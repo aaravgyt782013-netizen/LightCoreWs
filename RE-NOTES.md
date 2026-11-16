@@ -2,7 +2,7 @@
 
 Reconstruction of **https://xieron.com/** ("same to same") using the requested
 RE toolchain, then rebuilt as a production Next.js app and deployed to Vercel as
-**LightCore** (`https://lightcore.vercel.app`).
+**LightCore** (`https://lightcore-security.vercel.app`).
 
 ---
 
@@ -75,7 +75,7 @@ $ rea analyze /bin/ls --provider ghidra
 | Voice | "Personal channels with Voicemaster" — interface / easy setup / voice members + Discord-style panel mock |
 | CTA | Add to Discord · Open Dashboard |
 | Brand | Dragon ouroboros mark (`xieron.com/logo.png`, recovered via image search), crimson `#ef1010` on near-black |
-| Rebrand | All copy, metadata, assets and routes renamed **XIERON → LightCore**; deployment alias `lightcore.vercel.app` |
+| Rebrand | All copy, metadata, assets and routes renamed **XIERON → LightCore**; deployment alias `lightcore-security.vercel.app` |
 
 Live Discord invite URL from the source is preserved:
 `client_id=1391639072405196932`.

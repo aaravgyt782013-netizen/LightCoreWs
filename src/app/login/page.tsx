@@ -93,7 +93,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
             <Link href="/" className="transition-colors hover:text-zinc-300">
-              ← back to lightcore.vercel.app
+              ← back to LightCore home
             </Link>
           </p>
         </div>

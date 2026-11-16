@@ -3,7 +3,7 @@ export const site = {
   tagline: "LIGHTCORE SECURITY",
   description:
     "Real-time raid prevention, auto-moderation, and nuke blocking. Keep your Discord server protected around the clock, with zero setup latency.",
-  url: "https://lightcore.vercel.app",
+  url: "https://lightcore-security.vercel.app",
   invite:
     "https://discord.com/oauth2/authorize?client_id=1391639072405196932&permissions=8&scope=bot%20applications.commands",
   dashboard: "/login",
