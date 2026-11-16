@@ -1,7 +1,8 @@
-# XIERON — Reverse-Engineering Notes
+# LightCore — Reverse-Engineering Notes
 
 Reconstruction of **https://xieron.com/** ("same to same") using the requested
-RE toolchain, then rebuilt as a production Next.js app and deployed to Vercel.
+RE toolchain, then rebuilt as a production Next.js app and deployed to Vercel as
+**LightCore** (`https://lightcore.vercel.app`).
 
 ---
 
@@ -65,7 +66,7 @@ $ rea analyze /bin/ls --provider ghidra
 
 | Section | Recovered copy |
 | --- | --- |
-| Nav / hero | `XIERON SECURITY`, wordmark `X I E R O N`, "Real-time raid prevention, auto-moderation, and nuke blocking…", CTAs **Add to Discord** + **Open Dashboard** |
+| Nav / hero | `LIGHTCORE SECURITY`, wordmark `LIGHT·CORE`, "Real-time raid prevention, auto-moderation, and nuke blocking…", CTAs **Add to Discord** + **Open Dashboard** |
 | Feature rail | Anti-Nuke · AutoMod · Night Mode · Ticket · VoiceMaster |
 | Stats | `0K+` Servers Protected · `0M+` Users Safeguarded · `0%` Uptime · `0ms` Avg. Response |
 | Trusted by | "Securing The Best" + **27 real partner guilds** with member counts (Ratings™ 344,879 · Relationship 💕 180,463 · TheRawKnee 145,437 · UnGraduate Gamer 139,158 · Sujal Mundlia 101,557 · /smex 100,945 · /cutecafe 99,301 … as extracted) |
@@ -74,6 +75,7 @@ $ rea analyze /bin/ls --provider ghidra
 | Voice | "Personal channels with Voicemaster" — interface / easy setup / voice members + Discord-style panel mock |
 | CTA | Add to Discord · Open Dashboard |
 | Brand | Dragon ouroboros mark (`xieron.com/logo.png`, recovered via image search), crimson `#ef1010` on near-black |
+| Rebrand | All copy, metadata, assets and routes renamed **XIERON → LightCore**; deployment alias `lightcore.vercel.app` |
 
 Live Discord invite URL from the source is preserved:
 `client_id=1391639072405196932`.

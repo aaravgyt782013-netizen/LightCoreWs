@@ -60,13 +60,13 @@ const jetbrainsMono = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "XIERON | Advanced Discord Security & Anti-Nuke Bot",
-    template: "%s | XIERON",
+    default: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
+    template: "%s | LIGHTCORE",
   },
   description: site.description,
-  applicationName: "XIERON",
+  applicationName: "LIGHTCORE",
   keywords: [
-    "Xieron",
+    "LightCore",
     "Discord security bot",
     "anti-nuke",
     "anti-raid",
@@ -75,27 +75,27 @@ export const metadata: Metadata = {
     "Discord moderation",
     "server protection",
   ],
-  authors: [{ name: "XIERON Security" }],
-  creator: "XIERON Security",
+  authors: [{ name: "LightCore Security" }],
+  creator: "LightCore Security",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: site.url,
-    siteName: "XIERON",
-    title: "XIERON | Advanced Discord Security & Anti-Nuke Bot",
+    siteName: "LIGHTCORE",
+    title: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
     description: site.description,
     images: [
       {
         url: "/brand/og.png",
         width: 1200,
         height: 630,
-        alt: "XIERON — Advanced Discord Security",
+        alt: "LIGHTCORE — Advanced Discord Security",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "XIERON | Advanced Discord Security & Anti-Nuke Bot",
+    title: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
     description: site.description,
     images: ["/brand/og.png"],
   },
@@ -105,7 +105,7 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   icons: {
-    icon: [{ url: "/brand/xieron-512.png", type: "image/png" }],
+    icon: [{ url: "/brand/lightcore-512.png", type: "image/png" }],
     apple: [{ url: "/brand/apple-touch-icon.png" }],
   },
 };

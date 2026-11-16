@@ -4,7 +4,7 @@ import { PageShell, Prose } from "@/components/site/PageShell";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The terms that govern use of the XIERON Discord security bot and dashboard.",
+    "The terms that govern use of the LIGHTCORE Discord security bot and dashboard.",
 };
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
     <PageShell
       eyebrow="terms"
       title="Terms of Service"
-      intro="By inviting XIERON to a guild you agree to the terms below. They exist to keep the guard engine predictable."
+      intro="By inviting LIGHTCORE to a guild you agree to the terms below. They exist to keep the guard engine predictable."
     >
       <Prose>
         <p>
@@ -20,7 +20,7 @@ export default function TermsPage() {
         </p>
         <h2>Acceptable use</h2>
         <p>
-          XIERON is provided for the protection of Discord communities. You may
+          LIGHTCORE is provided for the protection of Discord communities. You may
           not use it to harass members, to bypass Discord&apos;s Terms of
           Service, or to target guilds you do not own or moderate.
         </p>
@@ -38,7 +38,7 @@ export default function TermsPage() {
         </p>
         <h2>Limitation of liability</h2>
         <p>
-          To the maximum extent permitted by law, XIERON Security is not liable
+          To the maximum extent permitted by law, LightCore Security is not liable
           for indirect damages arising from moderation actions, rollbacks or
           downtime.
         </p>

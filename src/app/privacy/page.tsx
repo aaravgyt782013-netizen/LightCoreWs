@@ -4,7 +4,7 @@ import { PageShell, Prose } from "@/components/site/PageShell";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How XIERON collects, processes and retains Discord guild data while protecting your server.",
+    "How LIGHTCORE collects, processes and retains Discord guild data while protecting your server.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <PageShell
       eyebrow="privacy"
       title="Privacy Policy"
-      intro="XIERON processes the minimum amount of Discord data required to keep your server safe. This page explains exactly what that means."
+      intro="LIGHTCORE processes the minimum amount of Discord data required to keep your server safe. This page explains exactly what that means."
     >
       <Prose>
         <p>

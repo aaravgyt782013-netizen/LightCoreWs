@@ -6,7 +6,7 @@ import { features } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Documentation",
   description:
-    "Commands, modules and configuration reference for the XIERON Discord security bot.",
+    "Commands, modules and configuration reference for the LIGHTCORE Discord security bot.",
 };
 
 const core = [

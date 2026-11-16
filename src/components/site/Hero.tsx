@@ -34,8 +34,8 @@ export function Hero() {
               </span>
             </div>
 
-            <h1 className="mt-7 font-display text-[44px] font-bold leading-[0.95] tracking-[0.16em] text-white sm:text-[62px] lg:text-[74px]">
-              XIERON
+            <h1 className="mt-7 font-display text-[38px] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[54px] lg:text-[64px]">
+              <span className="text-zinc-400">LIGHT</span><span className="text-brand-500">CORE</span>
             </h1>
 
             <p className="mt-6 max-w-[34rem] text-balance text-[15.5px] leading-relaxed text-zinc-400 sm:text-[16.5px]">
@@ -117,7 +117,7 @@ function ConsolePanel() {
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/50 to-transparent" />
           <div
             ref={scroller}
-            className="flex h-[286px] flex-col justify-end gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed"
+            className="flex h-[286px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto"
           >
             {logs
               .slice(Math.max(0, step - 6), step)
@@ -152,7 +152,7 @@ function ConsolePanel() {
       {/* floating badge */}
       <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-white/10 bg-ink-900/90 px-3.5 py-2.5 shadow-panel backdrop-blur sm:flex">
         <Image
-          src="/brand/xieron-512.png"
+          src="/brand/lightcore-512.png"
           alt=""
           width={22}
           height={22}

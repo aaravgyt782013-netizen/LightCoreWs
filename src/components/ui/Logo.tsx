@@ -23,8 +23,8 @@ export function Logo({
         />
       )}
       <Image
-        src="/brand/xieron-512.png"
-        alt="Xieron logo"
+        src="/brand/lightcore-512.png"
+        alt="LightCore logo"
         width={size}
         height={size}
         priority

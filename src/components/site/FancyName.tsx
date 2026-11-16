@@ -25,7 +25,6 @@ export function FancyName({
       className={`inline-block shrink-0 ${className}`}
       fill="currentColor"
     >
-      <title>{title}</title>
       <text
         x="0"
         y="18"

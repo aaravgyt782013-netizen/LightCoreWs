@@ -12,8 +12,8 @@ export default function NotFound() {
         <p className="mt-8 font-mono text-[11px] uppercase tracking-[0.34em] text-brand-400/80">
           404 · route not guarded
         </p>
-        <h1 className="mt-4 font-display text-[40px] font-semibold leading-none tracking-[0.14em] text-white sm:text-[64px]">
-          XIERON
+        <h1 className="mt-4 font-display text-[34px] font-semibold leading-none tracking-[0.06em] text-white sm:text-[54px]">
+          LIGHT<span className="text-brand-500">CORE</span>
         </h1>
         <p className="mt-4 max-w-sm text-[14px] leading-relaxed text-zinc-400">
           This page does not exist. The guard engine could not resolve the

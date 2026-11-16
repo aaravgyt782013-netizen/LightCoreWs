@@ -37,12 +37,12 @@ export function Navbar() {
           <Link
             href="/"
             className="group flex items-center gap-3"
-            aria-label="Xieron home"
+            aria-label="LightCore home"
           >
             <Logo size={34} />
             <span className="flex flex-col leading-none">
-              <span className="font-display text-[17px] font-semibold tracking-[0.22em] text-white">
-                XIERON
+              <span className="font-display text-[16px] font-semibold tracking-[0.16em] text-white">
+                LIGHT<span className="text-brand-500">CORE</span>
               </span>
               <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.42em] text-brand-400/80">
                 Security

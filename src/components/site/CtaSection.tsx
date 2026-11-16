@@ -20,7 +20,7 @@ export function CtaSection() {
             />
             <div className="relative mx-auto max-w-2xl">
               <Image
-                src="/brand/xieron-512.png"
+                src="/brand/lightcore-512.png"
                 alt=""
                 width={64}
                 height={64}

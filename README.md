@@ -1,6 +1,6 @@
-# XIERON
+# LIGHTCORE
 
-A same-to-same reconstruction of the **XIERON Discord security** marketing site
+A same-to-same reconstruction of the **LIGHTCORE Discord security** marketing site
 (anti-nuke / anti-raid / AutoMod bot), rebuilt with Next.js 15 and deployed on
 Vercel.
 

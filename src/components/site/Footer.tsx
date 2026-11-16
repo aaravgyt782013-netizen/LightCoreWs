@@ -17,8 +17,8 @@ export function Footer() {
           <div>
             <Link href="/" className="flex items-center gap-3">
               <Logo size={32} />
-              <span className="font-display text-[15px] font-semibold tracking-[0.24em] text-white">
-                XIERON
+              <span className="font-display text-[15px] font-semibold tracking-[0.18em] text-white">
+                LIGHT<span className="text-brand-500">CORE</span>
               </span>
             </Link>
             <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-zinc-500">
@@ -53,7 +53,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
           <p className="font-mono text-[10.5px] tracking-wide text-zinc-600">
-            © {new Date().getFullYear()} XIERON Security. All rights reserved.
+            © {new Date().getFullYear()} LightCore Security. All rights reserved.
           </p>
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
             <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />

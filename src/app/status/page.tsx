@@ -4,7 +4,7 @@ import { Reveal } from "@/components/ui/Reveal";
 
 export const metadata: Metadata = {
   title: "System Status",
-  description: "Live health and heartbeat signals for the XIERON guard engine.",
+  description: "Live health and heartbeat signals for the LIGHTCORE guard engine.",
 };
 
 const services = [

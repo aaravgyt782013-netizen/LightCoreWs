@@ -8,7 +8,7 @@ import { site } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Dashboard Login",
   description:
-    "Sign in to the XIERON dashboard to manage whitelists, rate limits, audit logs and voice modules.",
+    "Sign in to the LIGHTCORE dashboard to manage whitelists, rate limits, audit logs and voice modules.",
 };
 
 export default function LoginPage() {
@@ -20,8 +20,8 @@ export default function LoginPage() {
           <Link href="/" className="mb-8 flex items-center justify-center gap-3">
             <Logo size={38} />
             <span className="flex flex-col leading-none">
-              <span className="font-display text-[18px] font-semibold tracking-[0.24em] text-white">
-                XIERON
+              <span className="font-display text-[17px] font-semibold tracking-[0.16em] text-white">
+                LIGHT<span className="text-brand-500">CORE</span>
               </span>
               <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.42em] text-brand-400/80">
                 Security
@@ -93,7 +93,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
             <Link href="/" className="transition-colors hover:text-zinc-300">
-              ← back to xieron.com
+              ← back to lightcore.vercel.app
             </Link>
           </p>
         </div>

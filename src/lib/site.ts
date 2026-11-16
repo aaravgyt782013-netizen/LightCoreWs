@@ -1,13 +1,13 @@
 export const site = {
-  name: "XIERON",
-  tagline: "XIERON SECURITY",
+  name: "LIGHTCORE",
+  tagline: "LIGHTCORE SECURITY",
   description:
     "Real-time raid prevention, auto-moderation, and nuke blocking. Keep your Discord server protected around the clock, with zero setup latency.",
-  url: "https://xieron.com",
+  url: "https://lightcore.vercel.app",
   invite:
     "https://discord.com/oauth2/authorize?client_id=1391639072405196932&permissions=8&scope=bot%20applications.commands",
   dashboard: "/login",
-  discord: "https://discord.gg/xieron",
+  discord: "https://discord.gg/lightcore",
 } as const;
 
 export const nav = [
@@ -257,7 +257,7 @@ export const setupSteps = [
     step: "01",
     phase: "AUTH",
     title: "Invite the Bot",
-    copy: "Integrate Xieron into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.",
+    copy: "Integrate LightCore into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.",
     bullets: [
       "Instant OAuth2 gateway link",
       "Requires Manage Server permission only",
@@ -358,7 +358,7 @@ export const modules = [
 
 export const faqs = [
   {
-    q: "How fast does Xieron react to a nuke attempt?",
+    q: "How fast does LightCore react to a nuke attempt?",
     a: "Gateway events are intercepted in-process and evaluated against per-actor rate gates before the action is committed. Median detection-to-mitigation latency is 480ms, and rollback begins immediately after a threat is confirmed.",
   },
   {

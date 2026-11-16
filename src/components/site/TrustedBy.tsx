@@ -78,7 +78,7 @@ export function TrustedBy() {
             Securing The Best
           </h2>
           <p className="mt-4 text-balance text-[15px] leading-relaxed text-zinc-400">
-            XIERON is the security partner for Discord&apos;s fastest-growing
+            LIGHTCORE is the security partner for Discord&apos;s fastest-growing
             communities.
           </p>
         </Reveal>

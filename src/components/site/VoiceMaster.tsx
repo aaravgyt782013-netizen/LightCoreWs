@@ -46,7 +46,7 @@ function VoicePanelMock() {
               <div key={i} className="flex items-center gap-2 py-1">
                 <span className="relative size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
                   <Image
-                    src="/brand/xieron-512.png"
+                    src="/brand/lightcore-512.png"
                     alt=""
                     width={20}
                     height={20}
@@ -87,7 +87,7 @@ function MemberCard() {
       <div className="flex items-center gap-3">
         <span className="relative size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-brand-600/40">
           <Image
-            src="/brand/xieron-512.png"
+            src="/brand/lightcore-512.png"
             alt=""
             width={40}
             height={40}
