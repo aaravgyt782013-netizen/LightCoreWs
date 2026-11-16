@@ -1,0 +1,112 @@
+import Link from "next/link";
+import { Logo } from "@/components/ui/Logo";
+import { DiscordIcon } from "@/components/ui/Icons";
+import { nav, site } from "@/lib/site";
+
+const legal = [
+  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/terms" },
+  { label: "Status", href: "/status" },
+];
+
+export function Footer() {
+  return (
+    <footer className="relative border-t border-white/[0.07] bg-ink-950">
+      <div className="container-x py-14">
+        <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+          <div>
+            <Link href="/" className="flex items-center gap-3">
+              <Logo size={32} />
+              <span className="font-display text-[15px] font-semibold tracking-[0.24em] text-white">
+                XIERON
+              </span>
+            </Link>
+            <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-zinc-500">
+              Real-time raid prevention, auto-moderation and nuke blocking for
+              Discord communities that cannot afford downtime.
+            </p>
+            <a
+              href={site.invite}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition-colors hover:border-[#5865F2]/50 hover:text-white"
+            >
+              <DiscordIcon className="size-4 text-[#5865F2]" />
+              Join the support server
+            </a>
+          </div>
+
+          <FooterCol
+            title="Product"
+            links={nav.map((n) => ({ label: n.label, href: n.href }))}
+          />
+          <FooterCol
+            title="Platform"
+            links={[
+              { label: "Dashboard", href: site.dashboard },
+              { label: "Invite bot", href: site.invite, external: true },
+              { label: "Documentation", href: "/docs" },
+            ]}
+          />
+          <FooterCol title="Legal" links={legal} />
+        </div>
+
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
+          <p className="font-mono text-[10.5px] tracking-wide text-zinc-600">
+            © {new Date().getFullYear()} XIERON Security. All rights reserved.
+          </p>
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+            <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
+            all systems operational
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string; external?: boolean }[];
+}) {
+  return (
+    <div>
+      <p className="font-mono text-[9.5px] uppercase tracking-[0.26em] text-zinc-600">
+        {title}
+      </p>
+      <ul className="mt-4 space-y-2.5">
+        {links.map((l) => (
+          <li key={l.label}>
+            {l.external || l.href.startsWith("http") ? (
+              <a
+                href={l.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[13px] text-zinc-400 transition-colors hover:text-white"
+              >
+                {l.label}
+              </a>
+            ) : l.href.startsWith("#") ? (
+              <a
+                href={l.href}
+                className="text-[13px] text-zinc-400 transition-colors hover:text-white"
+              >
+                {l.label}
+              </a>
+            ) : (
+              <Link
+                href={l.href}
+                className="text-[13px] text-zinc-400 transition-colors hover:text-white"
+              >
+                {l.label}
+              </Link>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
