@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { cleanEnvString } from "@/lib/discord-oauth";
 
 export type DiscordGuild = {
   id: string;
@@ -92,14 +93,14 @@ export async function addUserToConfiguredGuild(input: {
   userId: string;
   accessToken: string;
 }): Promise<AutoJoinResult> {
-  const guildId = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim().replace(/^["']|["']$/g, "") || "";
+  const guildId = cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID);
   if (!/^\d{15,22}$/.test(guildId)) {
     return { status: "skipped", reason: "target_guild_not_configured" };
   }
   if (!/^\d{15,22}$/.test(input.userId)) {
     return { status: "failed", reason: "invalid_user_id" };
   }
-  const token = process.env.DISCORD_BOT_TOKEN?.trim().replace(/^["']|["']$/g, "").replace(/^Bot\s+/i, "").trim();
+  const token = cleanEnvString(process.env.DISCORD_BOT_TOKEN).replace(/^Bot\s+/i, "").trim();
   if (!token) return { status: "skipped", reason: "bot_token_not_configured" };
 
   try {
