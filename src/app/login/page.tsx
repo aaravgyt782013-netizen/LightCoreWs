@@ -56,12 +56,20 @@ export default function LoginPage() {
               </h1>
 
               <p className="mt-2.5 text-[13.5px] leading-relaxed text-zinc-400">
-                Sign in with Discord to manage your servers.
+                Sign in with Discord. We use your profile and server list to show servers you can manage. Your Discord password is entered only on discord.com.
               </p>
 
               <Suspense fallback={null}>
                 <LoginNotice />
               </Suspense>
+              <p className="mt-4 max-w-[300px] text-[11px] leading-relaxed text-zinc-500">
+                We request access to your Discord identity and server list only.
+                We do not ask for your Discord password, email, payment details,
+                or one-time codes. Read our{" "}
+                <Link href="/privacy" className="text-brand-300 underline underline-offset-2">
+                  Privacy Policy
+                </Link>.
+              </p>
 
               <Suspense
                 fallback={
