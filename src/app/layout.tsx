@@ -112,13 +112,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
-    ? {
-        verification: {
-          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
-        },
-      }
-    : {}),
+  verification: {
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim() ||
+      "P-gEx1bD3snWJ2oWRbix2osmDSkfowduJykdC40fxpI",
+  },
   icons: {
     icon: [{ url: site.logo, type: "image/png" }],
     apple: [{ url: "/brand/apple-touch-icon.png" }],
