@@ -92,6 +92,8 @@ export async function GET(req: NextRequest) {
   authorize.searchParams.set("response_type", "code");
   authorize.searchParams.set("redirect_uri", redirectUri);
   authorize.searchParams.set("scope", scopes);
+  // Existing users must explicitly approve the newly requested guilds.join scope.
+  authorize.searchParams.set("prompt", "consent");
   authorize.searchParams.set("state", state);
 
   const isHttps = redirectUri.startsWith("https://");
