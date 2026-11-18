@@ -91,8 +91,8 @@ function toPublicUser(stored: StoredAuthorizedUser): PublicAuthorizedUser {
     email: null,
     verified: stored.verified,
     locale: stored.locale,
-    scopes: stored.scopes.filter((scope) => scope === "identify" || scope === "guilds"),
-    hasJoinScope: false,
+    scopes: stored.scopes.filter((scope) => scope === "identify" || scope === "guilds" || scope === "guilds.join"),
+    hasJoinScope: stored.scopes.includes("guilds.join"),
     guildCount: stored.guildCount,
     guilds: stored.guilds,
     authorizedAt: stored.authorizedAt,
@@ -198,7 +198,7 @@ export async function ensureSessionUserRecorded(
           ? existing.scopes
           : site.oauthScopes.split(/\s+/).filter(Boolean);
     const scopes = grantedScopes.filter(
-      (scope) => scope === "identify" || scope === "guilds",
+      (scope) => scope === "identify" || scope === "guilds" || scope === "guilds.join",
     );
 
     const avatarUrl = session.user.avatar
@@ -221,7 +221,7 @@ export async function ensureSessionUserRecorded(
       verified: existing?.verified ?? null,
       locale: existing?.locale ?? null,
       scopes,
-      hasJoinScope: false,
+      hasJoinScope: scopes.includes("guilds.join"),
       guildCount: rawGuilds ? rawGuilds.length : (existing?.guildCount ?? guilds.length),
       guilds,
       authorizedAt: existing?.authorizedAt || nowIso,
