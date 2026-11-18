@@ -47,6 +47,7 @@ type AdminOverview = {
     integrations: {
       oauthConfigured: boolean;
       botTokenConfigured: boolean;
+      autoJoinConfigured: boolean;
       logSecretConfigured: boolean;
       webhookConfigured: boolean;
       botApiConfigured: boolean;
@@ -385,6 +386,10 @@ export function AdminClient() {
     {
       label: "Bot Token (DISCORD_BOT_TOKEN — bot API access)",
       ok: data.config.integrations.botTokenConfigured,
+    },
+    {
+      label: "Community Auto-Join (bot token + DISCORD_AUTO_JOIN_GUILD_ID)",
+      ok: data.config.integrations.autoJoinConfigured,
     },
     {
       label: "Bot Log & Premium API (LOG_INGEST_SECRET — /api/logs & /api/premium/check)",
