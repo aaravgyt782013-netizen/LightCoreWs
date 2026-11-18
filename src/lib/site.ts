@@ -128,7 +128,7 @@ export const features: {
     key: "Anti-Nuke",
     icon: "shield",
     headline: "Anti-Nuke",
-    copy: "Destructive actions are intercepted before they land. Channel wipes, mass bans, role purges and webhook spam are frozen in under 500ms.",
+    copy: "Configured safeguards monitor destructive actions such as channel wipes, mass bans, role changes, and webhook activity, then apply the selected response when thresholds are exceeded.",
     points: [
       "26 independent security modules",
       "Per-actor rate gates per minute",
@@ -217,7 +217,7 @@ export const setupSteps = [
     quadrants: [
       { title: "Whitelists", copy: "Explicit owner override authorization" },
       { title: "Limits", copy: "Fine-tune action counters per minute" },
-      { title: "Audit Logs", copy: "Sub-500ms chronological events" },
+      { title: "Audit Logs", copy: "Chronological events when logging is connected" },
       { title: "Status", copy: "Live health and heartbeat signals" },
     ],
   },
@@ -242,7 +242,7 @@ export const protocolStages = [
   {
     stage: "STAGE 06",
     title: "Mitigation & Rollback",
-    copy: "Instantly applies sanctions (ban, kick, role strip) and restores the server state when threats are confirmed.",
+    copy: "Applies configured sanctions and attempts to restore supported server state after a threat is confirmed.",
   },
 ] as const;
 
@@ -309,6 +309,6 @@ export const faqs = [
   },
   {
     q: "How long does setup take?",
-    a: `Under 30 seconds. Invite the bot, run ${prefix}antinuke enable, and the default hierarchy, caches and all 26 modules initialise automatically. Fine-tuning happens in the dashboard whenever you want it.`,
+    a: `Invite the bot and run ${prefix}antinuke enable to initialize the configured protection modules. Setup time depends on your server permissions and configuration. Fine-tuning is available in the dashboard.`,
   },
 ] as const;
