@@ -1,73 +1,110 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { Wordmark } from "@/components/ui/Logo";
-import { featureIcons, ArrowRight, CrownIcon } from "@/components/ui/Icons";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
+import {
+  featureIcons,
+  ArrowRight,
+  BoltIcon,
+  CrownIcon,
+  ShieldIcon,
+} from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { defaultLogs, features, site, stats, type LogEntry } from "@/lib/site";
 import { useCountUp } from "@/components/ui/useCountUp";
 
+const SIMULATED_RAID: LogEntry[] = [
+  { t: "ALERT", ok: false, msg: "rogue bot attempted 12 channel deletes" },
+  { t: "GATE", ok: false, msg: "rate threshold breached (12/2 per min)" },
+  { t: "BLOCK", ok: false, msg: "actor stripped & quarantined in 38ms" },
+  { t: "RESTORE", ok: true, msg: "all 12 channels & permissions restored" },
+  { t: "SEALED", ok: true, msg: "0 data lost · server locked & verified" },
+];
+
+const TELEMETRY_LAYERS = [
+  { name: "Anti-Nuke Interceptor", metric: "38ms", pct: 98 },
+  { name: "AutoMod Firewall", metric: "99.98%", pct: 99 },
+  { name: "State Rollback Engine", metric: "0-loss", pct: 96 },
+  { name: "VoiceMaster & Tickets", metric: "online", pct: 100 },
+];
+
 export function Hero() {
   const { config } = useSiteConfig();
+
   return (
-    <section className="relative overflow-hidden pb-12 pt-[110px] sm:pt-[132px]">
+    <section className="relative overflow-hidden pb-16 pt-[114px] sm:pb-20 sm:pt-[142px]">
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,486px)] lg:gap-12">
-          {/* copy */}
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-14">
+          {/* Staggered Hero Copy */}
           <div className="relative">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-brand-500/25 bg-brand-950/35 py-1.5 pl-1.5 pr-4 shadow-[0_0_30px_-10px_rgb(var(--brand-600)/0.55)] backdrop-blur-md">
-              <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-600/20">
-                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-500/70" />
-                <span className="size-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgb(var(--brand-400))]" />
+            <div
+              className="animate-hero-in inline-flex items-center gap-2.5 rounded-full border border-brand-500/30 bg-brand-950/40 py-1.5 pl-1.5 pr-4 shadow-[0_0_36px_-10px_rgb(var(--brand-500)/0.65),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl"
+              style={{ animationDelay: "0ms" }}
+            >
+              <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-500/20">
+                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-400/75" />
+                <span className="size-1.5 rounded-full bg-brand-400 shadow-[0_0_10px_rgb(var(--brand-400))]" />
               </span>
-              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.14em] text-zinc-200 sm:text-[10.5px] sm:tracking-[0.22em]">
+              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.16em] text-zinc-100 sm:text-[10.5px] sm:tracking-[0.22em]">
                 {config.tagline}
               </span>
             </div>
 
-            <h1 className="mt-7 font-display text-[40px] font-bold leading-[0.94] tracking-[0.07em] text-white drop-shadow-[0_12px_40px_rgb(var(--brand-600)/0.22)] sm:text-[56px] lg:text-[68px]">
-              <Wordmark leadClassName="text-zinc-100" />
+            <h1
+              className="animate-hero-in mt-7 font-display text-[42px] font-bold leading-[0.92] tracking-[0.06em] text-white drop-shadow-[0_16px_50px_rgb(var(--brand-600)/0.28)] sm:text-[60px] lg:text-[72px]"
+              style={{ animationDelay: "70ms" }}
+            >
+              <Wordmark leadClassName="text-white" />
             </h1>
 
-            <p className="mt-6 max-w-[35rem] text-balance text-[15.5px] leading-relaxed text-zinc-200 sm:text-[17px]">
+            <p
+              className="animate-hero-in mt-6 max-w-[35rem] text-balance text-[15.5px] leading-[1.7] text-zinc-200 sm:text-[17px]"
+              style={{ animationDelay: "140ms" }}
+            >
               {config.description}.{" "}
               {config.heroSubtext && (
                 <span className="text-zinc-400">{config.heroSubtext}</span>
               )}
             </p>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
+            <div
+              className="animate-hero-in mt-9 flex flex-wrap items-center gap-3"
+              style={{ animationDelay: "210ms" }}
+            >
               <InviteButton size="lg" />
               <Link
                 href={site.dashboard}
-                className="group inline-flex h-[52px] items-center gap-3 rounded-full border border-white/[0.13] bg-white/[0.035] px-6 text-[15px] font-medium text-zinc-100 backdrop-blur-md transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-500/[0.09] hover:text-white hover:shadow-[0_14px_38px_-16px_rgb(var(--brand-600)/0.55)] active:translate-y-0"
+                className="group inline-flex h-[52px] items-center gap-2.5 rounded-full border border-white/[0.13] bg-white/[0.04] px-6 text-[14.5px] font-medium text-zinc-100 shadow-[inset_0_1px_0_rgb(255_255_255/0.09)] backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/50 hover:bg-brand-500/[0.1] hover:text-white hover:shadow-[0_18px_44px_-16px_rgb(var(--brand-600)/0.6)] active:translate-y-0 active:scale-[0.98]"
               >
                 Open Dashboard
-                <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/premium"
-                className="group inline-flex h-[52px] items-center gap-2 rounded-full border border-brand-500/25 bg-brand-950/30 px-5 text-[14px] font-medium text-brand-200 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/55 hover:bg-brand-900/35 hover:text-white"
+                className="group inline-flex h-[52px] items-center gap-2 rounded-full border border-brand-500/28 bg-brand-950/35 px-5 text-[14px] font-medium text-brand-200 backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/60 hover:bg-brand-900/40 hover:text-white active:scale-[0.98]"
               >
-                <CrownIcon className="size-4 text-brand-400 transition-transform duration-300 group-hover:scale-110" />
+                <CrownIcon className="size-4 text-brand-400 transition-transform duration-300 ease-smooth group-hover:scale-110" />
                 Premium
               </Link>
             </div>
 
-            {/* feature chips */}
-            <div className="mt-10 flex flex-wrap items-center gap-2">
-              {features.map((f, i) => {
+            {/* Interactive module quick-pills */}
+            <div
+              className="animate-hero-in mt-10 flex flex-wrap items-center gap-2"
+              style={{ animationDelay: "280ms" }}
+            >
+              {features.map((f) => {
                 const Icon = featureIcons[f.icon];
                 return (
                   <a
                     key={f.key}
                     href="#features"
-                    className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/85 px-3.5 py-2 text-[12.5px] font-medium text-zinc-300 backdrop-blur transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-950/40 hover:text-white hover:shadow-[0_10px_28px_-14px_rgb(var(--brand-500)/0.65)]"
-                    style={{ animationDelay: `${i * 100}ms` }}
+                    className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/80 px-3.5 py-2 text-[12px] font-medium text-zinc-300 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] backdrop-blur-md transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-950/45 hover:text-white hover:shadow-[0_12px_30px_-14px_rgb(var(--brand-500)/0.7)] active:scale-[0.97]"
                   >
-                    <Icon className="size-[15px] text-brand-400 transition-transform duration-300 group-hover:scale-110" />
+                    <Icon className="size-[14px] text-brand-400 transition-transform duration-300 ease-smooth group-hover:scale-110" />
                     {f.key}
                   </a>
                 );
@@ -75,8 +112,13 @@ export function Hero() {
             </div>
           </div>
 
-          {/* live guard engine terminal */}
-          <ConsolePanel />
+          {/* Interactive Guard Command Console */}
+          <div
+            className="animate-hero-in"
+            style={{ animationDelay: "180ms" }}
+          >
+            <ConsolePanel />
+          </div>
         </div>
 
         <StatsBar />
@@ -86,15 +128,23 @@ export function Hero() {
 }
 
 function ConsolePanel() {
+  const { config } = useSiteConfig();
+  const [tab, setTab] = useState<"stream" | "telemetry">("stream");
   const [entries, setEntries] = useState<LogEntry[]>(defaultLogs);
   const [isLive, setIsLive] = useState(false);
-  const [step, setStep] = useState(4);
-  const scroller = useRef<HTMLDivElement | null>(null);
-  const { config } = useSiteConfig();
+  const [step, setStep] = useState(5);
+  const [simulating, setSimulating] = useState(false);
+  const [simLogs, setSimLogs] = useState<LogEntry[]>([]);
+  const simTimers = useRef<number[]>([]);
+
+  useEffect(() => {
+    return () => {
+      simTimers.current.forEach((t) => window.clearTimeout(t));
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
-
     const load = async () => {
       try {
         const res = await fetch("/api/logs?limit=12", { cache: "no-store" });
@@ -116,7 +166,6 @@ function ConsolePanel() {
         // Keep default animated stream when offline.
       }
     };
-
     void load();
     const poll = window.setInterval(() => void load(), 8000);
     return () => {
@@ -126,108 +175,207 @@ function ConsolePanel() {
   }, []);
 
   useEffect(() => {
-    if (isLive) return;
+    if (isLive || simulating) return;
     const id = window.setInterval(() => {
       setStep((s) =>
         s + 1 > entries.length ? Math.min(4, entries.length) : s + 1,
       );
-    }, 1750);
+    }, 1850);
     return () => window.clearInterval(id);
-  }, [isLive, entries.length]);
+  }, [isLive, simulating, entries.length]);
 
-  const visible = isLive
-    ? entries.slice(-6)
-    : entries.slice(Math.max(0, step - 6), step);
+  const runSimulation = useCallback(() => {
+    if (simulating) return;
+    setTab("stream");
+    setSimulating(true);
+    setSimLogs([SIMULATED_RAID[0]]);
+    simTimers.current.forEach((t) => window.clearTimeout(t));
+    simTimers.current = [];
+
+    SIMULATED_RAID.slice(1).forEach((entry, idx) => {
+      const id = window.setTimeout(
+        () => {
+          setSimLogs((prev) => [
+            ...prev,
+            { ...entry, id: `sim-${Date.now()}-${idx}` },
+          ]);
+        },
+        (idx + 1) * 560,
+      );
+      simTimers.current.push(id);
+    });
+
+    const endId = window.setTimeout(() => {
+      setSimulating(false);
+    }, SIMULATED_RAID.length * 560 + 2600);
+    simTimers.current.push(endId);
+  }, [simulating]);
+
+  const visible =
+    simLogs.length > 0 && simulating
+      ? simLogs
+      : isLive
+        ? entries.slice(-6)
+        : entries.slice(Math.max(0, step - 6), step);
 
   return (
     <div className="relative">
-      {/* intense crimson halo behind console */}
+      {/* Multi-layer volumetric crimson aura behind console */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-7 rounded-[2.2rem] blur-2xl"
+        className="pointer-events-none absolute -inset-8 rounded-[2.4rem] blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgb(var(--brand-600) / 0.26), rgb(var(--brand-500) / 0.08) 55%, transparent 78%)",
+            "radial-gradient(closest-side, rgb(var(--brand-600) / 0.28), rgb(var(--brand-800) / 0.1) 56%, transparent 82%)",
         }}
       />
 
-      <div className="panel panel-inner relative overflow-hidden rounded-[22px] border-brand-500/20 shadow-[0_32px_90px_-34px_rgba(0,0,0,0.98),0_0_60px_-28px_rgb(var(--brand-600)/0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
-        {/* top glowing crimson accent filament */}
+      <SpotlightCard className="overflow-hidden rounded-[24px] border-brand-500/25 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
+        {/* Top laser accent filament */}
         <div
           aria-hidden
-          className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500/80 to-transparent"
+          className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500 to-transparent"
         />
 
-        {/* terminal chrome header */}
-        <div className="flex items-center justify-between border-b border-white/[0.07] bg-black/35 px-4 py-3">
+        {/* Console header with interactive mode switcher */}
+        <div className="relative flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.075] bg-black/50 px-4 py-3">
           <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-full bg-brand-500 shadow-[0_0_10px_rgb(var(--brand-500)/0.85)]" />
-              <span className="size-2.5 rounded-full bg-white/10" />
-              <span className="size-2.5 rounded-full bg-white/10" />
+              <span className="size-2.5 rounded-full bg-brand-500 shadow-[0_0_10px_rgb(var(--brand-500))]" />
+              <span className="size-2.5 rounded-full bg-white/12" />
+              <span className="size-2.5 rounded-full bg-white/12" />
             </span>
-            <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.26em] text-zinc-400">
-              {(config.brandName || site.name).toLowerCase()} · guard engine
-            </span>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/25 bg-brand-500/10 px-2.5 py-0.5 font-mono text-[9.5px] font-medium text-brand-300">
-            <span className="size-1.5 animate-ticker rounded-full bg-brand-400" />
-            {isLive ? "live stream" : "armed"}
-          </span>
-        </div>
-
-        {/* body */}
-        <div className="relative p-4">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/65 to-transparent" />
-          <div
-            ref={scroller}
-            className="flex h-[286px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto"
-          >
-            {visible.map((l, i) => (
-              <div
-                key={l.id ?? `${l.t}-${l.msg}-${i}`}
-                className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.055] bg-black/45 px-3 py-2 transition-colors hover:border-brand-500/25"
+            <div className="ml-1 inline-flex rounded-lg border border-white/[0.07] bg-white/[0.03] p-0.5 font-mono text-[9.5px] uppercase tracking-[0.16em]">
+              <button
+                type="button"
+                onClick={() => setTab("stream")}
+                className={`rounded-md px-2.5 py-1 transition-all duration-200 ${
+                  tab === "stream"
+                    ? "bg-brand-600/25 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.45)]"
+                    : "text-zinc-500 hover:text-zinc-200"
+                }`}
               >
-                <span
-                  className={`mt-px shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
-                    l.ok
-                      ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                      : "border border-brand-500/35 bg-brand-600/20 text-brand-300"
-                  }`}
-                >
-                  {l.t}
-                </span>
-                <span className="text-zinc-300">{l.msg}</span>
-              </div>
-            ))}
+                Feed
+              </button>
+              <button
+                type="button"
+                onClick={() => setTab("telemetry")}
+                className={`rounded-md px-2.5 py-1 transition-all duration-200 ${
+                  tab === "telemetry"
+                    ? "bg-brand-600/25 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.45)]"
+                    : "text-zinc-500 hover:text-zinc-200"
+                }`}
+              >
+                Radar
+              </button>
+            </div>
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3 font-mono text-[10px] text-zinc-500">
+
+          <button
+            type="button"
+            onClick={runSimulation}
+            disabled={simulating}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] font-medium uppercase tracking-wider transition-all duration-300 ease-smooth active:scale-95 ${
+              simulating
+                ? "border-brand-400/60 bg-brand-500/25 text-white shadow-[0_0_20px_-4px_rgb(var(--brand-500))]"
+                : "border-brand-500/35 bg-brand-500/12 text-brand-200 hover:border-brand-400/70 hover:bg-brand-500/22 hover:text-white"
+            }`}
+          >
+            <BoltIcon className="size-3 text-brand-400" />
+            {simulating ? "mitigating…" : "test raid"}
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="relative p-4">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/70 to-transparent" />
+
+          {tab === "stream" ? (
+            <div className="flex h-[288px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto">
+              {visible.map((l, i) => (
+                <div
+                  key={l.id ?? `${l.t}-${l.msg}-${i}`}
+                  className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.06] bg-black/55 px-3 py-2.5 transition-colors duration-200 hover:border-brand-500/30"
+                >
+                  <span
+                    className={`mt-px shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
+                      l.ok
+                        ? "border border-emerald-500/25 bg-emerald-500/12 text-emerald-300"
+                        : "border border-brand-500/40 bg-brand-600/22 text-brand-200"
+                    }`}
+                  >
+                    {l.t}
+                  </span>
+                  <span className="text-zinc-200">{l.msg}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="animate-fade-in flex h-[288px] flex-col justify-between py-1">
+              <div className="space-y-3">
+                {TELEMETRY_LAYERS.map((layer) => (
+                  <div
+                    key={layer.name}
+                    className="rounded-xl border border-white/[0.06] bg-black/50 px-3.5 py-2.5"
+                  >
+                    <div className="flex items-center justify-between text-[11.5px]">
+                      <span className="font-medium text-zinc-200">
+                        {layer.name}
+                      </span>
+                      <span className="font-mono text-[10px] font-semibold text-brand-300">
+                        {layer.metric}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-brand-700 via-brand-500 to-brand-300 shadow-[0_0_12px_rgb(var(--brand-500))]"
+                        style={{ width: `${layer.pct}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-8 gap-1.5 pt-2">
+                {[31, 36, 29, 41, 34, 38, 33, 37].map((ms, idx) => (
+                  <div
+                    key={idx}
+                    className="flex flex-col items-center rounded-lg border border-emerald-500/20 bg-emerald-500/[0.07] py-1.5 font-mono text-[8.5px]"
+                  >
+                    <span className="text-zinc-400">S{idx + 1}</span>
+                    <span className="font-semibold text-emerald-300">
+                      {ms}m
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-3 flex items-center justify-between border-t border-white/[0.065] pt-3 font-mono text-[10px] text-zinc-500">
             <span>
-              prefix <span className="text-brand-400">{config.prefix}</span> ·
-              uptime 99.99%
+              prefix <span className="text-brand-400">{config.prefix}</span> ·{" "}
+              {isLive ? "live cluster" : "26 gates active"}
             </span>
-            <span className="flex items-center gap-1.5">
-              shield
-              <span className="font-medium text-emerald-400">nominal</span>
+            <span className="inline-flex items-center gap-1.5 text-emerald-400">
+              <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
+              shield nominal
             </span>
           </div>
         </div>
-      </div>
+      </SpotlightCard>
 
-      {/* floating shield badge */}
-      <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-brand-500/25 bg-ink-900/95 px-3.5 py-2.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.95),0_0_30px_-12px_rgb(var(--brand-500)/0.55)] backdrop-blur-xl sm:flex">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={config.logoUrl || site.logo}
-          alt=""
-          width={24}
-          height={24}
-          className="size-6 rounded-md object-cover ring-1 ring-brand-500/40"
-        />
+      {/* Floating glass micro-card */}
+      <div className="absolute -bottom-5 -left-5 hidden animate-floaty items-center gap-3 rounded-2xl border border-brand-500/30 bg-ink-900/95 px-4 py-2.5 shadow-[0_22px_55px_-14px_rgba(0,0,0,0.98),0_0_34px_-12px_rgb(var(--brand-500)/0.65)] backdrop-blur-2xl sm:flex">
+        <span className="flex size-8 items-center justify-center rounded-xl border border-brand-500/35 bg-brand-600/20 text-brand-400">
+          <ShieldIcon className="size-4" />
+        </span>
         <div className="leading-tight">
-          <p className="text-[11.5px] font-semibold text-white">Nuke blocked</p>
-          <p className="font-mono text-[9.5px] text-brand-300/90">
-            rollback complete · 41ms
+          <p className="text-[12px] font-semibold text-white">
+            Zero-Loss Rollback
+          </p>
+          <p className="font-mono text-[9.5px] text-brand-300">
+            intercepted in 38ms
           </p>
         </div>
       </div>
@@ -250,29 +398,32 @@ function Stat({
 }) {
   const { ref, display } = useCountUp(value, { decimals });
   return (
-    <div
-      ref={ref}
-      className="group relative px-5 py-6 text-center transition-colors duration-300 hover:bg-brand-500/[0.03] sm:px-6"
-    >
-      <p className="font-display text-[30px] font-bold tabular-nums tracking-tight text-white sm:text-[38px]">
+    <SpotlightCard className="group rounded-2xl px-5 py-6 text-center transition-transform duration-300 ease-smooth hover:-translate-y-1 sm:px-6 sm:py-7">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/55 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-100"
+      />
+      <p
+        ref={ref}
+        className="relative font-display text-[30px] font-bold tabular-nums tracking-tight text-white sm:text-[40px]"
+      >
         {display}
         <span className="text-brand-500">{suffix}</span>
       </p>
-      <p className="mt-1.5 text-[11.5px] font-medium uppercase tracking-[0.16em] text-zinc-300">
+      <p className="relative mt-1.5 text-[11.5px] font-semibold uppercase tracking-[0.16em] text-zinc-200">
         {label}
       </p>
-      <p className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-500">
+      <p className="relative mt-1 font-mono text-[9.5px] uppercase tracking-[0.26em] text-zinc-500">
         {hint}
       </p>
-    </div>
+    </SpotlightCard>
   );
 }
 
 function StatsBar() {
   return (
-    <div className="relative mt-16">
-      <div className="hairline" />
-      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-white/[0.075] bg-ink-900/65 shadow-panel backdrop-blur-xl md:grid-cols-4 [&>*:nth-child(2n)]:border-l [&>*:nth-child(2n)]:border-white/[0.06] [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-white/[0.06] md:[&>*]:border-l md:[&>*]:border-t-0 md:[&>*:first-child]:border-l-0">
+    <div className="relative mt-16 sm:mt-20">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         {stats.map((s) => (
           <Stat
             key={s.label}

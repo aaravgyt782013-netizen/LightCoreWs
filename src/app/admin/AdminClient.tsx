@@ -315,7 +315,7 @@ export function AdminClient() {
         <div className="mt-6 flex flex-wrap gap-3">
           <a
             href="/api/auth/discord?next=/admin"
-            className="inline-flex h-11 items-center gap-2.5 rounded-full bg-[#5865F2] px-5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#4752C4]"
+            className="btn-primary btn-glow relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full px-6 text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <DiscordIcon className="size-4" />
             Sign in as Owner

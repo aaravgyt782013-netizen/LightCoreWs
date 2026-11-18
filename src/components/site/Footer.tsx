@@ -17,7 +17,11 @@ export function Footer() {
   const { config } = useSiteConfig();
 
   return (
-    <footer className="relative border-t border-brand-200/[0.08] bg-ink-950/95">
+    <footer className="relative border-t border-white/[0.075] bg-ink-950/95">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/45 to-transparent"
+      />
       <div className="container-x py-14">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
@@ -37,9 +41,9 @@ export function Footer() {
               href={config.supportUrl || site.discord}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand-200/15 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-200 transition-all hover:border-brand-400/50 hover:text-white"
+              className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand-500/25 bg-brand-950/35 px-4 py-2 text-[12px] font-medium text-zinc-200 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/55 hover:bg-brand-900/40 hover:text-white"
             >
-              <DiscordIcon className="size-4 text-[#5865F2]" />
+              <DiscordIcon className="size-4 text-brand-400" />
               Join the support server
             </a>
           </div>

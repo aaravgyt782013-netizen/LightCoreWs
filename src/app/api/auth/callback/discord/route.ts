@@ -151,7 +151,7 @@ async function exchangeDiscordCode(params: {
   return { ok: false, reason: "rate_limited" };
 }
 
-export async function handleDiscordOAuthCallback(req: NextRequest) {
+async function handleDiscordOAuthCallback(req: NextRequest) {
   const reqCtx = { url: req.url, headers: req.headers };
   const { searchParams } = new URL(req.url);
   const oauthError = searchParams.get("error");
@@ -213,7 +213,8 @@ export async function handleDiscordOAuthCallback(req: NextRequest) {
       if (
         reqPathname === "/api/auth/callback/discord" ||
         reqPathname === "/api/auth/callback" ||
-        reqPathname === "/api/auth/discord/callback"
+        reqPathname === "/api/auth/discord/callback" ||
+        reqPathname === "/oauth/callback"
       ) {
         u.pathname = reqPathname;
       }
