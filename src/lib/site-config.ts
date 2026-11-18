@@ -1,4 +1,4 @@
-import { site } from "@/lib/site";
+import { site, normalizeSupportUrl } from "@/lib/site";
 import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 
 export type ThemePresetId =
@@ -576,7 +576,9 @@ export function mergeSiteConfig(
         : base.enableRouteLoader,
     loaderText: cleanStr(p.loaderText, base.loaderText, 60),
 
-    supportUrl: cleanUrl(p.supportUrl, base.supportUrl, false),
+    supportUrl: normalizeSupportUrl(
+      cleanUrl(p.supportUrl, base.supportUrl, false),
+    ),
     inviteUrl:
       typeof p.inviteUrl === "string" && p.inviteUrl.trim()
         ? sanitizeDiscordInviteUrl(p.inviteUrl, site.clientId)

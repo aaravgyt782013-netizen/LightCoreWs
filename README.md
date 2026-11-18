@@ -6,7 +6,7 @@
 
 As your choice for an all in one bot.
 
-[**Live site**](https://lightcorews.wasmer.app/) · [**Add to Discord**](https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot) · [**Support Server**](https://discord.gg/np8M2TZgqa)
+[**Live site**](https://lightcorews.onrender.com/) · [**Add to Discord**](https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot) · [**Support Server**](https://discord.gg/vTPhtsncjH)
 
 </div>
 
@@ -22,12 +22,12 @@ All public brand values live in [`src/lib/site.ts`](./src/lib/site.ts) (and can 
 | Tagline | `LIGHT FOR YOU HEAVY FOR NUKERS` |
 | Description | `As your choice for an all in one bot` |
 | Command Prefix | `.` (e.g. `.antinuke enable`) |
-| Site URL | `https://lightcorews.wasmer.app` |
+| Site URL | `https://lightcorews.onrender.com` |
 | Discord Client ID | `1559607601115955210` |
 | Owner ID (`/admin`) | `1538907226671022111` |
 | OAuth2 Scopes | `identify email guilds guilds.join` |
 | Bot Invite | `https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot` |
-| Support Server | `https://discord.gg/np8M2TZgqa` |
+| Support Server | `https://discord.gg/vTPhtsncjH` |
 
 ---
 

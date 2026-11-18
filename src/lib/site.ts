@@ -11,6 +11,16 @@ import {
 const clientId = resolveDiscordClientId();
 const prefix = cleanEnvString(process.env.NEXT_PUBLIC_BOT_PREFIX) || ".";
 
+export const DEFAULT_SUPPORT_URL = "https://discord.gg/vTPhtsncjH";
+
+export function normalizeSupportUrl(raw?: string | null): string {
+  const cleaned = cleanEnvString(raw);
+  if (!cleaned || /np8M2TZgqa/i.test(cleaned)) {
+    return DEFAULT_SUPPORT_URL;
+  }
+  return cleaned;
+}
+
 const resolvedInviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL
   ? sanitizeDiscordInviteUrl(
       process.env.NEXT_PUBLIC_DISCORD_INVITE_URL,
@@ -49,9 +59,7 @@ export const site = {
     cleanEnvString(process.env.NEXT_PUBLIC_DASHBOARD_URL) || "/login",
   premium: "/premium",
   admin: "/admin",
-  discord:
-    cleanEnvString(process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL) ||
-    "https://discord.gg/np8M2TZgqa",
+  discord: normalizeSupportUrl(process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL),
   logo: cleanEnvString(process.env.NEXT_PUBLIC_LOGO_URL) || "/brand/logo.png",
 } as const;
 
