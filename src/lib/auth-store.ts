@@ -88,7 +88,7 @@ function toPublicUser(stored: StoredAuthorizedUser): PublicAuthorizedUser {
     username: stored.username,
     globalName: stored.globalName,
     avatarUrl: stored.avatarUrl,
-    email: stored.email,
+    email: null,
     verified: stored.verified,
     locale: stored.locale,
     scopes: stored.scopes,
