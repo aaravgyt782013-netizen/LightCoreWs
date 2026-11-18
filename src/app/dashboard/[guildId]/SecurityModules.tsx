@@ -676,7 +676,7 @@ export function WhitelistModule({
                 options={roles.map((r) => ({
                   value: r.id,
                   label: `@${r.name}`,
-                  colorDot: r.color || "#22d3ee",
+                  colorDot: r.color || "#ef4444",
                 }))}
               />
             ) : (
@@ -1365,7 +1365,7 @@ export function NightModeModule({
       <div
         className={`flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5 transition-colors ${
           nightmode.lockdownActive
-            ? "border-brand-400/60 bg-brand-950/60 shadow-[0_0_42px_-12px_rgba(34,211,238,0.65)]"
+            ? "border-brand-400/60 bg-brand-950/60 shadow-[0_0_42px_-12px_rgb(var(--brand-500)/0.65)]"
             : "border-brand-200/10 bg-ink-900/55"
         }`}
       >

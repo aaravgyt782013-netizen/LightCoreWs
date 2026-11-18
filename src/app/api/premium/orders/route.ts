@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
   await sendDiscordLogEmbed({
     title: `${inv.brandName} · New Premium Invoice`,
     description: `\`@${inv.username}\` (\`${inv.userId}\`) generated an invoice and was directed to open a Support Server ticket.`,
-    color: 0x06b6d4,
+    color: 0xef4444,
     timestamp: inv.createdAt,
     fields: [
       { name: "Invoice ID", value: `\`${inv.invoiceId}\``, inline: true },

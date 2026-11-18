@@ -36,7 +36,7 @@ export function Setup() {
             <Reveal
               key={s.step}
               delay={i * 90}
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-white/[0.035] to-white/[0.012] p-6 transition-colors duration-300 hover:border-white/[0.14]"
+              className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-b from-ink-850/90 to-ink-950/95 p-6 shadow-panel transition-all duration-300 ease-smooth hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-[0_26px_65px_-30px_rgb(var(--brand-600)/0.55)]"
             >
               <div className="flex items-center justify-between">
                 <span className="font-display text-[13px] font-semibold tracking-[0.28em] text-brand-500/90">

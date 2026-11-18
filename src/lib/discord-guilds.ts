@@ -54,9 +54,13 @@ export async function fetchAllUserGuilds(
 
   try {
     const res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
+      },
       cache: "no-store",
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(5500),
     });
     if (!res.ok) return cached ? cached.guilds : null;
     const guilds = (await res.json()) as DiscordGuild[];
@@ -93,7 +97,11 @@ type GlobalCache = typeof globalThis & {
 };
 
 export async function fetchBotGuilds(): Promise<CachedBotGuilds | null> {
-  const token = process.env.DISCORD_BOT_TOKEN?.trim();
+  const token = process.env.DISCORD_BOT_TOKEN
+    ?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/^Bot\s+/i, "")
+    .trim();
   if (!token) return null;
 
   const g = globalThis as GlobalCache;

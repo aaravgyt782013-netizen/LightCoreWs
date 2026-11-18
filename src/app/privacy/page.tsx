@@ -18,6 +18,16 @@ export default function PrivacyPage() {
         <p>
           <strong>Last updated:</strong> November 2026
         </p>
+        <h2>Official Discord OAuth2 &amp; Zero Credential Collection</h2>
+        <p>
+          {site.name} is an independent Discord bot and server management
+          dashboard and is not affiliated with or endorsed by Discord Inc. Sign-in
+          is performed exclusively on <code>discord.com</code> via the official
+          Discord OAuth2 2.0 authorization code flow. This website never asks
+          for, receives, or stores passwords, phone numbers, credit/debit card
+          details, or software downloads. You may revoke dashboard access at any
+          time from Discord User Settings → Authorized Apps.
+        </p>
         <h2>Data we process</h2>
         <p>
           Guild identifiers, channel and role identifiers, member identifiers

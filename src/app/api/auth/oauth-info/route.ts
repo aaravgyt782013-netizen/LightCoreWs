@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
       inviteUrl,
       supportUrl: siteCfg.supportUrl || site.discord,
       scopes,
-      oauthConfigured: Boolean(clientSecret && sessionSecret.length >= 16),
+      oauthConfigured: Boolean(clientSecret && sessionSecret.length > 0),
     },
     {
       headers: { "Cache-Control": "no-store, max-age=0" },

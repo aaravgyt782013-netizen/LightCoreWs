@@ -35,7 +35,7 @@ export function Protocol() {
                   delay={i * 80}
                   className="group relative"
                 >
-                  <div className="relative h-full rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-brand-600/30 hover:bg-white/[0.035]">
+                  <div className="relative h-full rounded-2xl border border-white/[0.08] bg-gradient-to-b from-ink-850/85 to-ink-950/95 p-5 shadow-panel transition-all duration-300 ease-smooth hover:-translate-y-1 hover:border-brand-500/40 hover:shadow-[0_24px_60px_-28px_rgb(var(--brand-600)/0.55)]">
                     <div className="flex items-center justify-between">
                       <span className="flex size-10 items-center justify-center rounded-xl border border-white/[0.07] bg-ink-900 text-zinc-300 transition-colors group-hover:border-brand-600/30 group-hover:text-brand-400">
                         <Icon className="size-[18px]" />

@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   cleanEnvString,
@@ -7,10 +6,9 @@ import {
   sanitizeOriginUrl,
 } from "@/lib/discord-oauth";
 import {
+  createSignedOAuthState,
   getRedirectUri,
   getSessionSecret,
-  OAUTH_NEXT_COOKIE,
-  OAUTH_REDIRECT_COOKIE,
   OAUTH_STATE_COOKIE,
   relativeRedirect,
 } from "@/lib/session";
@@ -35,16 +33,18 @@ export async function GET(req: NextRequest) {
   const clientSecret = cleanEnvString(process.env.DISCORD_CLIENT_SECRET);
   const sessionSecret = getSessionSecret();
 
-  if (!clientSecret || !sessionSecret || sessionSecret.length < 16) {
-    return relativeRedirect("/login?error=oauth_not_configured");
+  if (!clientSecret || !sessionSecret) {
+    return relativeRedirect("/login?error=oauth_not_configured", {
+      url: req.url,
+      headers: req.headers,
+    });
   }
 
   const reqUrl = new URL(req.url);
   const nextPath = resolveSafeNextPath(reqUrl.searchParams.get("next"));
 
-  // If the user opened a Netlify commit-permalink/branch subdomain
-  // (e.g. `67ab12--sitename.netlify.app`), hop to the primary Netlify URL first
-  // so the OAuth state cookie and redirect_uri match the registered domain.
+  // Hop Netlify commit-permalink subdomains (`*--site.netlify.app`) to primary site
+  // so cookies and registered OAuth2 redirect_uri always match the main domain.
   const reqHost = (
     req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
     req.headers.get("host")?.trim() ||
@@ -62,7 +62,9 @@ export async function GET(req: NextRequest) {
     if (primaryHost !== reqHost && !primaryHost.includes("--")) {
       const canonicalStart = new URL("/api/auth/discord", primaryNetlifyOrigin);
       canonicalStart.searchParams.set("next", nextPath);
-      return NextResponse.redirect(canonicalStart.toString());
+      const hop = NextResponse.redirect(canonicalStart.toString(), 302);
+      hop.headers.set("Cache-Control", "private, no-store, max-age=0");
+      return hop;
     }
   }
 
@@ -73,7 +75,18 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES,
   );
 
-  const state = crypto.randomBytes(24).toString("base64url");
+  const state = createSignedOAuthState({
+    next: nextPath,
+    redirectUri,
+  });
+
+  if (!state) {
+    return relativeRedirect("/login?error=oauth_not_configured", {
+      url: req.url,
+      headers: req.headers,
+    });
+  }
+
   const authorize = new URL("https://discord.com/oauth2/authorize");
   authorize.searchParams.set("client_id", clientId);
   authorize.searchParams.set("response_type", "code");
@@ -82,16 +95,17 @@ export async function GET(req: NextRequest) {
   authorize.searchParams.set("state", state);
 
   const isHttps = redirectUri.startsWith("https://");
-  const res = NextResponse.redirect(authorize.toString());
-  const cookieOpts = {
+  const res = NextResponse.redirect(authorize.toString(), 302);
+  res.headers.set(
+    "Cache-Control",
+    "private, no-store, no-cache, max-age=0, must-revalidate",
+  );
+  res.cookies.set(OAUTH_STATE_COOKIE, state, {
     httpOnly: true,
-    sameSite: "lax" as const,
+    sameSite: "lax",
     secure: isHttps,
     path: "/",
-    maxAge: 600,
-  };
-  res.cookies.set(OAUTH_STATE_COOKIE, state, cookieOpts);
-  res.cookies.set(OAUTH_NEXT_COOKIE, nextPath, cookieOpts);
-  res.cookies.set(OAUTH_REDIRECT_COOKIE, redirectUri, cookieOpts);
+    maxAge: 900,
+  });
   return res;
 }

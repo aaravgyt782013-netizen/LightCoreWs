@@ -155,7 +155,7 @@ export function DashboardClient() {
         <div className="panel panel-inner relative overflow-hidden rounded-3xl p-8 text-center shadow-panel sm:p-12">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-28 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(6,182,212,0.24),transparent)]"
+            className="pointer-events-none absolute -top-28 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(var(--brand-500)/0.25),transparent)]"
           />
           <div className="relative mx-auto max-w-lg">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-950/40 px-3.5 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
@@ -180,9 +180,9 @@ export function DashboardClient() {
               </a>
               <Link
                 href="/premium"
-                className="btn-glow relative inline-flex h-12 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-6 text-[14px] font-semibold text-white shadow-[0_10px_34px_-10px_rgba(6,182,212,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-110"
+                className="btn-glow relative inline-flex h-12 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-6 text-[14px] font-semibold text-white shadow-[0_10px_34px_-10px_rgb(var(--brand-500)/0.82)] transition-all hover:-translate-y-0.5 hover:brightness-110"
               >
-                <CrownIcon className="size-4 text-cyan-100" />
+                <CrownIcon className="size-4 text-brand-100" />
                 Buy Premium
               </Link>
             </div>
@@ -222,7 +222,7 @@ export function DashboardClient() {
                 </span>
               )}
               {premium && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-brand-300/45 bg-gradient-to-r from-brand-600/30 to-sky-500/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-100">
+                <span className="inline-flex items-center gap-1 rounded-md border border-brand-300/45 bg-gradient-to-r from-brand-600/30 to-brand-500/20 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brand-100">
                   <CrownIcon className="size-2.5 text-brand-300" />
                   {premium.tierName}
                 </span>
@@ -241,7 +241,7 @@ export function DashboardClient() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             href="/premium"
-            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgba(6,182,212,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
+            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgb(var(--brand-500)/0.82)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
           >
             <CrownIcon className="size-4" />
             {premium ? "Manage Premium" : "Buy Premium"}
@@ -280,10 +280,10 @@ export function DashboardClient() {
       </div>
 
       {/* Premium Status / Upgrade Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-brand-400/30 bg-gradient-to-r from-brand-950/80 via-ink-900 to-sky-950/50 px-5 py-4 shadow-panel sm:px-6">
+      <div className="relative overflow-hidden rounded-2xl border border-brand-400/30 bg-gradient-to-r from-brand-950/80 via-ink-900 to-ink-950 px-5 py-4 shadow-panel sm:px-6">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-[radial-gradient(closest-side,rgba(34,211,238,0.22),transparent)] blur-xl"
+          className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-[radial-gradient(closest-side,rgb(var(--brand-500)/0.22),transparent)] blur-xl"
         />
         <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3.5 sm:items-center">
@@ -412,7 +412,7 @@ export function DashboardClient() {
               }}
               className={`group relative flex flex-col overflow-hidden rounded-2xl border border-brand-200/[0.09] bg-ink-900/85 shadow-panel transition-all duration-300 ease-smooth ${
                 g.canManage
-                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/50 hover:shadow-[0_22px_55px_-22px_rgba(6,182,212,0.55)]"
+                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/50 hover:shadow-[0_22px_55px_-22px_rgb(var(--brand-500)/0.5)]"
                   : "opacity-70"
               }`}
             >

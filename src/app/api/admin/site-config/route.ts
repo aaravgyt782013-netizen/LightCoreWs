@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest) {
   await sendDiscordLogEmbed({
     title: `${config.brandName} · Website Config Updated`,
     description: `Owner \`${actor}\` updated website theme, branding, or pricing settings.`,
-    color: 0x06b6d4,
+    color: 0xef4444,
     timestamp: new Date().toISOString(),
     fields: [
       { name: "Theme", value: `\`${config.themePreset}\``, inline: true },

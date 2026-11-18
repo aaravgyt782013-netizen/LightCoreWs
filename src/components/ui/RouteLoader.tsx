@@ -79,12 +79,12 @@ export function RouteLoader() {
     setVisible(true);
     setFading(false);
 
-    const holdMs = isInitial ? 480 : 360;
+    const holdMs = isInitial ? 340 : 220;
     const fadeTimer = window.setTimeout(() => setFading(true), holdMs);
     const hideTimer = window.setTimeout(() => {
       setVisible(false);
       setFading(false);
-    }, holdMs + 260);
+    }, holdMs + 240);
 
     return () => {
       window.clearTimeout(fadeTimer);

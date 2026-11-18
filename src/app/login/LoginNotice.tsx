@@ -11,6 +11,7 @@ import { site } from "@/lib/site";
 export function LoginNotice() {
   const params = useSearchParams();
   const code = params.get("error");
+  const reason = params.get("reason");
   const [redirectUri, setRedirectUri] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
@@ -49,11 +50,30 @@ export function LoginNotice() {
       title: "Login session expired",
       detail: "Your OAuth2 verification timed out. Click Continue with Discord to try again.",
     },
-    token_exchange_failed: {
-      title: "Discord authorization failed",
-      detail: `Check that DISCORD_CLIENT_SECRET matches Client ID ${site.clientId} and that this exact Redirect URI is saved in Discord Developer Portal → OAuth2 → Redirects:`,
-      showRedirect: true,
-    },
+    token_exchange_failed:
+      reason === "invalid_client"
+        ? {
+            title: "DISCORD_CLIENT_SECRET doesn't match your bot",
+            detail: `Discord returned invalid_client for App ID ${site.clientId}. Open Discord Developer Portal → OAuth2 → Reset Secret, copy the new Client Secret, paste it as DISCORD_CLIENT_SECRET in your hosting environment variables, and redeploy.`,
+          }
+        : reason === "rate_limited"
+          ? {
+              title: "Discord temporarily rate-limited sign-in",
+              detail:
+                "Wait a few seconds and tap Continue with Discord to sign in.",
+            }
+          : reason === "invalid_grant"
+            ? {
+                title: "Authorization code expired or callback mismatch",
+                detail:
+                  "Tap Continue with Discord once to sign in fresh, and confirm this exact Redirect URI is saved in Discord Developer Portal → OAuth2 → Redirects:",
+                showRedirect: true,
+              }
+            : {
+                title: "Discord authorization failed",
+                detail: `Verify DISCORD_CLIENT_SECRET matches App ID ${site.clientId} and that this exact Redirect URI is saved in Discord Developer Portal → OAuth2 → Redirects:`,
+                showRedirect: true,
+              },
     user_fetch_failed: {
       title: "Could not load Discord profile",
       detail: "Discord did not return your profile information. Please try again.",

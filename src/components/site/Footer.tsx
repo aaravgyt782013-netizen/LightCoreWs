@@ -74,9 +74,10 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
-          <p className="font-mono text-[10.5px] tracking-wide text-zinc-600">
-            © {new Date().getFullYear()} {config.footerCopyright || config.brandName}.
-            All rights reserved.
+          <p className="text-center font-mono text-[10.5px] tracking-wide text-zinc-500 sm:text-left">
+            © {new Date().getFullYear()}{" "}
+            {config.footerCopyright || config.brandName}. Independent Discord
+            bot — not affiliated with Discord Inc.
           </p>
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
             <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />

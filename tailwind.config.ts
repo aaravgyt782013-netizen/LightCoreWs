@@ -48,7 +48,7 @@ export default {
         grid: "64px 64px",
       },
       transitionTimingFunction: {
-        smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
+        smooth: "cubic-bezier(0.16, 1, 0.3, 1)",
       },
       keyframes: {
         marquee: {
@@ -120,11 +120,11 @@ export default {
         "fade-in": "fadeIn 0.2s ease-out both",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgb(var(--brand-400) / 0.28), 0 18px 60px -18px rgb(var(--brand-500) / 0.5)",
+        glow: "0 0 0 1px rgb(var(--brand-500) / 0.34), 0 20px 60px -18px rgb(var(--brand-600) / 0.58)",
         "glow-lg":
-          "0 0 0 1px rgb(var(--brand-400) / 0.38), 0 26px 80px -20px rgb(var(--brand-500) / 0.55)",
+          "0 0 0 1px rgb(var(--brand-500) / 0.45), 0 28px 85px -20px rgb(var(--brand-600) / 0.65)",
         panel:
-          "inset 0 1px 0 0 rgb(var(--brand-200) / 0.07), 0 28px 75px -38px rgba(0,0,0,0.92)",
+          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 30px 80px -38px rgba(0,0,0,0.96)",
       },
     },
   },

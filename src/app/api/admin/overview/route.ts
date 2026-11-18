@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
         integrations: {
           oauthConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_CLIENT_SECRET) &&
-              getSessionSecret().length >= 16,
+              getSessionSecret().length > 0,
           ),
           botTokenConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_BOT_TOKEN),
