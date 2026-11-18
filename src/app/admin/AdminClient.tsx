@@ -102,12 +102,6 @@ export function AdminClient() {
 
   // Logged-In Users tab state
   const [userSearch, setUserSearch] = useState("");
-  const [targetGuildId, setTargetGuildId] = useState("");
-  const [joinBusy, setJoinBusy] = useState<string | null>(null);
-  const [joinFeedback, setJoinFeedback] = useState<{
-    ok: boolean;
-    text: string;
-  } | null>(null);
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
 
   // Servers tab search & copy
@@ -144,13 +138,6 @@ export function AdminClient() {
       const payload = (await res.json()) as AdminOverview;
       setData(payload);
       setStatus("ready");
-      setTargetGuildId(
-        (prev) =>
-          prev ||
-          payload.config.autoJoinGuildId ||
-          payload.botGuilds[0]?.id ||
-          "",
-      );
     } catch {
       setStatus("guest");
     } finally {
@@ -183,50 +170,6 @@ export function AdminClient() {
       (g) => g.name.toLowerCase().includes(q) || g.id.includes(q),
     );
   }, [data, serverSearch]);
-
-  const handleJoinGuild = async (userIds?: string[]) => {
-    const guildId = targetGuildId.trim();
-    if (!/^\d{15,22}$/.test(guildId)) {
-      setJoinFeedback({
-        ok: false,
-        text: "Select or enter a valid Discord Server (Guild) ID first.",
-      });
-      return;
-    }
-
-    const key = userIds ? userIds[0] : "all";
-    setJoinBusy(key);
-    setJoinFeedback(null);
-    try {
-      const res = await fetch("/api/admin/join-guild", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guildId, userIds }),
-      });
-      const json = (await res.json()) as {
-        error?: string;
-        added?: number;
-        alreadyMember?: number;
-        failed?: number;
-        total?: number;
-      };
-      if (!res.ok) {
-        setJoinFeedback({
-          ok: false,
-          text: json.error || "Failed to add users to server.",
-        });
-      } else {
-        setJoinFeedback({
-          ok: true,
-          text: `Processed ${json.total ?? 0}: ${json.added ?? 0} added, ${json.alreadyMember ?? 0} already in server, ${json.failed ?? 0} failed.`,
-        });
-      }
-    } catch {
-      setJoinFeedback({ ok: false, text: "Network error while calling API." });
-    } finally {
-      setJoinBusy(null);
-    }
-  };
 
   const handlePostLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -413,7 +356,7 @@ export function AdminClient() {
       id: "users",
       label: "Logged-In Users",
       badge: String(data.users.length),
-      desc: "All authenticated Discord users & server pull",
+      desc: "Discord accounts that have signed in",
       Icon: UsersIcon,
     },
     {
@@ -559,7 +502,7 @@ export function AdminClient() {
         <KpiCard
           label="Logged-In Users"
           value={String(data.stats.authorizedUsers)}
-          sub={`${data.stats.joinCapableUsers} with guilds.join`}
+          sub="Discord sign-ins"
           onClick={() => setTab("users")}
         />
         <KpiCard
@@ -682,68 +625,6 @@ export function AdminClient() {
       {/* TAB 4: LOGGED-IN OAUTH2 USERS + PULL TO SERVER */}
       {tab === "users" && (
         <div className="space-y-4">
-          <div className="panel panel-inner rounded-2xl p-5">
-            <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-brand-400">
-              guilds.join · add authorized users to server
-            </p>
-            <p className="mt-1.5 text-[12.5px] text-zinc-400">
-              Choose a server where {data.siteConfig.brandName} is installed (or
-              paste its Server ID) to add consenting OAuth2 users.
-            </p>
-
-            <div className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-[260px_1fr_auto]">
-              {data.botGuilds.length > 0 && (
-                <CustomSelect
-                  title="Choose Target Bot Server"
-                  placeholder="Choose bot server…"
-                  value={
-                    data.botGuilds.some((g) => g.id === targetGuildId)
-                      ? targetGuildId
-                      : ""
-                  }
-                  onChange={(val) => {
-                    if (val) setTargetGuildId(val);
-                  }}
-                  options={data.botGuilds.map((g) => ({
-                    value: g.id,
-                    label: g.name,
-                    iconUrl: g.iconUrl,
-                    description: `ID ${g.id}`,
-                  }))}
-                />
-              )}
-
-              <input
-                type="text"
-                value={targetGuildId}
-                onChange={(e) => setTargetGuildId(e.target.value)}
-                placeholder="Target Server ID (e.g. 123456789012345678)"
-                className="input-aqua font-mono text-[12px]"
-              />
-
-              <button
-                type="button"
-                disabled={joinBusy !== null || data.stats.joinCapableUsers === 0}
-                onClick={() => void handleJoinGuild()}
-                className="h-10 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 text-[12.5px] font-semibold text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {joinBusy === "all"
-                  ? "Adding…"
-                  : `Add All (${data.stats.joinCapableUsers})`}
-              </button>
-            </div>
-
-            {joinFeedback && (
-              <p
-                className={`mt-3 font-mono text-[11px] ${
-                  joinFeedback.ok ? "text-emerald-400" : "text-amber-300"
-                }`}
-              >
-                {joinFeedback.text}
-              </p>
-            )}
-          </div>
-
           {data.users.length > 0 && (
             <div className="relative max-w-md">
               <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-brand-400/75" />
@@ -751,7 +632,7 @@ export function AdminClient() {
                 type="search"
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                placeholder="Search logged-in users by name, ID, or email…"
+                placeholder="Search logged-in users by name or ID…"
                 className="input-aqua pl-10"
               />
             </div>
@@ -810,7 +691,7 @@ export function AdminClient() {
                           </div>
                           <p className="truncate font-mono text-[10px] text-zinc-500">
                             ID {u.id}
-                            {u.email ? ` · ${u.email}` : ""} · {u.guildCount}{" "}
+                            {u.guildCount}{" "}
                             servers
                             {u.lastSeenAt
                               ? ` · active ${new Date(u.lastSeenAt).toLocaleDateString()}`
@@ -831,16 +712,7 @@ export function AdminClient() {
                             ? "Hide Servers"
                             : `Servers (${u.guildCount})`}
                         </button>
-                        {u.hasJoinScope && (
-                          <button
-                            type="button"
-                            disabled={joinBusy !== null}
-                            onClick={() => void handleJoinGuild([u.id])}
-                            className="rounded-xl bg-brand-600 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white hover:bg-brand-500 disabled:opacity-40"
-                          >
-                            {joinBusy === u.id ? "Adding…" : "Add to Server"}
-                          </button>
-                        )}
+}
                       </div>
                     </div>
 
