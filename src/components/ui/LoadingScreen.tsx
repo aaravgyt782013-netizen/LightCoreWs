@@ -44,7 +44,7 @@ export function LoadingScreen({
       aria-live="polite"
       className={
         fullScreen
-          ? "fixed inset-0 z-[100] grid h-[100dvh] min-h-[100svh] w-full place-items-center overflow-hidden bg-ink-950 px-6 text-center"
+          ? "fixed inset-x-0 top-0 z-[100] flex h-[100svh] min-h-[100svh] w-full items-center justify-center overflow-hidden bg-ink-950 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center"
           : "relative flex min-h-[420px] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-brand-200/10 bg-ink-950/90 px-6 py-16 text-center"
       }
     >
@@ -62,8 +62,8 @@ export function LoadingScreen({
       />
 
       <div className="relative z-10 flex w-full max-w-sm flex-col items-center justify-center">
-      {/* Center bot logo with triple spinning luminous brand orbital lines */}
-      <div className="relative flex size-[152px] shrink-0 items-center justify-center">
+        {/* Center bot logo with triple spinning luminous brand orbital lines */}
+        <div className="relative flex size-[152px] shrink-0 items-center justify-center">
         <span
           aria-hidden
           className="absolute size-[110px] animate-pulse-ring rounded-full border border-brand-400/50"
@@ -179,7 +179,7 @@ export function LoadingScreen({
         >
           <div className="h-full w-20 animate-loader-slide rounded-full bg-gradient-to-r from-transparent via-brand-400 to-brand-200 shadow-[0_0_14px_rgb(var(--brand-400))]" />
         </div>
-      </div>
+        </div>
       </div>
     </div>
   );
