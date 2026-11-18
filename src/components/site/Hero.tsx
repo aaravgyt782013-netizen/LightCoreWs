@@ -24,10 +24,10 @@ const SIMULATED_RAID: LogEntry[] = [
 ];
 
 const TELEMETRY_LAYERS = [
-  { name: "Anti-Nuke Interceptor", metric: "38ms", pct: 98 },
-  { name: "AutoMod Firewall", metric: "99.98%", pct: 99 },
-  { name: "State Rollback Engine", metric: "0-loss", pct: 96 },
-  { name: "VoiceMaster & Tickets", metric: "online", pct: 100 },
+  { name: "Anti-Nuke Interceptor", metric: "Sample", pct: 78 },
+  { name: "AutoMod Firewall", metric: "Sample", pct: 72 },
+  { name: "State Rollback Engine", metric: "Sample", pct: 68 },
+  { name: "VoiceMaster & Tickets", metric: "Sample", pct: 84 },
 ];
 
 export function Hero() {
@@ -280,7 +280,7 @@ function ConsolePanel() {
             }`}
           >
             <BoltIcon className="size-3 text-brand-400" />
-            {simulating ? "mitigating…" : "test raid"}
+            {simulating ? "running demo…" : "run demo"}
           </button>
         </div>
 
@@ -361,11 +361,11 @@ function ConsolePanel() {
           <div className="mt-3 flex items-center justify-between border-t border-white/[0.065] pt-3 font-mono text-[10px] text-zinc-500">
             <span>
               prefix <span className="text-brand-400">{config.prefix}</span> ·{" "}
-              {isLive ? "live cluster" : "26 gates active"}
+              {isLive ? "live cluster" : "demo preview only"}
             </span>
             <span className="inline-flex items-center gap-1.5 text-emerald-400">
               <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-              shield nominal
+              illustrative preview
             </span>
           </div>
         </div>
