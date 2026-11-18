@@ -45,7 +45,7 @@ export function LoadingScreen({
       className={
         fullScreen
           ? "fixed inset-x-0 top-0 z-[100] flex h-[100svh] min-h-[100svh] w-full items-center justify-center overflow-hidden bg-ink-950 px-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] text-center"
-          : "relative flex min-h-[420px] w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-brand-200/10 bg-ink-950/90 px-6 py-16 text-center"
+          : "relative flex h-full min-h-full w-full flex-col items-center justify-center overflow-hidden bg-ink-950 px-6 py-16 text-center"
       }
     >
       <div
