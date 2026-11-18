@@ -47,9 +47,9 @@ export function Features() {
   const feature = features[active];
   const ActiveIcon = featureIcons[feature.icon];
   const meta = MODULE_TELEMETRY[feature.key] ?? {
-    latency: "sub-500ms",
-    coverage: "24/7 active",
-    status: "Armed",
+    latency: "Configured workflow",
+    coverage: "Rule-based controls",
+    status: "Setup required",
   };
 
   useEffect(() => {
@@ -87,12 +87,12 @@ export function Features() {
         <Reveal className="max-w-2xl">
           <p className="eyebrow">Command suite</p>
           <h2 className="mt-5 font-display text-[32px] font-bold leading-[1.06] tracking-tight text-white sm:text-[48px]">
-            Everything a server needs,{" "}
-            <span className="text-gradient-brand">already armed</span>
+            The tools your server needs,{" "}
+            <span className="text-gradient-brand">in one dashboard</span>
           </h2>
           <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-zinc-400">
-            Five precision modules unified under one low-latency interception
-            engine — zero clutter, zero blind spots.
+            Explore five core modules, review their controls, and configure
+            the protection that fits your community.
           </p>
         </Reveal>
 
@@ -209,14 +209,14 @@ export function Features() {
                   </div>
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.09] px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-emerald-300">
                     <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-                    active
+                    selected
                   </span>
                 </div>
 
-                {/* Live micro-KPI strip */}
+                {/* Module configuration details */}
                 <div className="mt-6 grid grid-cols-3 gap-2.5">
                   {[
-                    { k: "Speed", v: meta.latency },
+                    { k: "Workflow", v: meta.latency },
                     { k: "Scope", v: meta.coverage },
                     { k: "Mode", v: meta.status },
                   ].map((item) => (
