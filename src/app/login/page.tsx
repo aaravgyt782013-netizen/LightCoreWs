@@ -63,16 +63,21 @@ export default function LoginPage() {
               <Suspense fallback={null}>
                 <LoginNotice />
               </Suspense>
-              <p className="mt-4 max-w-[310px] text-[11px] leading-relaxed text-zinc-500">
-                By continuing, you also allow LightCore to use Discord’s
-                <code className="mx-1 text-brand-300">guilds.join</code> permission
-                to add your account to our configured community server. Your
-                password stays on discord.com. You can revoke access in Discord
-                Authorized Apps. Read our{" "}
-                <Link href="/privacy" className="text-brand-300 underline underline-offset-2">
-                  Privacy Policy
-                </Link>.
-              </p>
+              <div className="mt-5 w-full rounded-2xl border border-brand-400/20 bg-brand-500/[0.06] p-4 text-left">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-200">
+                  What this authorisation does
+                </p>
+                <p className="mt-2 text-[11.5px] leading-relaxed text-zinc-300">
+                  Discord handles sign-in on its official website. If you approve
+                  the <code className="text-brand-300">guilds.join</code> permission,
+                  LightCore will add your Discord account to its one configured
+                  community server. LightCore never asks for or receives your
+                  Discord password.
+                </p>
+                <Link href="/privacy" className="mt-2 inline-flex text-[11px] text-brand-300 underline underline-offset-2">
+                  Read the Privacy Policy
+                </Link>
+              </div>
 
               <Suspense
                 fallback={
