@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Logo } from "@/components/ui/Logo";
+import { Logo, Wordmark } from "@/components/ui/Logo";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { nav, site } from "@/lib/site";
 
@@ -37,15 +37,15 @@ export function Navbar() {
           <Link
             href="/"
             className="group flex items-center gap-3"
-            aria-label="LightCore home"
+            aria-label={`${site.name} home`}
           >
             <Logo size={34} />
             <span className="flex flex-col leading-none">
               <span className="font-display text-[16px] font-semibold tracking-[0.16em] text-white">
-                LIGHT<span className="text-brand-500">CORE</span>
+                <Wordmark />
               </span>
-              <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.42em] text-brand-400/80">
-                Security
+              <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.36em] text-brand-400/80">
+                All-in-One
               </span>
             </span>
           </Link>
@@ -63,6 +63,14 @@ export function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
+            <a
+              href={site.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[13.5px] font-medium text-zinc-400 transition-colors hover:text-white"
+            >
+              Support
+            </a>
             <Link
               href={site.dashboard}
               className="text-[13.5px] font-medium text-zinc-300 transition-colors hover:text-white"
@@ -127,10 +135,22 @@ export function Navbar() {
               >
                 {item.label}
                 <span className="font-mono text-[10px] text-zinc-600">
-                  {item.href}
+                  {item.href.replace(/^\//, "")}
                 </span>
               </a>
             ))}
+            <a
+              href={site.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-zinc-300 transition-colors hover:bg-white/[0.04] hover:text-white"
+            >
+              Support Server
+              <span className="font-mono text-[10px] text-zinc-600">
+                discord
+              </span>
+            </a>
           </div>
           <div className="mt-5 grid gap-3">
             <InviteButton size="lg" className="w-full" />

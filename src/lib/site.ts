@@ -1,21 +1,75 @@
+const clientId =
+  process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "1559607601115955210";
+const prefix = process.env.NEXT_PUBLIC_BOT_PREFIX || ".";
+
 export const site = {
-  name: "LIGHTCORE",
-  tagline: "LIGHTCORE SECURITY",
+  name: process.env.NEXT_PUBLIC_SITE_NAME || "LightCore",
+  wordmark: {
+    lead: process.env.NEXT_PUBLIC_WORDMARK_LEAD || "LIGHT",
+    accent: process.env.NEXT_PUBLIC_WORDMARK_ACCENT || "CORE",
+  },
+  tagline:
+    process.env.NEXT_PUBLIC_SITE_TAGLINE || "LIGHT FOR YOU HEAVY FOR NUKERS",
   description:
-    "Real-time raid prevention, auto-moderation, and nuke blocking. Keep your Discord server protected around the clock, with zero setup latency.",
-  url: "https://lightcore-security.vercel.app",
+    process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
+    "As your choice for an all in one bot",
+  url: (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://lightcorews.wasmer.app"
+  ).replace(/\/+$/, ""),
+  clientId,
+  ownerId: process.env.NEXT_PUBLIC_OWNER_ID || "1538907226671022111",
+  prefix,
+  oauthScopes:
+    process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES ||
+    "identify email guilds guilds.join",
   invite:
-    "https://discord.com/oauth2/authorize?client_id=1391639072405196932&permissions=8&scope=bot%20applications.commands",
-  dashboard: "/login",
-  discord: "https://discord.gg/lightcore",
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ||
+    `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=8&integration_type=0&scope=bot`,
+  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_URL || "/login",
+  admin: "/admin",
+  discord:
+    process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL ||
+    "https://discord.gg/np8M2TZgqa",
+  logo: process.env.NEXT_PUBLIC_LOGO_URL || "/brand/logo.png",
 } as const;
 
+export function buildGuildInviteUrl(guildId: string): string {
+  try {
+    const url = new URL(site.invite);
+    url.searchParams.set("guild_id", guildId);
+    url.searchParams.set("disable_guild_select", "true");
+    return url.toString();
+  } catch {
+    return site.invite;
+  }
+}
+
+export type LogEntry = {
+  id?: string;
+  t: string;
+  ok: boolean;
+  msg: string;
+  guild?: string;
+  guildId?: string;
+  ts?: string;
+};
+
+export const defaultLogs: LogEntry[] = [
+  { t: "GUARD", ok: true, msg: "gateway session established · shard 07" },
+  { t: "SCAN", ok: true, msg: `26 modules armed · prefix ${prefix} active` },
+  { t: "WARN", ok: false, msg: "mass channel delete by @raider (7/3 per min)" },
+  { t: "DENY", ok: false, msg: "action blocked in 41ms · actor quarantined" },
+  { t: "FIX", ok: true, msg: "rollback restored 6 channels · 4 roles" },
+  { t: "AUDIT", ok: true, msg: "incident #4471 written to audit stream" },
+  { t: "GUARD", ok: true, msg: "heartbeat ok · latency 38ms" },
+];
+
 export const nav = [
-  { label: "Features", href: "#features" },
-  { label: "Setup", href: "#setup" },
-  { label: "Protocol", href: "#protocol" },
-  { label: "VoiceMaster", href: "#voicemaster" },
-  { label: "FAQ", href: "#faq" },
+  { label: "Features", href: "/#features" },
+  { label: "Setup", href: "/#setup" },
+  { label: "Protocol", href: "/#protocol" },
+  { label: "VoiceMaster", href: "/#voicemaster" },
+  { label: "FAQ", href: "/#faq" },
 ] as const;
 
 export type FeatureKey =
@@ -43,7 +97,7 @@ export const features: {
       "Per-actor rate gates per minute",
       "Automatic rollback of damaged state",
     ],
-    command: "&antinuke enable",
+    command: `${prefix}antinuke enable`,
   },
   {
     key: "AutoMod",
@@ -55,7 +109,7 @@ export const features: {
       "Phishing & invite link quarantine",
       "Escalating mute, kick and ban ladders",
     ],
-    command: "&automod strict",
+    command: `${prefix}automod strict`,
   },
   {
     key: "Night Mode",
@@ -67,7 +121,7 @@ export const features: {
       "Auto-lock on raid signal spikes",
       "One tap morning restore",
     ],
-    command: "&nightmode 00:00 08:00",
+    command: `${prefix}nightmode 00:00 08:00`,
   },
   {
     key: "Ticket",
@@ -79,7 +133,7 @@ export const features: {
       "Staff assignment and SLA tracking",
       "Panel-based ticket creation",
     ],
-    command: "&ticket setup",
+    command: `${prefix}ticket setup`,
   },
   {
     key: "VoiceMaster",
@@ -91,7 +145,7 @@ export const features: {
       "Per-channel owner controls in chat",
       "Auto cleanup when empty",
     ],
-    command: "/voicemaster setup",
+    command: `${prefix}voicemaster setup`,
   },
 ];
 
@@ -257,7 +311,7 @@ export const setupSteps = [
     step: "01",
     phase: "AUTH",
     title: "Invite the Bot",
-    copy: "Integrate LightCore into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.",
+    copy: `Integrate ${site.name} into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.`,
     bullets: [
       "Instant OAuth2 gateway link",
       "Requires Manage Server permission only",
@@ -269,7 +323,7 @@ export const setupSteps = [
     phase: "ACTIVATE",
     title: "Initialize Anti-Nuke",
     copy: "Run the setup trigger command to configure database state and start active scanning.",
-    command: "&antinuke enable",
+    command: `${prefix}antinuke enable`,
     bullets: [
       "Initializes all 26 security modules",
       "Establishes local server state caches",
@@ -358,7 +412,7 @@ export const modules = [
 
 export const faqs = [
   {
-    q: "How fast does LightCore react to a nuke attempt?",
+    q: `How fast does ${site.name} react to a nuke attempt?`,
     a: "Gateway events are intercepted in-process and evaluated against per-actor rate gates before the action is committed. Median detection-to-mitigation latency is 480ms, and rollback begins immediately after a threat is confirmed.",
   },
   {
@@ -375,6 +429,6 @@ export const faqs = [
   },
   {
     q: "How long does setup take?",
-    a: "Under 30 seconds. Invite the bot, run &antinuke enable, and the default hierarchy, caches and all 26 modules initialise automatically. Fine-tuning happens in the dashboard whenever you want it.",
+    a: `Under 30 seconds. Invite the bot, run ${prefix}antinuke enable, and the default hierarchy, caches and all 26 modules initialise automatically. Fine-tuning happens in the dashboard whenever you want it.`,
   },
 ] as const;

@@ -20,11 +20,12 @@ export function CtaSection() {
             />
             <div className="relative mx-auto max-w-2xl">
               <Image
-                src="/brand/lightcore-512.png"
-                alt=""
+                src={site.logo}
+                alt={`${site.name} logo`}
                 width={64}
                 height={64}
-                className="mx-auto size-16 object-contain drop-shadow-[0_0_28px_rgba(239,16,16,0.6)]"
+                unoptimized
+                className="mx-auto size-16 rounded-2xl object-cover ring-1 ring-white/10 drop-shadow-[0_0_28px_rgba(239,16,16,0.6)]"
               />
               <h2 className="mt-7 font-display text-[30px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[46px]">
                 Lock your server down

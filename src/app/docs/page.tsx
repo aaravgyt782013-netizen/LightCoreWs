@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
 import { PageShell } from "@/components/site/PageShell";
 import { Reveal } from "@/components/ui/Reveal";
-import { features } from "@/lib/site";
+import { features, site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Documentation",
-  description:
-    "Commands, modules and configuration reference for the LIGHTCORE Discord security bot.",
+  description: `Commands, modules and configuration reference for ${site.name} — ${site.description}.`,
 };
 
 const core = [
-  { cmd: "&antinuke enable", desc: "Initialise all 26 modules and caches" },
-  { cmd: "&antinuke status", desc: "Show module health and rate gates" },
-  { cmd: "&whitelist add @user", desc: "Grant explicit owner override" },
-  { cmd: "&limits ban 3", desc: "Allow 3 bans per actor per minute" },
-  { cmd: "&automod strict", desc: "Enable the high-sensitivity content firewall" },
-  { cmd: "&nightmode 00:00 08:00", desc: "Schedule a nightly lockdown window" },
-  { cmd: "&ticket setup", desc: "Deploy the ticket panel and staff routing" },
-  { cmd: "/voicemaster setup", desc: "Create the join-to-create hub" },
+  { cmd: `${site.prefix}antinuke enable`, desc: "Initialise all 26 modules and caches" },
+  { cmd: `${site.prefix}antinuke status`, desc: "Show module health and rate gates" },
+  { cmd: `${site.prefix}whitelist add @user`, desc: "Grant explicit owner override" },
+  { cmd: `${site.prefix}limits ban 3`, desc: "Allow 3 bans per actor per minute" },
+  { cmd: `${site.prefix}automod strict`, desc: "Enable the high-sensitivity content firewall" },
+  { cmd: `${site.prefix}nightmode 00:00 08:00`, desc: "Schedule a nightly lockdown window" },
+  { cmd: `${site.prefix}ticket setup`, desc: "Deploy the ticket panel and staff routing" },
+  { cmd: `${site.prefix}voicemaster setup`, desc: "Create the join-to-create hub" },
 ];
 
 export default function DocsPage() {
@@ -25,7 +24,7 @@ export default function DocsPage() {
     <PageShell
       eyebrow="docs"
       title="Documentation"
-      intro="Everything runs on a single guard engine. These are the commands you will actually type."
+      intro={`Everything runs on a single guard engine with prefix "${site.prefix}". These are the commands you will actually type.`}
     >
       <div className="grid max-w-5xl gap-4 lg:grid-cols-2">
         <Reveal className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5">

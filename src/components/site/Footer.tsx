@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Logo } from "@/components/ui/Logo";
+import { Logo, Wordmark } from "@/components/ui/Logo";
 import { DiscordIcon } from "@/components/ui/Icons";
 import { nav, site } from "@/lib/site";
 
@@ -18,15 +18,17 @@ export function Footer() {
             <Link href="/" className="flex items-center gap-3">
               <Logo size={32} />
               <span className="font-display text-[15px] font-semibold tracking-[0.18em] text-white">
-                LIGHT<span className="text-brand-500">CORE</span>
+                <Wordmark />
               </span>
             </Link>
-            <p className="mt-4 max-w-xs text-[13px] leading-relaxed text-zinc-500">
-              Real-time raid prevention, auto-moderation and nuke blocking for
-              Discord communities that cannot afford downtime.
+            <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-brand-400/80">
+              {site.tagline}
+            </p>
+            <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-zinc-500">
+              {site.description}.
             </p>
             <a
-              href={site.invite}
+              href={site.discord}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition-colors hover:border-[#5865F2]/50 hover:text-white"
@@ -44,7 +46,9 @@ export function Footer() {
             title="Platform"
             links={[
               { label: "Dashboard", href: site.dashboard },
+              { label: "Owner panel", href: site.admin },
               { label: "Invite bot", href: site.invite, external: true },
+              { label: "Support server", href: site.discord, external: true },
               { label: "Documentation", href: "/docs" },
             ]}
           />
@@ -53,7 +57,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
           <p className="font-mono text-[10.5px] tracking-wide text-zinc-600">
-            © {new Date().getFullYear()} LightCore Security. All rights reserved.
+            © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
             <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />

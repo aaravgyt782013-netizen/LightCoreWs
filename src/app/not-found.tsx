@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PageBackground } from "@/components/site/Background";
-import { Logo } from "@/components/ui/Logo";
+import { Logo, Wordmark } from "@/components/ui/Logo";
 import { ArrowRight } from "@/components/ui/Icons";
 
 export default function NotFound() {
@@ -13,7 +13,7 @@ export default function NotFound() {
           404 · route not guarded
         </p>
         <h1 className="mt-4 font-display text-[34px] font-semibold leading-none tracking-[0.06em] text-white sm:text-[54px]">
-          LIGHT<span className="text-brand-500">CORE</span>
+          <Wordmark />
         </h1>
         <p className="mt-4 max-w-sm text-[14px] leading-relaxed text-zinc-400">
           This page does not exist. The guard engine could not resolve the

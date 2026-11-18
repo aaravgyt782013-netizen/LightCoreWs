@@ -1,120 +1,114 @@
 <div align="center">
 
-# LIGHTCORE
+# LightCore
 
-**Real-time raid prevention, auto-moderation and nuke blocking for Discord.**
+**LIGHT FOR YOU HEAVY FOR NUKERS**
 
-A production-ready, fully static marketing site rebuilt from
-[xieron.com](https://xieron.com) — dark security aesthetic, crimson accent and a
-live "guard engine" console.
+As your choice for an all in one bot.
 
-[**Live site**](https://lightcore-security.vercel.app) · [Routes](#routes) · [Local development](#local-development) · [Re-origin notes](./RE-NOTES.md)
+[**Live site**](https://lightcorews.wasmer.app/) · [**Add to Discord**](https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot) · [**Support Server**](https://discord.gg/np8M2TZgqa)
 
 </div>
 
 ---
 
-## What this is
+## Configuration
 
-The original site is a closed-source Discord security bot landing page. It was
-reverse-engineered with [REA](https://github.com/morluto/rea) and
-[Ghidra](https://github.com/NationalSecurityAgency/ghidra), the recovered
-content was re-implemented as a Next.js 15 app, and the result is deployed on
-Vercel. The full process, toolchain and findings live in
-[`RE-NOTES.md`](./RE-NOTES.md).
+All public brand values live in [`src/lib/site.ts`](./src/lib/site.ts) (and can also be overridden via `NEXT_PUBLIC_*` environment variables — see [`.env.example`](./.env.example)):
 
-> The target origin was unreachable from the build sandbox (egress allow-list),
-> so the reconstruction is faithful to the **recovered content, structure and
-> brand language** rather than a pixel-for-pixel clone of their stylesheet.
-> See [RE-NOTES §2](./RE-NOTES.md) for the evidence.
-
-## Stack
-
-| Layer | Choice |
+| Setting | Value |
 | --- | --- |
-| Framework | **Next.js 15.5.29** (App Router, fully static prerender) |
-| UI | **React 19** + **TypeScript** (strict) |
-| Styling | **Tailwind CSS 3** with a custom dark security design system |
-| Fonts | **Self-hosted** Geist, Space Grotesk, JetBrains Mono — zero runtime font fetches, builds work in air-gapped CI |
-| Hosting | **Vercel** — `lightcore-security.vercel.app` |
+| Name | `LightCore` |
+| Tagline | `LIGHT FOR YOU HEAVY FOR NUKERS` |
+| Description | `As your choice for an all in one bot` |
+| Command Prefix | `.` (e.g. `.antinuke enable`) |
+| Site URL | `https://lightcorews.wasmer.app` |
+| Discord Client ID | `1559607601115955210` |
+| Owner ID (`/admin`) | `1538907226671022111` |
+| OAuth2 Scopes | `identify email guilds guilds.join` |
+| Bot Invite | `https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot` |
+| Support Server | `https://discord.gg/np8M2TZgqa` |
+
+---
+
+## Replace Logo, Favicon & Social Card
+
+Drop any square PNG logo anywhere and run:
+
+```bash
+npm run brand -- ./path/to/your-logo.png
+```
+
+This regenerates `public/brand/lightcore-512.png`, `public/brand/lightcore-mark.png`, `public/brand/apple-touch-icon.png`, `src/app/icon.png`, `src/app/favicon.ico`, and `public/brand/og.png` in one step.
+
+---
+
+## Discord OAuth2 Login & Owner Admin Panel (`/admin`)
+
+The OAuth2 flow requests `identify email guilds guilds.join` (profile/username, email, server list, and permission to add the user to servers where the bot is installed).
+
+1. In [Discord Developer Portal](https://discord.com/developers/applications/1559607601115955210/oauth2), add your Redirect URI:
+   - Production: `https://lightcorews.wasmer.app/api/auth/callback/discord`
+   - Local dev: `http://localhost:3000/api/auth/callback/discord`
+2. Set these server environment variables (in `.env.local` locally or your Wasmer/Vercel dashboard):
+   - `DISCORD_CLIENT_SECRET` — from Discord Developer Portal → OAuth2
+   - `SESSION_SECRET` — random 32+ character string (e.g. `openssl rand -hex 32`)
+   - `DISCORD_BOT_TOKEN` — needed to list bot servers, power live `/status` latency, and add authorized `guilds.join` users into servers (the bot must be in the target server)
+   - `DISCORD_AUTO_JOIN_GUILD_ID` *(optional)* — automatically add every user who logs in to this server ID (e.g. your support server)
+   - `DISCORD_OWNER_ID` — defaults to `1538907226671022111` (comma-separated IDs supported)
+
+When you sign in with Discord account `1538907226671022111`, you are routed directly to `/admin` where you can inspect authorized users & their servers, add users to any server the bot is in, view all bot guilds, check integration health, and broadcast/test logs.
+
+---
+
+## Connect Live Bot Logs & Discord Webhooks
+
+1. Set `LOG_INGEST_SECRET` (and optionally `DISCORD_LOG_WEBHOOK_URL`) in your environment.
+2. Push events from your bot:
+
+```js
+await fetch("https://lightcorews.wasmer.app/api/logs", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${process.env.LOG_INGEST_SECRET}`,
+  },
+  body: JSON.stringify({
+    t: "DENY",          // GUARD | SCAN | WARN | DENY | FIX | AUDIT
+    ok: false,          // true = green badge, false = red alert badge
+    msg: "mass channel delete blocked in 39ms",
+    guild: guild.name,  // optional
+    guildId: guild.id,  // optional — enables per-server filtering in /dashboard
+  }),
+});
+```
+
+---
 
 ## Routes
 
 | Route | Purpose |
 | --- | --- |
-| `/` | Landing page: hero, live guard-engine console, animated stats, 27-guild partner marquee, feature tabs, zero-config setup, security protocol pipeline, VoiceMaster mock, FAQ, CTA |
-| `/login` | Dashboard sign-in (Discord OAuth entry point) |
-| `/docs` | Command and module reference |
-| `/status` | Service health with 45-day uptime bars |
+| `/` | Landing page: hero, live guard-engine console, stats, partner marquee, features, setup, protocol, VoiceMaster, FAQ, CTA |
+| `/login` | Discord OAuth2 sign-in (`identify email guilds guilds.join`) |
+| `/dashboard` | User server viewer (manageable + all guilds) & live audit log stream |
+| `/admin` | Owner-only admin panel (locked to Discord ID `1538907226671022111`) |
+| `/docs` | Command reference (`.` prefix) & modules |
+| `/status` | Live health & heartbeat monitor |
 | `/privacy` `/terms` | Legal pages |
-| `404` | Guarded-route fallback |
+| `/api/auth/*` | Discord OAuth2 login, callback, session & logout |
+| `/api/admin/*` | Owner-protected overview, `guilds.join` runner & log controls |
+| `/api/logs` `/api/status` | Live log stream/ingestion & bot health API |
 
-All routes are statically prerendered at build time.
+---
 
-## Local development
+## Local Development
 
 ```bash
-git clone https://github.com/argamerzz9582-debug/LightCore.git
-cd LightCore
 npm install
-
-npm run dev     # http://localhost:3000
-npm run build   # production build (11 static routes)
-npm start       # serve the production build
-npm run lint    # eslint
-npx tsc --noEmit  # type-check
+npm run dev          # http://localhost:3000
+npm run build        # production build
+npm start            # serve production build
+npm run lint         # eslint
+npx tsc --noEmit     # type-check
 ```
-
-Node 20+ recommended.
-
-## Design system
-
-Defined once in [`tailwind.config.ts`](./tailwind.config.ts) and consumed
-everywhere:
-
-- **Surface** — near-black `#050507` with layered ember radial glow, a 64px
-  grid and a subtle film grain
-- **Accent** — crimson ramp `brand-400 → brand-900` (`#ff5c5c → #881212`)
-- **Type** — Geist for UI, Space Grotesk for display, JetBrains Mono for
-  micro-labels with wide tracking
-- **Motion** — CSS-only marquees, a typing guard-engine console, count-up
-  statistics and scroll reveals
-
-## Engineering notes
-
-- **Progressive enhancement** — reveal animations only apply when JavaScript is
-  active (a `js` class is set on `<html>` before paint). Without JS, every
-  section is fully visible, so content is never hidden from crawlers or no-JS
-  visitors.
-- **`prefers-reduced-motion`** — all animation is disabled for users who ask
-  for it.
-- **Metadata + JSON-LD** — per-route titles, OpenGraph/Twitter cards backed by a
-  generated 1200×630 image, and `SoftwareApplication` structured data.
-- **No build-time network dependencies** — fonts are vendored into
-  `src/fonts/`, so `next build` never reaches out to Google Fonts.
-- **Brand assets are generated** — the dragon mark, favicons and OG image are
-  derived from a single source PNG with `sharp`.
-
-## Deploy
-
-Pushes to `main` deploy production via the Vercel Git integration. To deploy a
-branch manually:
-
-```bash
-vercel deploy --prod
-```
-
-`vercel.json` pins the framework preset and enables git deployments for `main`.
-
-## Rebranding
-
-Every brand string resolves from [`src/lib/site.ts`](./src/lib/site.ts) plus
-per-page metadata. To rebrand, change `site.name`, `site.url`, the copy in
-`src/lib/site.ts`, the `<LIGHT|CORE>` wordmark spans and the assets in
-`public/brand/`.
-
-## License and attribution
-
-Released for demonstration and portfolio purposes. Brand assets, marketing copy
-and the Discord application ID belong to their original owners. This project is
-not affiliated with or endorsed by the original site.

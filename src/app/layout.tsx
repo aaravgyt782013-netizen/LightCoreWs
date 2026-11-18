@@ -57,16 +57,19 @@ const jetbrainsMono = localFont({
   display: "swap",
 });
 
+const fullTitle = `${site.name} | ${site.tagline}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
-    template: "%s | LIGHTCORE",
+    default: fullTitle,
+    template: `%s | ${site.name}`,
   },
   description: site.description,
-  applicationName: "LIGHTCORE",
+  applicationName: site.name,
   keywords: [
-    "LightCore",
+    site.name,
+    "Discord all in one bot",
     "Discord security bot",
     "anti-nuke",
     "anti-raid",
@@ -75,27 +78,27 @@ export const metadata: Metadata = {
     "Discord moderation",
     "server protection",
   ],
-  authors: [{ name: "LightCore Security" }],
-  creator: "LightCore Security",
+  authors: [{ name: site.name }],
+  creator: site.name,
   openGraph: {
     type: "website",
     locale: "en_US",
     url: site.url,
-    siteName: "LIGHTCORE",
-    title: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
+    siteName: site.name,
+    title: fullTitle,
     description: site.description,
     images: [
       {
         url: "/brand/og.png",
         width: 1200,
         height: 630,
-        alt: "LIGHTCORE — Advanced Discord Security",
+        alt: `${site.name} — ${site.tagline}`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "LIGHTCORE | Advanced Discord Security & Anti-Nuke Bot",
+    title: fullTitle,
     description: site.description,
     images: ["/brand/og.png"],
   },
@@ -105,7 +108,7 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true },
   },
   icons: {
-    icon: [{ url: "/brand/lightcore-512.png", type: "image/png" }],
+    icon: [{ url: site.logo, type: "image/png" }],
     apple: [{ url: "/brand/apple-touch-icon.png" }],
   },
 };

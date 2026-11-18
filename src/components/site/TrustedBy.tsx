@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { partners, type Partner } from "@/lib/site";
+import { partners, site, type Partner } from "@/lib/site";
 import { VerifiedIcon } from "@/components/ui/Icons";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -78,8 +78,8 @@ export function TrustedBy() {
             Securing The Best
           </h2>
           <p className="mt-4 text-balance text-[15px] leading-relaxed text-zinc-400">
-            LIGHTCORE is the security partner for Discord&apos;s fastest-growing
-            communities.
+            {site.name} is the all-in-one security partner for Discord&apos;s
+            fastest-growing communities.
           </p>
         </Reveal>
       </div>
