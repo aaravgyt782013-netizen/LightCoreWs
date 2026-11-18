@@ -12,29 +12,29 @@ const MODULE_TELEMETRY: Record<
   { latency: string; coverage: string; status: string }
 > = {
   "Anti-Nuke": {
-    latency: "38ms intercept",
-    coverage: "26 rate gates",
-    status: "Auto-Rollback",
+    latency: "Event monitoring",
+    coverage: "Configurable rate limits",
+    status: "Configuration-based",
   },
   AutoMod: {
-    latency: "12ms scan",
-    coverage: "99.98% precision",
-    status: "Zero-False-Positive",
+    latency: "Content filtering",
+    coverage: "Rules and thresholds",
+    status: "Configuration-based",
   },
   "Night Mode": {
-    latency: "Instant lock",
-    coverage: "UTC & local schedules",
-    status: "1-Tap Restore",
+    latency: "Scheduled controls",
+    coverage: "UTC and local schedules",
+    status: "Configuration-based",
   },
   Ticket: {
-    latency: "Threaded routing",
-    coverage: "HTML transcripts",
-    status: "SLA Tracked",
+    latency: "Ticket workflow",
+    coverage: "Support routing",
+    status: "Configuration-based",
   },
   VoiceMaster: {
-    latency: "90ms spawn",
-    coverage: "In-chat controls",
-    status: "Auto-Cleanup",
+    latency: "Voice controls",
+    coverage: "Temporary channels",
+    status: "Configuration-based",
   },
 };
 
