@@ -21,7 +21,7 @@ export function Protocol() {
           </h2>
           <p className="mt-4 text-balance text-[15px] leading-relaxed text-zinc-400">
             Every gateway mutation traverses a four-stage verification and
-            rollback pipeline in real time.
+            configured safeguards and supported recovery actions.
           </p>
         </Reveal>
 
