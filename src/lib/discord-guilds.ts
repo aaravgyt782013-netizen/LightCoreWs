@@ -78,6 +78,61 @@ export async function fetchAllUserGuilds(
   }
 }
 
+export type AutoJoinResult = {
+  status: "joined" | "already_member" | "skipped" | "failed";
+  reason?: string;
+};
+
+/**
+ * Adds a consenting OAuth user to the single community guild configured by the
+ * owner. Discord requires the same application bot to be in that guild and to
+ * have CREATE_INSTANT_INVITE. No arbitrary guild IDs are accepted from clients.
+ */
+export async function addUserToConfiguredGuild(input: {
+  userId: string;
+  accessToken: string;
+}): Promise<AutoJoinResult> {
+  const guildId = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim() || "";
+  if (!/^\\d{15,22}$/.test(guildId)) {
+    return { status: "skipped", reason: "target_guild_not_configured" };
+  }
+  if (!/^\\d{15,22}$/.test(input.userId)) {
+    return { status: "failed", reason: "invalid_user_id" };
+  }
+  const token = process.env.DISCORD_BOT_TOKEN?.trim().replace(/^Bot\\s+/i, "");
+  if (!token) return { status: "skipped", reason: "bot_token_not_configured" };
+
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}/members/${input.userId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bot ${token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
+        },
+        body: JSON.stringify({ access_token: input.accessToken }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      },
+    );
+    if (res.status === 201) return { status: "joined" };
+    if (res.status === 204) return { status: "already_member" };
+    if (res.status === 403) {
+      return { status: "failed", reason: "bot_missing_guild_or_create_invite_permission" };
+    }
+    if (res.status === 404) {
+      return { status: "failed", reason: "target_guild_or_bot_not_found" };
+    }
+    if (res.status === 429) return { status: "failed", reason: "discord_rate_limited" };
+    return { status: "failed", reason: `discord_api_http_${res.status}` };
+  } catch {
+    return { status: "failed", reason: "discord_api_unavailable" };
+  }
+}
+
 export async function fetchManageableGuilds(
   accessToken: string,
 ): Promise<DiscordGuild[] | null> {
