@@ -51,12 +51,11 @@ export function CtaSection() {
 
               <h2 className="mt-7 font-display text-[32px] font-bold leading-[1.04] tracking-tight text-white sm:text-[52px]">
                 Lock your server down
-                <br className="hidden sm:block" /> in under{" "}
-                <span className="text-gradient-brand">30 seconds</span>
+                <br className="hidden sm:block" /> with a quick setup
               </h2>
               <p className="mx-auto mt-4 max-w-md text-balance text-[15px] leading-relaxed text-zinc-300 sm:text-[16px]">
-                Join thousands of communities guarded 24/7 against nukes,
-                raids, and rogue actors by {config.brandName || site.name}.
+                Configure {config.brandName || site.name} to help protect your
+                Discord community against raids, destructive actions, and abuse.
               </p>
 
               <div className="mt-9 flex flex-wrap items-center justify-center gap-3.5">
