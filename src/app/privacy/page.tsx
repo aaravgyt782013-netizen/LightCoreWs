@@ -18,15 +18,18 @@ export default function PrivacyPage() {
         <p>
           <strong>Last updated:</strong> November 2026
         </p>
-        <h2>Official Discord OAuth2 &amp; Zero Credential Collection</h2>
+        <h2>Discord sign-in and account data</h2>
         <p>
           {site.name} is an independent Discord bot and server management
-          dashboard and is not affiliated with or endorsed by Discord Inc. Sign-in
-          is performed exclusively on <code>discord.com</code> via the official
-          Discord OAuth2 2.0 authorization code flow. This website never asks
-          for, receives, or stores passwords, phone numbers, credit/debit card
-          details, or software downloads. You may revoke dashboard access at any
-          time from Discord User Settings → Authorized Apps.
+          dashboard and is not affiliated with or endorsed by Discord Inc.
+          Sign-in takes place on <code>discord.com</code> using Discord OAuth2.
+          We request only the <code>identify</code> and <code>guilds</code>
+          permissions so the dashboard can read your Discord profile and server
+          list. We do not request your email address, Discord password, phone
+          number, payment credentials, or one-time codes. The dashboard receives
+          an OAuth access token from Discord to make the requested profile and
+          server-list calls; stored tokens are encrypted. You can revoke access
+          from Discord User Settings → Authorized Apps.
         </p>
         <h2>Data we process</h2>
         <p>
