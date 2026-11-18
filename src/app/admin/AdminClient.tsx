@@ -154,7 +154,7 @@ export function AdminClient() {
       (u) =>
         u.username.toLowerCase().includes(q) ||
         (u.globalName && u.globalName.toLowerCase().includes(q)) ||
-        u.id.includes(q) ||
+        u.id.includes(q),
     );
   }, [data, userSearch]);
 
