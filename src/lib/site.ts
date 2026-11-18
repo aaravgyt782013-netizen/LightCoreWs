@@ -186,13 +186,6 @@ export const features: {
   },
 ];
 
-export const stats = [
-  { value: 2.4, suffix: "M+", label: "Servers Protected", hint: "guilds", decimals: 1 },
-  { value: 38, suffix: "M+", label: "Users Safeguarded", hint: "members", decimals: 0 },
-  { value: 99.99, suffix: "%", label: "Uptime Guaranteed", hint: "SLA", decimals: 2 },
-  { value: 480, suffix: "ms", label: "Avg. Response Time", hint: "median", decimals: 0 },
-] as const;
-
 export type Partner = {
   name: string;
   members: string;
