@@ -80,8 +80,8 @@ export function buildInvoicePlainText(
     `3. The support team will explain the available payment method.`,
     `4. The owner will confirm activation after payment is verified.`,
     `================================================`,
-    siteCfg.invoiceFooterNote ||
-      "This is an order summary, not a tax invoice or proof of payment. No payment is collected on this website. Confirm seller details before paying. Never share passwords or one-time codes.",
+    siteCfg.invoiceFooterNote || "Order summary generated for your records.",
+    "IMPORTANT: This is not a tax invoice or proof of payment. No payment is collected on this website. Confirm seller details before paying. Never share passwords or one-time codes.",
   ];
   return lines.join("\n");
 }
@@ -479,8 +479,7 @@ export async function downloadInvoicePng(
   ctx.font = "500 11.5px ui-monospace, SFMono-Regular, Menlo, monospace";
   const footLines = wrapLines(
     ctx,
-    siteCfg.invoiceFooterNote ||
-      "This is an order summary, not a tax invoice or proof of payment. No payment is collected here. Confirm seller details before paying. Never share passwords or one-time codes.",
+    "ORDER SUMMARY ONLY — NOT A TAX INVOICE OR PROOF OF PAYMENT. No payment is collected here. Confirm seller details before paying. Never share passwords or one-time codes.",
     W - 176,
   );
   footLines.slice(0, 2).forEach((ln, i) => {
