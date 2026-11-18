@@ -91,13 +91,11 @@ export type LogEntry = {
 };
 
 export const defaultLogs: LogEntry[] = [
-  { t: "GUARD", ok: true, msg: "gateway session established · shard 07" },
-  { t: "SCAN", ok: true, msg: `26 modules armed · prefix ${prefix} active` },
-  { t: "WARN", ok: false, msg: "mass channel delete by @raider (7/3 per min)" },
-  { t: "DENY", ok: false, msg: "action blocked in 41ms · actor quarantined" },
-  { t: "FIX", ok: true, msg: "rollback restored 6 channels · 4 roles" },
-  { t: "AUDIT", ok: true, msg: "incident #4471 written to audit stream" },
-  { t: "GUARD", ok: true, msg: "heartbeat ok · latency 38ms" },
+  { t: "PREVIEW", ok: true, msg: "Sample event stream · connect the bot API for live events" },
+  { t: "SCAN", ok: true, msg: "Illustrative moderation event · sample data only" },
+  { t: "RULE", ok: true, msg: `Configured rule preview · prefix ${prefix}` },
+  { t: "AUDIT", ok: true, msg: "Example audit entry · no live server action was performed" },
+  { t: "STATUS", ok: true, msg: "Demo preview · live telemetry is not connected" },
 ];
 
 export const nav = [
