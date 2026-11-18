@@ -65,7 +65,7 @@ export function buildInvoicePlainText(
     `Plan              : ${inv.tierName} (${inv.tierBadge})`,
     `Duration          : ${inv.durationLabel}`,
     `Payment Process   : Confirm payment instructions in Support Server`,
-    `Activation SLA    : ${inv.activationSla}`,
+    `Activation Timing : Confirmed by the owner after payment verification`,
     `Total Amount      : ${inv.currencySymbol}${inv.amount.toLocaleString("en-IN")} ${inv.currencyCode}`,
     ``,
     `Included Features :`,
@@ -349,7 +349,7 @@ export async function downloadInvoicePng(
     rightX + 20,
     boxY + 86,
   );
-  ctx.fillText(`Payment  : Owner QR via Ticket`, rightX + 20, boxY + 110);
+  ctx.fillText(`Payment  : Confirm instructions in Support Server`, rightX + 20, boxY + 110);
   ctx.fillStyle = "#34d399";
   ctx.font = "600 12px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.fillText(`Delivery : Instant (within 24h)`, rightX + 20, boxY + 134);
