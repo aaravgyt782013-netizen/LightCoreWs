@@ -13,8 +13,7 @@ import {
   ShieldIcon,
 } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
-import { defaultLogs, features, site, stats, type LogEntry } from "@/lib/site";
-import { useCountUp } from "@/components/ui/useCountUp";
+import { defaultLogs, features, site, type LogEntry } from "@/lib/site";
 
 const SIMULATED_RAID: LogEntry[] = [
   { t: "ALERT", ok: false, msg: "rogue bot attempted 12 channel deletes" },
@@ -121,7 +120,6 @@ export function Hero() {
           </div>
         </div>
 
-        <StatsBar />
       </div>
     </section>
   );
@@ -286,6 +284,14 @@ function ConsolePanel() {
           </button>
         </div>
 
+        <div className="border-b border-white/[0.06] bg-brand-950/20 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-400">
+          {isLive
+            ? "Live events from the connected bot"
+            : simulating
+              ? "Interactive simulation · sample events only"
+              : "Demo preview · sample events only, not a live security feed"}
+        </div>
+
         {/* Body */}
         <div className="relative p-4">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/70 to-transparent" />
@@ -383,58 +389,3 @@ function ConsolePanel() {
   );
 }
 
-function Stat({
-  value,
-  suffix,
-  label,
-  decimals,
-  hint,
-}: {
-  value: number;
-  suffix: string;
-  label: string;
-  decimals?: number;
-  hint: string;
-}) {
-  const { ref, display } = useCountUp(value, { decimals });
-  return (
-    <SpotlightCard className="group rounded-2xl px-5 py-6 text-center transition-transform duration-300 ease-smooth hover:-translate-y-1 sm:px-6 sm:py-7">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/55 to-transparent opacity-60 transition-opacity duration-300 group-hover:opacity-100"
-      />
-      <p
-        ref={ref}
-        className="relative font-display text-[30px] font-bold tabular-nums tracking-tight text-white sm:text-[40px]"
-      >
-        {display}
-        <span className="text-brand-500">{suffix}</span>
-      </p>
-      <p className="relative mt-1.5 text-[11.5px] font-semibold uppercase tracking-[0.16em] text-zinc-200">
-        {label}
-      </p>
-      <p className="relative mt-1 font-mono text-[9.5px] uppercase tracking-[0.26em] text-zinc-500">
-        {hint}
-      </p>
-    </SpotlightCard>
-  );
-}
-
-function StatsBar() {
-  return (
-    <div className="relative mt-16 sm:mt-20">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
-        {stats.map((s) => (
-          <Stat
-            key={s.label}
-            value={s.value}
-            suffix={s.suffix}
-            label={s.label}
-            hint={s.hint}
-            decimals={s.decimals}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
