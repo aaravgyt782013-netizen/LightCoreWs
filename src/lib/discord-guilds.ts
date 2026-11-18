@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 export type DiscordGuild = {
   id: string;
   name: string;
@@ -23,19 +25,52 @@ export function guildIconUrl(guildId: string, icon: string | null): string | nul
   return `https://cdn.discordapp.com/icons/${guildId}/${icon}.${ext}?size=128`;
 }
 
+type CachedUserGuilds = {
+  guilds: DiscordGuild[];
+  expiresAt: number;
+};
+
+type UserGuildGlobalCache = typeof globalThis & {
+  __lightcoreUserGuildCache?: Map<string, CachedUserGuilds>;
+};
+
 export async function fetchAllUserGuilds(
   accessToken: string,
 ): Promise<DiscordGuild[] | null> {
+  const g = globalThis as UserGuildGlobalCache;
+  if (!g.__lightcoreUserGuildCache) {
+    g.__lightcoreUserGuildCache = new Map();
+  }
+  const cacheKey = crypto
+    .createHash("sha256")
+    .update(accessToken)
+    .digest("hex")
+    .slice(0, 24);
+
+  const cached = g.__lightcoreUserGuildCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.guilds;
+  }
+
   try {
     const res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(6000),
     });
-    if (!res.ok) return null;
-    return (await res.json()) as DiscordGuild[];
+    if (!res.ok) return cached ? cached.guilds : null;
+    const guilds = (await res.json()) as DiscordGuild[];
+    g.__lightcoreUserGuildCache.set(cacheKey, {
+      guilds,
+      expiresAt: Date.now() + 30_000,
+    });
+    if (g.__lightcoreUserGuildCache.size > 200) {
+      const first = g.__lightcoreUserGuildCache.keys().next().value;
+      if (first) g.__lightcoreUserGuildCache.delete(first);
+    }
+    return guilds;
   } catch {
-    return null;
+    return cached ? cached.guilds : null;
   }
 }
 
@@ -93,6 +128,133 @@ export async function fetchBotGuilds(): Promise<CachedBotGuilds | null> {
     };
     g.__lightcoreBotGuildsV2 = entry;
     return entry;
+  } catch {
+    return null;
+  }
+}
+
+export type DiscordChannelOption = {
+  id: string;
+  name: string;
+  type: "text" | "voice" | "category";
+  position: number;
+};
+
+export type DiscordRoleOption = {
+  id: string;
+  name: string;
+  color: string | null;
+  position: number;
+};
+
+export type LiveGuildDetails = {
+  botInGuild: boolean;
+  memberCount: number | null;
+  onlineCount: number | null;
+  boostCount: number | null;
+  boostTier: number | null;
+  channels: DiscordChannelOption[];
+  roles: DiscordRoleOption[];
+};
+
+export async function fetchLiveGuildDetails(
+  guildId: string,
+): Promise<LiveGuildDetails | null> {
+  const token = process.env.DISCORD_BOT_TOKEN?.trim();
+  if (!token) return null;
+
+  const headers = { Authorization: `Bot ${token}` };
+
+  try {
+    const [guildRes, chanRes, roleRes] = await Promise.all([
+      fetch(
+        `https://discord.com/api/v10/guilds/${guildId}?with_counts=true`,
+        { headers, cache: "no-store", signal: AbortSignal.timeout(5000) },
+      ),
+      fetch(`https://discord.com/api/v10/guilds/${guildId}/channels`, {
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      }),
+      fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+        headers,
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      }),
+    ]);
+
+    if (!guildRes.ok) {
+      return {
+        botInGuild: false,
+        memberCount: null,
+        onlineCount: null,
+        boostCount: null,
+        boostTier: null,
+        channels: [],
+        roles: [],
+      };
+    }
+
+    const guildData = (await guildRes.json()) as {
+      approximate_member_count?: number;
+      approximate_presence_count?: number;
+      premium_subscription_count?: number;
+      premium_tier?: number;
+    };
+
+    const rawChannels = chanRes.ok
+      ? ((await chanRes.json()) as {
+          id: string;
+          name: string;
+          type: number;
+          position?: number;
+        }[])
+      : [];
+
+    const channels: DiscordChannelOption[] = rawChannels
+      .filter((c) => c.type === 0 || c.type === 5 || c.type === 2 || c.type === 4)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        type:
+          c.type === 2
+            ? ("voice" as const)
+            : c.type === 4
+              ? ("category" as const)
+              : ("text" as const),
+        position: c.position ?? 0,
+      }))
+      .sort((a, b) => a.position - b.position);
+
+    const rawRoles = roleRes.ok
+      ? ((await roleRes.json()) as {
+          id: string;
+          name: string;
+          color: number;
+          position: number;
+          managed?: boolean;
+        }[])
+      : [];
+
+    const roles: DiscordRoleOption[] = rawRoles
+      .filter((r) => r.id !== guildId && !r.managed)
+      .sort((a, b) => b.position - a.position)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.color ? `#${r.color.toString(16).padStart(6, "0")}` : null,
+        position: r.position,
+      }));
+
+    return {
+      botInGuild: true,
+      memberCount: guildData.approximate_member_count ?? null,
+      onlineCount: guildData.approximate_presence_count ?? null,
+      boostCount: guildData.premium_subscription_count ?? null,
+      boostTier: guildData.premium_tier ?? null,
+      channels,
+      roles,
+    };
   } catch {
     return null;
   }

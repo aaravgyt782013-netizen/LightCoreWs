@@ -51,15 +51,25 @@ export function Navbar() {
           </Link>
 
           <nav className="hidden items-center gap-1 lg:flex">
-            {nav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
-              >
-                {item.label}
-              </a>
-            ))}
+            {nav.map((item) =>
+              item.href === "/premium" ? (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-amber-300/95 transition-colors duration-200 hover:bg-amber-500/10 hover:text-amber-200"
+                >
+                  {item.label}
+                </Link>
+              ) : (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
+                >
+                  {item.label}
+                </a>
+              ),
+            )}
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
@@ -126,19 +136,33 @@ export function Navbar() {
           }`}
         >
           <div className="flex flex-col gap-1">
-            {nav.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-zinc-300 transition-colors hover:bg-white/[0.04] hover:text-white"
-              >
-                {item.label}
-                <span className="font-mono text-[10px] text-zinc-600">
-                  {item.href.replace(/^\//, "")}
-                </span>
-              </a>
-            ))}
+            {nav.map((item) =>
+              item.href.includes("#") ? (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-zinc-300 transition-colors hover:bg-white/[0.04] hover:text-white"
+                >
+                  {item.label}
+                  <span className="font-mono text-[10px] text-zinc-600">
+                    {item.href.replace(/^\//, "")}
+                  </span>
+                </a>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-amber-300 transition-colors hover:bg-amber-500/10 hover:text-amber-200"
+                >
+                  {item.label}
+                  <span className="font-mono text-[10px] text-amber-400/70">
+                    plans
+                  </span>
+                </Link>
+              ),
+            )}
             <a
               href={site.discord}
               target="_blank"

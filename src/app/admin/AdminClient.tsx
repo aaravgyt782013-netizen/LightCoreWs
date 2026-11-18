@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { site, type LogEntry } from "@/lib/site";
 import type { PublicAuthorizedUser } from "@/lib/auth-store";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import {
   ArrowRight,
   CheckIcon,
+  CrownIcon,
   DiscordIcon,
   LockIcon,
   ShieldIcon,
@@ -205,15 +207,17 @@ export function AdminClient() {
   };
 
   const handleLogout = async () => {
+    setStatus("loading");
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/";
   };
 
   if (status === "loading") {
     return (
-      <div className="max-w-xl rounded-2xl border border-white/[0.07] bg-white/[0.02] p-8 font-mono text-[12px] text-zinc-400">
-        Verifying owner clearance…
-      </div>
+      <LoadingScreen
+        label="Connection Establishing..."
+        sublabel="Verifying owner clearance & loading telemetry"
+      />
     );
   }
 
@@ -374,6 +378,13 @@ export function AdminClient() {
           >
             Refresh
           </button>
+          <Link
+            href="/premium"
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/35 bg-amber-500/10 px-3.5 py-1.5 text-[12px] font-medium text-amber-200 hover:border-amber-400/60 hover:text-white"
+          >
+            <CrownIcon className="size-3.5 text-amber-300" />
+            Premium
+          </Link>
           <Link
             href="/dashboard"
             className="rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-[12px] font-medium text-zinc-300 hover:border-white/25 hover:text-white"

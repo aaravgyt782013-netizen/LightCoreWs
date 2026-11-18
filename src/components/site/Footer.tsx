@@ -45,7 +45,8 @@ export function Footer() {
           <FooterCol
             title="Platform"
             links={[
-              { label: "Dashboard", href: site.dashboard },
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Buy Premium", href: site.premium },
               { label: "Owner panel", href: site.admin },
               { label: "Invite bot", href: site.invite, external: true },
               { label: "Support server", href: site.discord, external: true },
