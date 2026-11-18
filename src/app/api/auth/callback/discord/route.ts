@@ -308,9 +308,8 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return relativeRedirect("/login?error=oauth_not_configured", reqCtx);
     }
 
-    // Run persistence, optional auto-join, and webhook logging concurrently
-    // within a bounded window so serverless timeouts or storage hiccups can
-    // NEVER break a successful Discord sign-in.
+    // Run user persistence and webhook logging concurrently within a bounded
+    // window so storage hiccups cannot break a successful Discord sign-in.
     const avatarUrl = rawUser.avatar
       ? `https://cdn.discordapp.com/avatars/${rawUser.id}/${rawUser.avatar}.png?size=128`
       : null;
