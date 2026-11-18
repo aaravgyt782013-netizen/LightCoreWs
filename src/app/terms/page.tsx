@@ -33,9 +33,9 @@ export default function TermsPage() {
         </p>
         <h2>Availability</h2>
         <p>
-          We target 99.99% uptime and publish latency in the status panel, but
-          the service is provided &quot;as is&quot; without warranty. Scheduled
-          maintenance is announced in our{" "}
+          We do not guarantee uninterrupted availability. Current health
+          information is displayed on the status page only when a live monitoring
+          endpoint is configured. Scheduled maintenance is announced in our{" "}
           <a
             href={site.discord}
             target="_blank"
