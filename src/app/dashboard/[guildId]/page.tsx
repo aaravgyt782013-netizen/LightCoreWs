@@ -5,6 +5,7 @@ import { GuildDashboardClient } from "./GuildDashboardClient";
 export const metadata: Metadata = {
   title: "Manage Server",
   description: `Configure ${site.name} Anti-Nuke, Whitelists, AutoMod, Night Mode, Welcomer, VoiceMaster, Tickets, and Logging for your Discord server.`,
+  robots: { index: false, follow: false },
 };
 
 export default async function GuildDashboardPage({
