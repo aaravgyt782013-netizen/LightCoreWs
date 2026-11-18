@@ -191,7 +191,7 @@ export const setupSteps = [
     step: "01",
     phase: "AUTH",
     title: "Invite the Bot",
-    copy: `Integrate ${site.name} into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.`,
+    copy: `Invite ${site.name} to your guild and review the requested permissions on Discord before authorizing. Complete the setup steps to configure the protection modules you want to use.`,
     bullets: [
       "Instant OAuth2 gateway link",
       "Review the requested permissions on Discord before authorizing",
