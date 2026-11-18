@@ -18,9 +18,9 @@ import { defaultLogs, features, site, type LogEntry } from "@/lib/site";
 const SIMULATED_RAID: LogEntry[] = [
   { t: "ALERT", ok: false, msg: "rogue bot attempted 12 channel deletes" },
   { t: "GATE", ok: false, msg: "rate threshold breached (12/2 per min)" },
-  { t: "BLOCK", ok: false, msg: "actor stripped & quarantined in 38ms" },
-  { t: "RESTORE", ok: true, msg: "all 12 channels & permissions restored" },
-  { t: "SEALED", ok: true, msg: "0 data lost · server locked & verified" },
+  { t: "BLOCK", ok: false, msg: "sample action blocked · actor quarantined" },
+  { t: "RESTORE", ok: true, msg: "sample recovery result · supported state restored" },
+  { t: "SEALED", ok: true, msg: "sample result · protection workflow completed" },
 ];
 
 const TELEMETRY_LAYERS = [
