@@ -948,7 +948,7 @@ export function PremiumClient() {
                             : "Share server ID in ticket"}
                         </p>
                         <p className="mt-1 font-mono text-[10px] text-emerald-300">
-                          ✓ {activeInvoice.activationSla}
+                          ✓ Activation after payment confirmation
                         </p>
                       </div>
                     </div>
@@ -1208,6 +1208,8 @@ export function PremiumClient() {
                 {/* How It Works Notice */}
                 <div className="rounded-xl border border-brand-200/10 bg-ink-950/75 px-3.5 py-3 text-[12px] leading-relaxed text-zinc-300">
                   {siteCfg.ticketInstructions}
+                  {" "}
+                  No payment is collected on this website. This document is not a tax invoice or proof of payment. Confirm the seller and amount before paying. Never share passwords or one-time codes.
                 </div>
 
                 {invoiceError && (
