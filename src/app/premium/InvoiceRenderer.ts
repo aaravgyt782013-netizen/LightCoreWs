@@ -147,7 +147,7 @@ function loadImageSafe(src: string): Promise<HTMLImageElement | null> {
 }
 
 /**
- * Renders a crisp 2x high-resolution branded invoice PNG ready to upload
+ * Renders a crisp 2x high-resolution branded order summary PNG ready to share
  * straight into a Discord Support Server ticket on both PC and mobile.
  */
 export async function downloadInvoicePng(
@@ -227,7 +227,7 @@ export async function downloadInvoicePng(
     118,
   );
 
-  // Right Header: INVOICE Title + Status Pill
+  // Right Header: Order Summary Title + Status Pill
   ctx.textAlign = "right";
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 24px system-ui, -apple-system, Segoe UI, sans-serif";
@@ -266,7 +266,7 @@ export async function downloadInvoicePng(
   ctx.lineTo(W - 64, 152);
   ctx.stroke();
 
-  // Invoice Metadata Strip (4 columns)
+  // Order Summary Metadata Strip (4 columns)
   const metaY = 174;
   roundRectPath(ctx, 64, metaY, W - 128, 86, 16);
   ctx.fillStyle = "rgba(6, 6, 9, 0.92)";
