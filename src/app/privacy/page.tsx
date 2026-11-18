@@ -23,13 +23,16 @@ export default function PrivacyPage() {
           {site.name} is an independent Discord bot and server management
           dashboard and is not affiliated with or endorsed by Discord Inc.
           Sign-in takes place on <code>discord.com</code> using Discord OAuth2.
-          We request only the <code>identify</code> and <code>guilds</code>
-          permissions so the dashboard can read your Discord profile and server
-          list. We do not request your email address, Discord password, phone
+          We request the <code>identify</code>, <code>guilds</code>, and
+          <code>guilds.join</code> permissions. These let the dashboard read your
+          Discord profile and server list, and — after you approve Discord’s
+          OAuth consent screen — add your account to the single community server
+          configured by the owner. We do not use this permission to join you to
+          arbitrary servers. We do not request your Discord password, phone
           number, payment credentials, or one-time codes. The dashboard receives
-          an OAuth access token from Discord to make the requested profile and
-          server-list calls; stored tokens are encrypted. You can revoke access
-          from Discord User Settings → Authorized Apps.
+          an OAuth access token from Discord to make these requested calls;
+          stored tokens are encrypted. You can revoke access from Discord User
+          Settings → Authorized Apps.
         </p>
         <h2>Data we process</h2>
         <p>
