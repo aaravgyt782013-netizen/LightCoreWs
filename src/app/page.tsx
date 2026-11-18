@@ -27,13 +27,13 @@ export default function Home() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <PageBackground />
       <Navbar />
       <main>
         <Hero />
-          <Features />
+        <Features />
         <Setup />
         <Protocol />
         <VoiceMaster />
