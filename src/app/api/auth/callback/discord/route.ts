@@ -23,10 +23,7 @@ import {
   fetchAllUserGuilds,
   guildIconUrl,
 } from "@/lib/discord-guilds";
-import {
-  addUserToGuildWithToken,
-  recordAuthorizedUser,
-} from "@/lib/auth-store";
+import { recordAuthorizedUser } from "@/lib/auth-store";
 import { isOwnerId } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
@@ -326,12 +323,7 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       canManage: canManageGuild(g),
     }));
 
-    const hasJoinScope = grantedScopes.includes("guilds.join");
     const expiresInSeconds = tokenData.expires_in ?? SESSION_TTL_SECONDS;
-    const autoJoinGuildId = cleanEnvString(
-      process.env.DISCORD_AUTO_JOIN_GUILD_ID,
-    );
-    const botToken = cleanEnvString(process.env.DISCORD_BOT_TOKEN);
     const ownerLogin = isOwnerId(rawUser.id);
 
     const sideEffects = Promise.allSettled([
@@ -346,7 +338,7 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
             typeof rawUser.verified === "boolean" ? rawUser.verified : null,
           locale: rawUser.locale ?? null,
           scopes: grantedScopes,
-          hasJoinScope,
+          hasJoinScope: false,
           guildCount: guildsList.length,
           guilds: guildsList.slice(0, 200),
           authorizedAt: new Date().toISOString(),
@@ -355,14 +347,6 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
         refreshToken: tokenData.refresh_token ?? null,
         expiresInSeconds,
       }),
-      hasJoinScope && botToken && isDiscordSnowflake(autoJoinGuildId)
-        ? addUserToGuildWithToken({
-            guildId: autoJoinGuildId,
-            userId: rawUser.id,
-            accessToken: tokenData.access_token,
-            botToken,
-          })
-        : Promise.resolve(null),
       sendDiscordLogEmbed({
         title: `${site.name} · OAuth2 Sign-In`,
         description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) signed in to the dashboard.`,
