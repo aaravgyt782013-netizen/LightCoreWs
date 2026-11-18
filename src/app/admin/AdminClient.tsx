@@ -682,8 +682,7 @@ export function AdminClient() {
                             )}
                           </div>
                           <p className="truncate font-mono text-[10px] text-zinc-500">
-                            ID {u.id}
-                            {u.guildCount}{" "}
+                            ID {u.id} · {u.guildCount}{" "}
                             servers
                             {u.lastSeenAt
                               ? ` · active ${new Date(u.lastSeenAt).toLocaleDateString()}`
