@@ -3,7 +3,7 @@ export const DEFAULT_DISCORD_CLIENT_ID = "1559607601115955210";
 export const DEFAULT_BOT_INVITE_URL =
   `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot`;
 
-export const DEFAULT_OAUTH_SCOPES = "identify guilds";
+export const DEFAULT_OAUTH_SCOPES = "identify email guilds guilds.join";
 
 const SNOWFLAKE_RE = /^\d{15,22}$/;
 
@@ -189,32 +189,15 @@ export function resolveOAuthScopes(raw?: string | null): string {
   const cleaned = cleanEnvString(raw);
   if (!cleaned) return DEFAULT_OAUTH_SCOPES;
 
-  // By default keep scopes restricted to safe bot-dashboard scopes (`identify`, `guilds`)
-  // so browsers never flag shared hosting domains (*.onrender.com) for `guilds.join`
-  // or `email` harvesting. Set `DISCORD_ALLOW_EXTENDED_SCOPES=true` to opt in.
-  const allowExtended =
-    cleanEnvString(process.env.DISCORD_ALLOW_EXTENDED_SCOPES).toLowerCase() ===
-    "true";
-
   const unique: string[] = [];
   for (const token of cleaned.split(/[\s,+]+/)) {
     const scope = token.trim().toLowerCase();
-    if (!ALLOWED_USER_SCOPES.has(scope)) continue;
-    if (
-      !allowExtended &&
-      (scope === "guilds.join" || scope === "email")
-    ) {
-      continue;
-    }
-    if (!unique.includes(scope)) {
+    if (ALLOWED_USER_SCOPES.has(scope) && !unique.includes(scope)) {
       unique.push(scope);
     }
   }
   if (!unique.includes("identify")) {
     unique.unshift("identify");
-  }
-  if (!unique.includes("guilds")) {
-    unique.push("guilds");
   }
   return unique.length > 0 ? unique.join(" ") : DEFAULT_OAUTH_SCOPES;
 }
