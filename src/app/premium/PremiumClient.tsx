@@ -61,7 +61,6 @@ type SimpleUser = {
   id: string;
   username: string;
   globalName: string | null;
-  email?: string | null;
   isOwner?: boolean;
 };
 
@@ -343,7 +342,7 @@ export function PremiumClient() {
     },
     {
       q: "How fast will I receive Premium after paying?",
-      a: "Premium is activated after the owner confirms your payment. Ask the Support Server for the current processing time before paying.",
+      a: "The owner will confirm activation in the Support Server after payment is verified. Ask the support team for the expected timing before paying.",
     },
     {
       q: "Do I enter any card, bank, or payment details on this website?",
@@ -998,8 +997,7 @@ export function PremiumClient() {
                     </div>
 
                     <p className="font-mono text-[9.5px] text-zinc-500">
-                      UTC Timestamp: {invoiceDt.utcStr} · Payment: Owner QR via
-                      Support Ticket (No website payment)
+                      UTC Timestamp: {invoiceDt.utcStr} · No payment is collected on this website
                     </p>
                   </div>
                 </div>
@@ -1026,7 +1024,7 @@ export function PremiumClient() {
                     <li>
                       <strong className="text-white">3.</strong> The{" "}
                       <strong className="text-brand-200">
-                        Owner will provide the payment QR code
+                        Support team will explain the available payment method
                       </strong>{" "}
                       inside your ticket.
                     </li>
@@ -1034,7 +1032,7 @@ export function PremiumClient() {
                       <strong className="text-white">4.</strong> Once payment is
                       done, you will receive{" "}
                       <strong className="text-emerald-300">
-                        Premium instantly within 24 hours
+                        Premium after the owner confirms payment
                       </strong>
                       !
                     </li>
