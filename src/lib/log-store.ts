@@ -137,7 +137,9 @@ export async function getLogs(options?: {
   const buf = getBuffer();
   const filtered = options?.guildId
     ? buf.filter((l) => l.guildId === options.guildId)
-    : buf;
+    : options?.includePrivate
+      ? buf
+      : buf.filter((l) => !l.guildOnly);
 
   if (filtered.length > 0) {
     const slice = filtered.slice(-limit);

@@ -8,6 +8,7 @@ import {
   ShieldIcon,
   ArrowRight,
   CheckIcon,
+  CrownIcon,
 } from "@/components/ui/Icons";
 import { site } from "@/lib/site";
 import { LoginNotice } from "./LoginNotice";
@@ -102,6 +103,13 @@ export default function LoginPage() {
                   Add {site.name} to a Server
                   <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                 </a>
+                <Link
+                  href="/premium"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-[13px] font-medium text-amber-200 transition-colors hover:border-amber-400/55 hover:bg-amber-500/15 hover:text-white"
+                >
+                  <CrownIcon className="size-4 text-amber-300" />
+                  View Premium Plans
+                </Link>
                 <a
                   href={site.discord}
                   target="_blank"

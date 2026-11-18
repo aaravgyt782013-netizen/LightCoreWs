@@ -26,6 +26,7 @@ export const site = {
     process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ||
     `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=8&integration_type=0&scope=bot`,
   dashboard: process.env.NEXT_PUBLIC_DASHBOARD_URL || "/login",
+  premium: "/premium",
   admin: "/admin",
   discord:
     process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL ||
@@ -51,6 +52,7 @@ export type LogEntry = {
   msg: string;
   guild?: string;
   guildId?: string;
+  guildOnly?: boolean;
   ts?: string;
 };
 
@@ -69,6 +71,7 @@ export const nav = [
   { label: "Setup", href: "/#setup" },
   { label: "Protocol", href: "/#protocol" },
   { label: "VoiceMaster", href: "/#voicemaster" },
+  { label: "Premium", href: "/premium" },
   { label: "FAQ", href: "/#faq" },
 ] as const;
 

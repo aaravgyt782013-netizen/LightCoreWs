@@ -214,11 +214,7 @@ export async function GET(req: NextRequest) {
     });
 
     const destination: `/${string}` =
-      storedNext === "/admin"
-        ? "/admin"
-        : ownerLogin
-          ? "/admin"
-          : "/dashboard";
+      storedNext === "/admin" ? "/admin" : "/dashboard";
 
     const res = relativeRedirect(destination);
     res.cookies.delete(OAUTH_STATE_COOKIE);

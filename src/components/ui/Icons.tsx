@@ -143,6 +143,103 @@ export function BoltIcon(props: IconProps) {
   );
 }
 
+export function CrownIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M3 18h18M4.5 15.5 3 7l5.2 3.8L12 5l3.8 5.8L21 7l-1.5 8.5h-15Z" />
+    </svg>
+  );
+}
+
+export function GridIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.8" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.8" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.8" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.8" />
+    </svg>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.2 19a5.8 5.8 0 0 1 11.6 0" />
+      <path d="M15.5 5.2a3 3 0 0 1 0 5.6M17.5 14a5.2 5.2 0 0 1 3.3 5" />
+    </svg>
+  );
+}
+
+export function SlidersIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 6h10M18 6h2M14 4v4M4 12h4M12 12h8M8 10v4M4 18h12M20 18h0M16 16v4" />
+    </svg>
+  );
+}
+
+export function BellIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6 9.5a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4s2-1.5 2-6.5Z" />
+      <path d="M10 19a2.2 2.2 0 0 0 4 0" />
+    </svg>
+  );
+}
+
+export function GiftIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="8" width="18" height="4" rx="1.2" />
+      <path d="M12 8v12M5 12v7a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-7" />
+      <path d="M12 8H8.2a2.2 2.2 0 1 1 0-4.4C10.8 3.6 12 8 12 8Zm0 0h3.8a2.2 2.2 0 1 0 0-4.4C13.2 3.6 12 8 12 8Z" />
+    </svg>
+  );
+}
+
+export function LogListIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />
+    </svg>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="11" cy="11" r="6.8" />
+      <path d="m20 20-3.8-3.8" />
+    </svg>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M4 7h16M9.5 7V5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14.5 5v2M6.5 7l.8 12a1.8 1.8 0 0 0 1.8 1.7h5.8a1.8 1.8 0 0 0 1.8-1.7l.8-12" />
+    </svg>
+  );
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M20 11a8 8 0 0 0-14.4-4.8L4 8M4 4v4h4M4 13a8 8 0 0 0 14.4 4.8L20 16M20 20v-4h-4" />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
 export const featureIcons: Record<
   string,
   (props: IconProps) => React.JSX.Element

@@ -78,6 +78,14 @@ export default {
           "50%": { opacity: "0.35" },
           "100%": { opacity: "1" },
         },
+        spinReverse: {
+          "0%": { transform: "rotate(360deg)" },
+          "100%": { transform: "rotate(0deg)" },
+        },
+        loaderSlide: {
+          "0%": { transform: "translateX(-110%)" },
+          "100%": { transform: "translateX(260%)" },
+        },
       },
       animation: {
         marquee: "marquee var(--marquee-duration, 45s) linear infinite",
@@ -88,6 +96,10 @@ export default {
         scan: "scan 4.5s linear infinite",
         shimmer: "shimmer 4s linear infinite",
         ticker: "ticker 2.2s ease-in-out infinite",
+        "spin-orbit": "spin 1.8s linear infinite",
+        "spin-slow": "spin 4.2s linear infinite",
+        "spin-reverse": "spinReverse 2.6s linear infinite",
+        "loader-slide": "loaderSlide 1.5s cubic-bezier(0.4,0,0.2,1) infinite",
       },
       boxShadow: {
         glow: "0 0 0 1px rgba(255,43,43,0.25), 0 18px 60px -20px rgba(239,16,16,0.55)",
