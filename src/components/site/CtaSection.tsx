@@ -70,7 +70,7 @@ export function CtaSection() {
               </div>
 
               <p className="mt-7 font-mono text-[10px] uppercase tracking-[0.26em] text-zinc-500">
-                instant activation · live control center · 26 armed modules
+                guided setup · dashboard controls · configurable protection modules
               </p>
             </div>
           </SpotlightCard>
