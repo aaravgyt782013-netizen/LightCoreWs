@@ -191,12 +191,15 @@ export async function ensureSessionUserRecorded(
         }))
       : (existing?.guilds ?? []);
 
-    const scopes =
+    const grantedScopes =
       session.user.scopes && session.user.scopes.length > 0
         ? session.user.scopes
         : existing?.scopes?.length
           ? existing.scopes
           : site.oauthScopes.split(/\s+/).filter(Boolean);
+    const scopes = grantedScopes.filter(
+      (scope) => scope === "identify" || scope === "guilds",
+    );
 
     const avatarUrl = session.user.avatar
       ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
@@ -214,11 +217,11 @@ export async function ensureSessionUserRecorded(
       username: session.user.username,
       globalName: session.user.globalName ?? existing?.globalName ?? null,
       avatarUrl,
-      email: session.user.email ?? existing?.email ?? null,
+      email: null,
       verified: existing?.verified ?? null,
       locale: existing?.locale ?? null,
       scopes,
-      hasJoinScope: scopes.includes("guilds.join"),
+      hasJoinScope: false,
       guildCount: rawGuilds ? rawGuilds.length : (existing?.guildCount ?? guilds.length),
       guilds,
       authorizedAt: existing?.authorizedAt || nowIso,
