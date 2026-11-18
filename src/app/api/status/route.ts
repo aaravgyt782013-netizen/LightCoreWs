@@ -112,7 +112,7 @@ export async function GET() {
   return NextResponse.json(
     {
       live: false,
-      operational: true,
+      operational: false,
       botName: site.name,
       clientId: site.clientId,
       latencyMs: null,
