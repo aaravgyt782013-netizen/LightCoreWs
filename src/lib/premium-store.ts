@@ -181,9 +181,9 @@ export async function updateSubscriptionGuild(input: {
 }
 
 /**
- * Generates an official LightCore invoice (NO payment collected on website).
- * Buyers download & submit this invoice in a Support Server ticket to receive
- * the owner's payment QR, and receive Premium instantly within 24 hours.
+ * Creates a premium order summary (NO payment collected on website).
+ * Buyers download & share this order summary in a Support Server ticket to receive
+ * payment instructions and activation confirmation after payment is verified.
  */
 export async function createPremiumInvoice(input: {
   userId: string;
