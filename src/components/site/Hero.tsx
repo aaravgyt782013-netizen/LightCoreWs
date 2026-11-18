@@ -378,10 +378,10 @@ function ConsolePanel() {
         </span>
         <div className="leading-tight">
           <p className="text-[12px] font-semibold text-white">
-            Zero-Loss Rollback
+            Rollback Preview
           </p>
           <p className="font-mono text-[9.5px] text-brand-300">
-            intercepted in 38ms
+            illustrative demo
           </p>
         </div>
       </div>
