@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/Icons";
 
 const stageIcons = [ActivityIcon, BoltIcon, LockIcon, ShieldIcon];
-const stageTimings = ["8ms", "14ms", "19ms", "38ms"];
 
 export function Protocol() {
   return (
@@ -46,7 +45,7 @@ export function Protocol() {
                         <Icon className="size-[19px]" />
                       </span>
                       <span className="rounded-full border border-brand-500/25 bg-brand-950/40 px-2.5 py-0.5 font-mono text-[9.5px] font-medium text-brand-300">
-                        {stageTimings[i]}
+                        PROCESS
                       </span>
                     </div>
 
@@ -69,22 +68,15 @@ export function Protocol() {
         <Reveal delay={130} className="mt-6">
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-500/20 bg-gradient-to-r from-brand-950/50 via-ink-900/80 to-ink-900/60 px-6 py-4 backdrop-blur-xl">
             <p className="text-[13.5px] text-zinc-300">
-              Active Threat Mitigation —{" "}
+              Protection workflow —{" "}
               <span className="font-semibold text-white">
-                deterministic state rollback
-              </span>{" "}
-              with zero moderator friction.
+                configured safeguards and supported recovery actions
+              </span>
+              .
             </p>
-            <div className="flex items-center gap-5 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-              <span className="inline-flex items-center gap-1.5 text-emerald-300">
-                <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-                pipeline healthy
-              </span>
-              <span className="hidden sm:inline">p50 · 38ms</span>
-              <span className="hidden text-brand-300 sm:inline">
-                p99 · 480ms
-              </span>
-            </div>
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+              Architecture overview · illustrative
+            </span>
           </div>
         </Reveal>
       </div>
