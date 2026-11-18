@@ -76,9 +76,9 @@ export function buildInvoicePlainText(
     `------------------------------------------------`,
     `NEXT STEPS TO ACTIVATE PREMIUM:`,
     `1. Join Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
-    `2. Open a Support Ticket and upload/send this invoice.`,
+    `2. Open a Support Ticket and share this order summary.`,
     `3. The support team will explain the available payment method.`,
-    `4. Once payment is completed, Premium is granted instantly (within 24 hours).`,
+    `4. The owner will confirm activation after payment is verified.`,
     `================================================`,
     siteCfg.invoiceFooterNote ||
       "This is an order summary, not a tax invoice or proof of payment. No payment is collected on this website. Confirm seller details before paying. Never share passwords or one-time codes.",
@@ -461,13 +461,13 @@ export async function downloadInvoicePng(
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 15px system-ui, -apple-system, Segoe UI, sans-serif";
-  ctx.fillText("HOW TO COMPLETE PAYMENT & ACTIVATE PREMIUM", 88, cursorY + 34);
+  ctx.fillText("ORDER SUMMARY · SUPPORT PROCESS", 88, cursorY + 34);
 
   const steps = [
     `1. Open a ticket in our Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
-    `2. Send / attach this invoice (${inv.invoiceId}) inside your ticket.`,
+    `2. Share this order summary (${inv.invoiceId}) inside your ticket.`,
     `3. The Owner will provide the payment instructions in your ticket.`,
-    `4. Once payment is done, your Premium is activated instantly within 24 hours!`,
+    `4. The owner will confirm activation after payment is verified.`,
   ];
   ctx.font = "500 13.5px system-ui, -apple-system, Segoe UI, sans-serif";
   steps.forEach((s, idx) => {
@@ -480,7 +480,7 @@ export async function downloadInvoicePng(
   const footLines = wrapLines(
     ctx,
     siteCfg.invoiceFooterNote ||
-      "No payment is collected on the website. Present this order summary in a Support Server ticket.",
+      "This is an order summary, not a tax invoice or proof of payment. No payment is collected here. Confirm seller details before paying. Never share passwords or one-time codes.",
     W - 176,
   );
   footLines.slice(0, 2).forEach((ln, i) => {
