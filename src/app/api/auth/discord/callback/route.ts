@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { handleDiscordOAuthCallback } from "../../callback/discord/route";
+import { GET as callbackGet } from "@/app/api/auth/callback/discord/route";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  return handleDiscordOAuthCallback(req);
+  return callbackGet(req);
 }

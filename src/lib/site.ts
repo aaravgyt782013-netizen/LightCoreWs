@@ -203,8 +203,8 @@ export type Partner = {
 
 export const partners: Partner[] = [
   {
-    name: "Relationship 💕 | Dating 18+ ・Active・Social・VC・Egirls・Gaming・edating",
-    short: "Relationship 💕",
+    name: "Horizon Lounge",
+    short: "Horizon Lounge",
     members: "180,463 members",
     icon: "850309920133873664/a_6259712d1ec7ecca6e153404add48b33.gif",
   },
@@ -287,30 +287,30 @@ export const partners: Partner[] = [
     icon: "779246640648683540/c9faef4fa3e1e269500a54ef7495837c.png",
   },
   {
-    name: "/cutecafe 🎀 •⩊• egirl ♡ social ♡ vc ♡ active ♡ ask to dm",
-    short: "/cutecafe 🎀",
+    name: "CuteCafe Community",
+    short: "CuteCafe",
     members: "99,301 members",
     icon: "1370442573889671318/9a5675796cecf13788142813a3823a4f.png",
   },
   {
-    name: "/smex 🎀",
+    name: "Aether Hub",
     members: "100,945 members",
     icon: "374050847379685379/b66bdc5e773a971958287aaf5067dda7.png",
   },
   {
-    name: "/babies 🎀 •⩊• social ♡ vc ♡ active",
-    short: "/babies 🎀",
+    name: "Starlight Social",
+    short: "Starlight",
     members: "108,916 members",
     icon: "1353636298249863199/cf502684f5f9fb5790a5afddd8797693.png",
   },
   {
-    name: "Ratings™ | E-Girls | SFW・Roles・Social・Rate・Community・Chat・VC・Gaming・E-life・Nitro・Anime・Chill・",
+    name: "Ratings Community",
     short: "Ratings™",
     members: "344,879 members",
     icon: "1002105365829259264/a_6ee0d93532bfe6e32bfae0a5e9442527.gif",
   },
   {
-    name: "First Love .™、♡ || Chilling • Indian & International Community • Gaming • Hangout • Vc • Events!",
+    name: "First Love Community",
     short: "First Love .™",
     members: "34,941 members",
     icon: "1004262053181136996/a_5645338609fe3c5e40eefdbbc9a9d667.gif",
@@ -331,8 +331,8 @@ export const partners: Partner[] = [
     icon: "1534611665511911546/fde1e1d405a991b33872b22947f5e601.png",
   },
   {
-    name: "Dialing 📞 Active VC Server Hangout Voice Chat Call Social Chill Egirl Ask To DM",
-    short: "Dialing 📞",
+    name: "Dialing VC Hub",
+    short: "Dialing VC",
     members: "89,383 members",
     icon: "1379056322514911315/b1d5169c5ec296e342d3963f41113679.png",
   },

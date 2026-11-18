@@ -144,24 +144,20 @@ export function unsealSession(token: string | undefined): SessionPayload | null 
 }
 
 /**
- * Creates a compact, URL-free, HMAC-SHA256 signed OAuth2 `state` token:
- * `<expBase36>-<destCode>-<nonce>-<sig>`
- * Avoids embedding base64 URLs in query strings (which trigger browser phishing
- * heuristics on shared hosting domains) while staying CSRF-safe and surviving
- * mobile Discord-app <-> browser handoffs.
+ * Creates a clean, dot-free, hexadecimal HMAC-SHA256 OAuth2 `state` token:
+ * `<exp8hex><dest1char><nonce16hex><mac24hex>` (49 lowercase alnum chars).
+ * Looks identical to a standard opaque RFC 6749 state token (no dots, no base64
+ * blobs, no embedded URLs) while surviving mobile Discord-app handoffs safely.
  */
-function encodeNextCode(next: string): string {
+function encodeDestChar(next: string): string {
   if (next === "/admin") return "a";
   if (next === "/premium") return "p";
-  const guildMatch = /^\/dashboard\/(\d{15,22})$/.exec(next);
-  if (guildMatch) return `g${guildMatch[1]}`;
   return "d";
 }
 
-function decodeNextCode(code: string): string {
-  if (code === "a") return "/admin";
-  if (code === "p") return "/premium";
-  if (/^g\d{15,22}$/.test(code)) return `/dashboard/${code.slice(1)}`;
+function decodeDestChar(ch: string): string {
+  if (ch === "a") return "/admin";
+  if (ch === "p") return "/premium";
   return "/dashboard";
 }
 
@@ -172,38 +168,34 @@ export function createSignedOAuthState(input: {
   const secret = getSessionSecret();
   if (!secret) return null;
 
-  const expStr = (
-    Math.floor(Date.now() / 1000) + OAUTH_STATE_TTL_SECONDS
-  ).toString(36);
-  const dest = encodeNextCode(input.next);
-  const nonce = crypto.randomBytes(9).toString("base64url");
-  const core = `${expStr}.${dest}.${nonce}`;
+  const exp = Math.floor(Date.now() / 1000) + OAUTH_STATE_TTL_SECONDS;
+  const expHex = exp.toString(16).padStart(8, "0").slice(-8);
+  const dest = encodeDestChar(input.next);
+  const nonce = crypto.randomBytes(8).toString("hex"); // 16 hex chars
+  const core = `${expHex}${dest}${nonce}`; // 25 chars
   const sig = crypto
-    .createHmac("sha256", `lc-oauth-state-v3:${secret}`)
+    .createHmac("sha256", `lc-oauth-state-v4:${secret}`)
     .update(core)
-    .digest("base64url")
-    .slice(0, 22);
+    .digest("hex")
+    .slice(0, 24);
   void input.redirectUri;
-  return `${core}.${sig}`;
+  return `${core}${sig}`; // 49 lowercase alphanumeric chars
 }
 
 export function verifySignedOAuthState(
   state: string | null | undefined,
 ): SignedOAuthStatePayload | null {
   const secret = getSessionSecret();
-  if (!secret || !state || state.length > 120) return null;
+  if (!secret || !state || state.length !== 49) return null;
+  if (!/^[0-9a-f]{8}[adp][0-9a-f]{40}$/.test(state)) return null;
 
-  const parts = state.split(".");
-  if (parts.length !== 4) return null;
-  const [expStr, dest, nonce, providedSig] = parts;
-  if (!expStr || !dest || !nonce || !providedSig) return null;
-
-  const core = `${expStr}.${dest}.${nonce}`;
+  const core = state.slice(0, 25);
+  const providedSig = state.slice(25);
   const expectedSig = crypto
-    .createHmac("sha256", `lc-oauth-state-v3:${secret}`)
+    .createHmac("sha256", `lc-oauth-state-v4:${secret}`)
     .update(core)
-    .digest("base64url")
-    .slice(0, 22);
+    .digest("hex")
+    .slice(0, 24);
 
   const a = Buffer.from(providedSig, "utf8");
   const b = Buffer.from(expectedSig, "utf8");
@@ -211,15 +203,15 @@ export function verifySignedOAuthState(
     return null;
   }
 
-  const exp = parseInt(expStr, 36);
+  const exp = parseInt(core.slice(0, 8), 16);
   if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) {
     return null;
   }
 
   return {
-    n: nonce,
+    n: core.slice(9, 25),
     exp,
-    next: decodeNextCode(dest),
+    next: decodeDestChar(core[8]),
     ru: "",
   };
 }
@@ -230,21 +222,21 @@ export function relativeRedirect(
 ): NextResponse {
   if (requestContext) {
     const pub = resolvePublicOrigin(requestContext.url, requestContext.headers);
-    const res = NextResponse.redirect(new URL(path, pub.origin), 302);
+    const res = NextResponse.redirect(new URL(path, pub.origin), 303);
     res.headers.set(
       "Cache-Control",
       "private, no-store, no-cache, max-age=0, must-revalidate",
     );
-    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Referrer-Policy", "no-referrer");
     return res;
   }
 
   return new NextResponse(null, {
-    status: 302,
+    status: 303,
     headers: {
       Location: path,
       "Cache-Control": "private, no-store, no-cache, max-age=0, must-revalidate",
-      Pragma: "no-cache",
+      "Referrer-Policy": "no-referrer",
     },
   });
 }

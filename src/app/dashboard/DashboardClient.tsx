@@ -134,8 +134,8 @@ export function DashboardClient() {
   if (state === "loading") {
     return (
       <LoadingScreen
-        label="Connection Establishing..."
-        sublabel="Verifying Discord credentials & syncing your servers"
+        label="Loading Dashboard..."
+        sublabel="Syncing your server workspace"
       />
     );
   }
@@ -143,49 +143,41 @@ export function DashboardClient() {
   if (openingGuild) {
     return (
       <LoadingScreen
-        label="Connection Establishing..."
-        sublabel={`Opening ${openingGuild} · loading modules & permissions`}
+        label="Opening Server..."
+        sublabel={`${openingGuild} · loading modules`}
       />
     );
   }
 
   if (state === "guest" || !user) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6">
-        <div className="panel panel-inner relative overflow-hidden rounded-3xl p-8 text-center shadow-panel sm:p-12">
+      <div className="mx-auto max-w-md py-8">
+        <div className="glass-card relative overflow-hidden rounded-[26px] p-8 text-center sm:p-10">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-28 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(var(--brand-500)/0.25),transparent)]"
+            className="pointer-events-none absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500 to-transparent"
           />
-          <div className="relative mx-auto max-w-lg">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-950/40 px-3.5 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
-              <ShieldIcon className="size-3.5" />
-              server control center
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(var(--brand-500)/0.24),transparent)]"
+          />
+          <div className="relative">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-brand-500/35 bg-brand-950/55 text-brand-400 shadow-[0_0_30px_-8px_rgb(var(--brand-500)/0.75)]">
+              <ShieldIcon className="size-5" />
             </div>
-            <h2 className="mt-5 font-display text-[28px] font-semibold tracking-tight text-white sm:text-[34px]">
-              Select a server to manage
+            <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
+              Select a server
             </h2>
-            <p className="mt-3 text-[14px] leading-relaxed text-zinc-400">
-              Sign in with your Discord account to configure Anti-Nuke,
-              Whitelists, AutoMod, Night Mode, Welcomer, VoiceMaster, Tickets,
-              Giveaways, and Logging for any server you manage.
+            <p className="mt-2.5 text-[13.5px] leading-relaxed text-zinc-400">
+              Sign in with Discord to manage your servers.
             </p>
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="/api/auth/discord?next=/dashboard"
-                className="btn-glow relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full bg-[#5865F2] px-6 text-[14px] font-semibold text-white transition-colors hover:bg-[#4752C4]"
-              >
-                <DiscordIcon className="size-[18px]" />
-                Continue with Discord
-              </a>
-              <Link
-                href="/premium"
-                className="btn-glow relative inline-flex h-12 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-6 text-[14px] font-semibold text-white shadow-[0_10px_34px_-10px_rgb(var(--brand-500)/0.82)] transition-all hover:-translate-y-0.5 hover:brightness-110"
-              >
-                <CrownIcon className="size-4 text-brand-100" />
-                Buy Premium
-              </Link>
-            </div>
+            <a
+              href="/api/auth/discord?next=/dashboard"
+              className="btn-primary btn-glow relative mt-7 flex h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
+            >
+              <DiscordIcon className="size-[19px]" />
+              Login with Discord
+            </a>
           </div>
         </div>
       </div>

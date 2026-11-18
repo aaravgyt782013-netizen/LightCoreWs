@@ -1068,7 +1068,7 @@ export function UtilityModule({
         eyebrow="Server Management · Engagement"
         title="AutoResponder & Giveaways"
         description="Automate instant custom keyword replies and manage high-engagement community giveaways."
-        command={`${prefix}gstart 24h 1w Nitro`}
+        command={`${prefix}gstart 24h 1w VIP Role`}
       />
 
       {/* AutoResponder */}

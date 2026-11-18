@@ -415,7 +415,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             onClick={() =>
               setTransitionMsg("Redirecting to Discord OAuth2 gateway…")
             }
-            className="btn-glow relative mt-6 inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-[#5865F2] text-[14px] font-semibold text-white hover:bg-[#4752C4]"
+            className="btn-primary btn-glow relative mt-6 inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
           >
             <DiscordIcon className="size-[18px]" />
             Continue with Discord

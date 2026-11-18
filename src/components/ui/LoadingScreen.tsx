@@ -6,10 +6,10 @@ import { Wordmark } from "@/components/ui/Logo";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 
 const defaultSteps = [
-  "Connection Establishing...",
-  "Syncing Discord Gateway...",
+  "Initializing Core...",
+  "Syncing Gateway...",
   "Arming Guard Engine...",
-  "Verifying Credentials...",
+  "Preparing Workspace...",
 ];
 
 export function LoadingScreen({

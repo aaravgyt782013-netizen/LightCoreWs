@@ -1063,7 +1063,7 @@ export function PremiumClient() {
                     href={activeInvoice.supportUrl || supportUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#4752C4]"
+                    className="btn-primary btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-[13.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
                   >
                     <DiscordIcon className="size-4" />
                     Open Ticket in Support Server
@@ -1122,7 +1122,7 @@ export function PremiumClient() {
                     </p>
                     <a
                       href="/api/auth/discord?next=/premium"
-                      className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] text-[13.5px] font-semibold text-white hover:bg-[#4752C4]"
+                      className="btn-primary btn-glow relative mt-3 inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[13.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
                     >
                       <DiscordIcon className="size-4" />
                       Continue with Discord

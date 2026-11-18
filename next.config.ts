@@ -28,10 +28,15 @@ const nextConfig: NextConfig = {
             value:
               "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
           },
+          {
+            key: "Content-Security-Policy",
+            value:
+              "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'",
+          },
         ],
       },
       {
-        source: "/api/auth/:path*",
+        source: "/(api/auth|oauth)/:path*",
         headers: [
           {
             key: "Referrer-Policy",

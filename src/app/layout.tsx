@@ -109,6 +109,16 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true },
   },
+  alternates: {
+    canonical: "/",
+  },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
+        },
+      }
+    : {}),
   icons: {
     icon: [{ url: site.logo, type: "image/png" }],
     apple: [{ url: "/brand/apple-touch-icon.png" }],
@@ -116,7 +126,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#040406",
+  themeColor: "#030305",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
