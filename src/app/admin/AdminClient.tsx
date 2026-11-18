@@ -712,7 +712,6 @@ export function AdminClient() {
                             ? "Hide Servers"
                             : `Servers (${u.guildCount})`}
                         </button>
-}
                       </div>
                     </div>
 
