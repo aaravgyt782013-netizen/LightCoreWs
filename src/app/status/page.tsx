@@ -13,7 +13,7 @@ export default function StatusPage() {
     <PageShell
       eyebrow="status"
       title="System Status"
-      intro={`Every surface of ${site.name}, sampled continuously. Rolling 45-day window.`}
+      intro={`Live health checks for ${site.name} when a monitoring endpoint is configured. Historical metrics are shown only when reported by that endpoint.`}
     >
       <StatusClient />
     </PageShell>
