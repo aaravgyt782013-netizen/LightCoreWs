@@ -9,7 +9,7 @@ export function CtaSection() {
     <section className="relative py-20 sm:py-28">
       <div className="container-x">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[26px] border border-cyan-200/12 bg-ink-900 px-6 py-14 text-center shadow-panel sm:px-12 sm:py-20">
+          <div className="relative overflow-hidden rounded-[26px] border border-brand-200/12 bg-ink-900 px-6 py-14 text-center shadow-panel sm:px-12 sm:py-20">
             <div
               aria-hidden
               className="absolute inset-0 bg-[radial-gradient(62%_82%_at_50%_0%,rgba(6,182,212,0.24),transparent_72%)]"

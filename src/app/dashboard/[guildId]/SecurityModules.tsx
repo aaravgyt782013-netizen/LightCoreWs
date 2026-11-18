@@ -1366,7 +1366,7 @@ export function NightModeModule({
         className={`flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5 transition-colors ${
           nightmode.lockdownActive
             ? "border-brand-400/60 bg-brand-950/60 shadow-[0_0_42px_-12px_rgba(34,211,238,0.65)]"
-            : "border-cyan-200/10 bg-ink-900/55"
+            : "border-brand-200/10 bg-ink-900/55"
         }`}
       >
         <div>

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { DiscordIcon } from "@/components/ui/Icons";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { nav, site } from "@/lib/site";
 
 const legal = [
@@ -10,8 +13,10 @@ const legal = [
 ];
 
 export function Footer() {
+  const { config } = useSiteConfig();
+
   return (
-    <footer className="relative border-t border-cyan-200/[0.08] bg-ink-950/95">
+    <footer className="relative border-t border-brand-200/[0.08] bg-ink-950/95">
       <div className="container-x py-14">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
@@ -21,17 +26,17 @@ export function Footer() {
                 <Wordmark />
               </span>
             </Link>
-            <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-brand-400/80">
-              {site.tagline}
+            <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-brand-400/85">
+              {config.tagline}
             </p>
             <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-zinc-500">
-              {site.description}.
+              {config.description}.
             </p>
             <a
-              href={site.discord}
+              href={config.supportUrl || site.discord}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-cyan-200/15 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-200 transition-all hover:border-brand-400/50 hover:text-white"
+              className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand-200/15 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-200 transition-all hover:border-brand-400/50 hover:text-white"
             >
               <DiscordIcon className="size-4 text-[#5865F2]" />
               Join the support server
@@ -48,8 +53,16 @@ export function Footer() {
               { label: "Dashboard", href: "/dashboard" },
               { label: "Buy Premium", href: site.premium },
               { label: "Owner panel", href: site.admin },
-              { label: "Invite bot", href: site.invite, external: true },
-              { label: "Support server", href: site.discord, external: true },
+              {
+                label: "Invite bot",
+                href: config.inviteUrl || site.invite,
+                external: true,
+              },
+              {
+                label: "Support server",
+                href: config.supportUrl || site.discord,
+                external: true,
+              },
               { label: "Documentation", href: "/docs" },
             ]}
           />
@@ -58,11 +71,12 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
           <p className="font-mono text-[10.5px] tracking-wide text-zinc-600">
-            © {new Date().getFullYear()} {site.name}. All rights reserved.
+            © {new Date().getFullYear()} {config.footerCopyright || config.brandName}.
+            All rights reserved.
           </p>
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-600">
+          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
             <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-            all systems operational
+            {config.footerStatusText || "all systems operational"}
           </div>
         </div>
       </div>

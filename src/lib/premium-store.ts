@@ -1,583 +1,603 @@
 import crypto from "node:crypto";
-import { site } from "@/lib/site";
 import { kvDelete, kvGet, kvListValues, kvSet } from "@/lib/kv-store";
+import { getSiteConfig } from "@/lib/site-config-server";
 import {
   BILLING_CYCLES,
+  DURATION_PRESETS,
   PREMIUM_PLANS,
   TIER_RANK,
+  customTimeToMs,
+  defaultPerksForTier,
   type BillingCycle,
-  type OrderStatus,
-  type PaymentSettings,
-  type PremiumOrder,
+  type CustomTimeUnit,
+  type InvoiceStatus,
+  type PremiumInvoice,
+  type PremiumPerks,
   type PremiumPlanSpec,
+  type PremiumRecord,
   type PremiumSubscription,
+  type PremiumTargetType,
   type PremiumTier,
 } from "@/lib/premium-plans";
 
 export {
   BILLING_CYCLES,
+  DURATION_PRESETS,
   PREMIUM_PLANS,
   TIER_RANK,
   type BillingCycle,
-  type OrderStatus,
-  type PaymentSettings,
-  type PremiumOrder,
+  type CustomTimeUnit,
+  type InvoiceStatus,
+  type PremiumInvoice,
+  type PremiumPerks,
   type PremiumPlanSpec,
+  type PremiumRecord,
   type PremiumSubscription,
+  type PremiumTargetType,
   type PremiumTier,
 };
 
-const SETTINGS_KEY = "premium/settings";
-const SUB_PREFIX = "premium-subs/";
-const ORDER_PREFIX = "premium-orders/";
-const ORDER_TTL_MS = 20 * 60 * 1000; // 20 minutes to complete UPI scan
+const RECORD_PREFIX = "premium-v2/records/";
+const INVOICE_PREFIX = "premium-v2/invoices/";
 
-export function getPlanSpec(tier: string): PremiumPlanSpec | null {
-  return PREMIUM_PLANS.find((p) => p.id === tier) ?? null;
+function recordKey(id: string): string {
+  return `${RECORD_PREFIX}${id}`;
 }
 
-export function getCycleSpec(cycle: string) {
-  return BILLING_CYCLES.find((c) => c.id === cycle) ?? null;
+function invoiceKey(invoiceId: string): string {
+  return `${INVOICE_PREFIX}${invoiceId}`;
 }
 
-export function isValidUpiId(upi: string): boolean {
-  return /^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9.-]{2,32}$/.test(upi.trim());
+export function isRecordCurrentlyActive(
+  rec: PremiumRecord | null | undefined,
+  nowMs = Date.now(),
+): rec is PremiumRecord {
+  if (!rec || rec.status !== "active") return false;
+  if (rec.isLifetime || !rec.expiresAt) return true;
+  const exp = Date.parse(rec.expiresAt);
+  return Number.isFinite(exp) && exp > nowMs;
 }
 
-export function buildUpiUri(params: {
-  upiId: string;
-  payeeName: string;
-  amount: string;
-  orderId: string;
-  planName: string;
-}): string {
-  const note = `${site.name} ${params.planName} ${params.orderId}`.slice(0, 50);
-  const query = new URLSearchParams({
-    pa: params.upiId.trim(),
-    pn: params.payeeName.trim() || site.name,
-    am: params.amount,
-    cu: "INR",
-    tn: note,
-    tr: params.orderId,
+export function recordToSubscription(rec: PremiumRecord): PremiumSubscription {
+  return {
+    id: rec.id,
+    targetType: rec.targetType,
+    userId: rec.userId || "",
+    username: rec.username || rec.guildName || "Premium",
+    globalName: rec.globalName,
+    avatarUrl: rec.avatarUrl,
+    tier: rec.tier,
+    tierName: rec.tierName,
+    durationLabel: rec.durationLabel,
+    isLifetime: rec.isLifetime,
+    guildId: rec.guildId,
+    guildName: rec.guildName,
+    activatedAt: rec.startedAt,
+    expiresAt: rec.expiresAt,
+    invoiceId: rec.invoiceId,
+    grantedBy: rec.grantedBy,
+    pricePaid: rec.pricePaid,
+    currencySymbol: rec.currencySymbol,
+    maxServers: rec.maxServers,
+    perks: rec.perks,
+  };
+}
+
+function pickBestActiveRecord(records: PremiumRecord[]): PremiumRecord | null {
+  const now = Date.now();
+  const active = records.filter((r) => isRecordCurrentlyActive(r, now));
+  if (active.length === 0) return null;
+  active.sort((a, b) => {
+    const rankDiff = (TIER_RANK[b.tier] || 0) - (TIER_RANK[a.tier] || 0);
+    if (rankDiff !== 0) return rankDiff;
+    if (a.isLifetime !== b.isLifetime) return a.isLifetime ? -1 : 1;
+    const ea = a.expiresAt ? Date.parse(a.expiresAt) : 0;
+    const eb = b.expiresAt ? Date.parse(b.expiresAt) : 0;
+    return eb - ea;
   });
-  return `upi://pay?${query.toString()}`;
+  return active[0];
 }
 
-export async function getPaymentSettings(): Promise<PaymentSettings> {
-  const stored = await kvGet<PaymentSettings>(SETTINGS_KEY);
-  const envUpi =
-    process.env.FAMPAY_UPI_ID?.trim() ||
-    process.env.NEXT_PUBLIC_FAMPAY_UPI_ID?.trim() ||
-    "";
-  const envPayee = process.env.FAMPAY_PAYEE_NAME?.trim() || site.name;
-  const envSecret = process.env.FAMPAY_WEBHOOK_SECRET?.trim() || "";
-  const envRole = process.env.DISCORD_PREMIUM_ROLE_ID?.trim() || "";
+export async function listAllPremiumRecords(
+  limit = 500,
+): Promise<PremiumRecord[]> {
+  const all = await kvListValues<PremiumRecord>(RECORD_PREFIX, limit);
+  const valid = all.filter((r) => Boolean(r && r.id && r.tier));
+  const now = Date.now();
 
-  if (stored) {
-    return {
-      fampayUpiId: stored.fampayUpiId || envUpi,
-      payeeName: stored.payeeName || envPayee,
-      webhookSecret: envSecret || stored.webhookSecret,
-      premiumRoleId: stored.premiumRoleId || envRole,
-      updatedAt: stored.updatedAt ?? null,
-    };
-  }
-
-  const generated: PaymentSettings = {
-    fampayUpiId: envUpi,
-    payeeName: envPayee,
-    webhookSecret: envSecret || `lc_fp_${crypto.randomBytes(18).toString("hex")}`,
-    premiumRoleId: envRole,
-    updatedAt: null,
+  const bucket = (r: PremiumRecord): number => {
+    if (r.status !== "active") return 2; // revoked
+    if (isRecordCurrentlyActive(r, now)) return 0; // active / lifetime
+    return 1; // expired naturally
   };
-  await kvSet(SETTINGS_KEY, generated);
-  return generated;
+
+  return valid.sort((a, b) => {
+    const bd = bucket(a) - bucket(b);
+    if (bd !== 0) return bd;
+    return (Date.parse(b.startedAt) || 0) - (Date.parse(a.startedAt) || 0);
+  });
 }
 
-export async function updatePaymentSettings(patch: {
-  fampayUpiId?: string;
-  payeeName?: string;
-  premiumRoleId?: string;
-  regenerateSecret?: boolean;
-}): Promise<PaymentSettings> {
-  const cur = await getPaymentSettings();
-  const next: PaymentSettings = {
-    fampayUpiId:
-      typeof patch.fampayUpiId === "string"
-        ? patch.fampayUpiId.trim().slice(0, 96)
-        : cur.fampayUpiId,
-    payeeName:
-      typeof patch.payeeName === "string"
-        ? patch.payeeName.trim().slice(0, 60) || site.name
-        : cur.payeeName,
-    premiumRoleId:
-      typeof patch.premiumRoleId === "string"
-        ? patch.premiumRoleId.replace(/[^\d]/g, "").slice(0, 22)
-        : cur.premiumRoleId,
-    webhookSecret: patch.regenerateSecret
-      ? `lc_fp_${crypto.randomBytes(18).toString("hex")}`
-      : cur.webhookSecret,
-    updatedAt: new Date().toISOString(),
-  };
-  await kvSet(SETTINGS_KEY, next);
-  return next;
+export async function listActivePremiumRecords(): Promise<PremiumRecord[]> {
+  const all = await listAllPremiumRecords(500);
+  const now = Date.now();
+  return all.filter((r) => isRecordCurrentlyActive(r, now));
 }
 
-export function isSubscriptionActive(sub: PremiumSubscription | null): boolean {
-  if (!sub) return false;
-  const exp = Date.parse(sub.expiresAt);
-  return Number.isFinite(exp) && exp > Date.now();
+export async function getPremiumRecord(
+  id: string,
+): Promise<PremiumRecord | null> {
+  if (!id) return null;
+  return kvGet<PremiumRecord>(recordKey(id));
 }
 
 export async function getUserSubscription(
   userId: string,
 ): Promise<PremiumSubscription | null> {
-  if (!/^\d{15,22}$/.test(userId)) return null;
-  const sub = await kvGet<PremiumSubscription>(`${SUB_PREFIX}${userId}`);
-  if (!sub || !isSubscriptionActive(sub)) return null;
-  return sub;
+  if (!userId) return null;
+  const all = await listAllPremiumRecords(500);
+  const matching = all.filter(
+    (r) =>
+      (r.targetType === "user" || r.targetType === "both") &&
+      r.userId === userId,
+  );
+  const best = pickBestActiveRecord(matching);
+  return best ? recordToSubscription(best) : null;
 }
 
 export async function getGuildSubscription(
   guildId: string,
 ): Promise<PremiumSubscription | null> {
-  if (!/^\d{15,22}$/.test(guildId)) return null;
-  const all = await listActiveSubscriptions();
-  return all.find((s) => s.guildId === guildId) ?? null;
+  if (!guildId) return null;
+  const all = await listAllPremiumRecords(500);
+  const matching = all.filter((r) => r.guildId === guildId);
+  const best = pickBestActiveRecord(matching);
+  return best ? recordToSubscription(best) : null;
 }
 
-export async function listActiveSubscriptions(): Promise<PremiumSubscription[]> {
-  const all = await kvListValues<PremiumSubscription>(SUB_PREFIX, 500);
-  return all
-    .filter((s) => isSubscriptionActive(s))
-    .sort((a, b) => (Date.parse(b.activatedAt) || 0) - (Date.parse(a.activatedAt) || 0));
-}
-
-export async function updateSubscriptionGuild(options: {
+export async function updateSubscriptionGuild(input: {
   userId: string;
   guildId: string | null;
   guildName: string | null;
 }): Promise<PremiumSubscription | null> {
-  const sub = await getUserSubscription(options.userId);
-  if (!sub) return null;
-  const updated: PremiumSubscription = {
-    ...sub,
-    guildId: options.guildId,
-    guildName: options.guildName,
-  };
-  await kvSet(`${SUB_PREFIX}${options.userId}`, updated);
-  return updated;
-}
-
-export async function grantSubscription(input: {
-  userId: string;
-  username: string;
-  globalName: string | null;
-  avatarUrl: string | null;
-  tier: PremiumTier;
-  cycle: BillingCycle;
-  guildId: string | null;
-  guildName: string | null;
-  orderId: string;
-  utr: string | null;
-  source: PremiumSubscription["source"];
-}): Promise<PremiumSubscription> {
-  const plan = getPlanSpec(input.tier) ?? PREMIUM_PLANS[0];
-  const cyc = getCycleSpec(input.cycle) ?? BILLING_CYCLES[0];
-
-  const existing = await getUserSubscription(input.userId);
-  const now = Date.now();
-  // Extend remaining time if renewing same or lower tier
-  const baseMs =
-    existing && Date.parse(existing.expiresAt) > now
-      ? Date.parse(existing.expiresAt)
-      : now;
-  const expiresAt = new Date(baseMs + cyc.days * 86_400_000).toISOString();
-
-  const resolvedTier: PremiumTier =
-    existing && TIER_RANK[existing.tier] > TIER_RANK[input.tier]
-      ? existing.tier
-      : input.tier;
-  const resolvedPlan = getPlanSpec(resolvedTier) ?? plan;
-
-  const sub: PremiumSubscription = {
-    userId: input.userId,
-    username: input.username,
-    globalName: input.globalName,
-    avatarUrl: input.avatarUrl,
-    tier: resolvedTier,
-    tierName: resolvedPlan.name,
-    cycle: input.cycle,
-    guildId: input.guildId ?? existing?.guildId ?? null,
-    guildName: input.guildName ?? existing?.guildName ?? null,
-    activatedAt: new Date(now).toISOString(),
-    expiresAt,
-    orderId: input.orderId,
-    utr: input.utr,
-    source: input.source,
-  };
-
-  await kvSet(`${SUB_PREFIX}${input.userId}`, sub);
-
-  // Best-effort auto-assign Premium Discord role strictly to the buyer's Discord ID
-  await tryAssignPremiumDiscordRole(input.userId);
-
-  return sub;
-}
-
-export async function revokeSubscription(userId: string): Promise<void> {
-  await kvDelete(`${SUB_PREFIX}${userId}`);
-}
-
-async function tryAssignPremiumDiscordRole(userId: string): Promise<void> {
-  try {
-    const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
-    const hubGuildId = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim();
-    const settings = await getPaymentSettings();
-    if (!botToken || !hubGuildId || !settings.premiumRoleId) return;
-
-    await fetch(
-      `https://discord.com/api/v10/guilds/${hubGuildId}/members/${userId}/roles/${settings.premiumRoleId}`,
-      {
-        method: "PUT",
-        headers: { Authorization: `Bot ${botToken}` },
-        signal: AbortSignal.timeout(5000),
-      },
-    );
-  } catch {
-    // Non-fatal optional role grant.
-  }
-}
-
-export async function listOrders(limit = 200): Promise<PremiumOrder[]> {
-  const all = await kvListValues<PremiumOrder>(ORDER_PREFIX, limit);
-  const now = Date.now();
-  return all
-    .map((o) =>
-      o.status === "pending" && Date.parse(o.expiresAt) < now
-        ? { ...o, status: "expired" as const }
-        : o,
-    )
-    .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
-}
-
-export async function getOrder(orderId: string): Promise<PremiumOrder | null> {
-  if (!/^LC-[A-Z0-9]{6,12}$/.test(orderId)) return null;
-  const order = await kvGet<PremiumOrder>(`${ORDER_PREFIX}${orderId}`);
-  if (!order) return null;
-  if (order.status === "pending" && Date.parse(order.expiresAt) < Date.now()) {
-    return { ...order, status: "expired" };
-  }
-  return order;
-}
-
-export async function createPremiumOrder(input: {
-  userId: string;
-  username: string;
-  globalName: string | null;
-  avatarUrl: string | null;
-  tier: PremiumTier;
-  cycle: BillingCycle;
-  guildId: string | null;
-  guildName: string | null;
-}): Promise<
-  | { ok: true; order: PremiumOrder }
-  | { ok: false; code: "upi_not_configured"; error: string }
-> {
-  const settings = await getPaymentSettings();
-  if (!settings.fampayUpiId || !isValidUpiId(settings.fampayUpiId)) {
-    return {
-      ok: false,
-      code: "upi_not_configured",
-      error:
-        "FamPay UPI checkout is being configured by the bot owner. Complete your order via Support or check back shortly.",
-    };
-  }
-
-  const plan = getPlanSpec(input.tier) ?? PREMIUM_PLANS[0];
-  const cyc = getCycleSpec(input.cycle) ?? BILLING_CYCLES[0];
-  const baseAmount = plan.prices[cyc.id];
-
-  const existingOrders = await listOrders(250);
-
-  // Reuse an active pending order if same user + tier + cycle + guild created within last 15m
-  const reusable = existingOrders.find(
-    (o) =>
-      o.userId === input.userId &&
-      o.tier === plan.id &&
-      o.cycle === cyc.id &&
-      (o.guildId || "") === (input.guildId || "") &&
-      o.status === "pending" &&
-      o.upiId === settings.fampayUpiId &&
-      Date.parse(o.expiresAt) - Date.now() > 5 * 60_000,
+  const all = await listAllPremiumRecords(500);
+  const matching = all.filter(
+    (r) =>
+      (r.targetType === "user" || r.targetType === "both") &&
+      r.userId === input.userId,
   );
-  if (reusable) {
-    return { ok: true, order: reusable };
-  }
+  const best = pickBestActiveRecord(matching);
+  if (!best) return null;
 
-  // Pick unique paise (01..99) among currently live orders of this base amount
-  // so FamPay auto-webhook matches this exact buyer unambiguously.
-  const takenAmounts = new Set(
-    existingOrders
-      .filter((o) => o.status === "pending" || o.status === "verifying")
-      .map((o) => o.exactAmount),
-  );
-
-  let chosenPaise = 11;
-  for (let attempt = 0; attempt < 99; attempt++) {
-    const candidate = ((crypto.randomInt(1, 99) + attempt) % 98) + 1;
-    const formatted = `${baseAmount}.${String(candidate).padStart(2, "0")}`;
-    if (!takenAmounts.has(formatted)) {
-      chosenPaise = candidate;
-      break;
-    }
-  }
-  const exactAmount = `${baseAmount}.${String(chosenPaise).padStart(2, "0")}`;
-  const orderId = `LC-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
-
-  const upiUri = buildUpiUri({
-    upiId: settings.fampayUpiId,
-    payeeName: settings.payeeName,
-    amount: exactAmount,
-    orderId,
-    planName: plan.name,
-  });
-
-  const now = Date.now();
-  const order: PremiumOrder = {
-    orderId,
-    userId: input.userId,
-    username: input.username,
-    globalName: input.globalName,
-    avatarUrl: input.avatarUrl,
-    tier: plan.id,
-    tierName: plan.name,
-    cycle: cyc.id,
-    periodLabel: cyc.period,
-    baseAmount,
-    exactAmount,
-    upiId: settings.fampayUpiId,
-    payeeName: settings.payeeName,
-    upiUri,
+  const updated: PremiumRecord = {
+    ...best,
+    targetType: input.guildId ? "both" : "user",
     guildId: input.guildId,
     guildName: input.guildName,
-    status: "pending",
-    utr: null,
-    createdAt: new Date(now).toISOString(),
-    expiresAt: new Date(now + ORDER_TTL_MS).toISOString(),
-    paidAt: null,
-    verifiedBy: null,
+    updatedAt: new Date().toISOString(),
   };
-
-  await kvSet(`${ORDER_PREFIX}${orderId}`, order);
-  return { ok: true, order };
-}
-
-export async function submitOrderUtr(options: {
-  orderId: string;
-  userId: string;
-  utr: string;
-}): Promise<{ ok: true; order: PremiumOrder } | { ok: false; error: string }> {
-  const cleanUtr = options.utr.replace(/[^\d]/g, "");
-  if (cleanUtr.length !== 12) {
-    return {
-      ok: false,
-      error: "Please enter a valid 12-digit UPI UTR / Reference number.",
-    };
-  }
-
-  const order = await getOrder(options.orderId);
-  if (!order || order.userId !== options.userId) {
-    return { ok: false, error: "Order not found for your account." };
-  }
-  if (order.status === "paid") {
-    return { ok: true, order };
-  }
-  if (order.status === "rejected") {
-    return { ok: false, error: "This order was declined. Create a new order." };
-  }
-
-  // Prevent UTR replay across orders
-  const allOrders = await listOrders(400);
-  const duplicate = allOrders.find(
-    (o) => o.orderId !== order.orderId && o.utr === cleanUtr && o.status !== "rejected",
-  );
-  if (duplicate) {
-    return {
-      ok: false,
-      error: "This UTR number has already been submitted on another order.",
-    };
-  }
-
-  const updated: PremiumOrder = {
-    ...order,
-    utr: cleanUtr,
-    status: "verifying",
-  };
-  await kvSet(`${ORDER_PREFIX}${order.orderId}`, updated);
-  return { ok: true, order: updated };
-}
-
-export async function completeOrderPayment(options: {
-  orderId: string;
-  utr?: string | null;
-  verifiedBy: string;
-  source: PremiumSubscription["source"];
-}): Promise<{ order: PremiumOrder; subscription: PremiumSubscription } | null> {
-  const raw = await kvGet<PremiumOrder>(`${ORDER_PREFIX}${options.orderId}`);
-  if (!raw) return null;
-
-  const paidOrder: PremiumOrder = {
-    ...raw,
-    status: "paid",
-    utr: options.utr ?? raw.utr ?? null,
-    paidAt: raw.paidAt || new Date().toISOString(),
-    verifiedBy: options.verifiedBy,
-  };
-  await kvSet(`${ORDER_PREFIX}${raw.orderId}`, paidOrder);
-
-  // Grant Premium strictly and exclusively to paidOrder.userId
-  const subscription = await grantSubscription({
-    userId: paidOrder.userId,
-    username: paidOrder.username,
-    globalName: paidOrder.globalName,
-    avatarUrl: paidOrder.avatarUrl,
-    tier: paidOrder.tier,
-    cycle: paidOrder.cycle,
-    guildId: paidOrder.guildId,
-    guildName: paidOrder.guildName,
-    orderId: paidOrder.orderId,
-    utr: paidOrder.utr,
-    source: options.source,
-  });
-
-  return { order: paidOrder, subscription };
-}
-
-export async function rejectOrder(
-  orderId: string,
-  rejectedBy: string,
-): Promise<PremiumOrder | null> {
-  const raw = await kvGet<PremiumOrder>(`${ORDER_PREFIX}${orderId}`);
-  if (!raw || raw.status === "paid") return null;
-  const updated: PremiumOrder = {
-    ...raw,
-    status: "rejected",
-    verifiedBy: rejectedBy,
-  };
-  await kvSet(`${ORDER_PREFIX}${orderId}`, updated);
-  return updated;
+  await kvSet(recordKey(updated.id), updated);
+  return recordToSubscription(updated);
 }
 
 /**
- * Matches an incoming FamPay UPI credit notification (amount, orderId, or UTR)
- * against pending/verifying orders and auto-activates ONLY that buyer's account.
+ * Generates an official LightCore invoice (NO payment collected on website).
+ * Buyers download & submit this invoice in a Support Server ticket to receive
+ * the owner's payment QR, and receive Premium instantly within 24 hours.
  */
-export async function matchAndAutoVerifyFamPayPayment(payload: {
-  text?: string;
-  amount?: string | number;
-  orderId?: string;
-  utr?: string;
-}): Promise<
-  | { matched: true; order: PremiumOrder; subscription: PremiumSubscription }
-  | { matched: false; reason: string }
-> {
-  const text = (payload.text || "").trim();
-
-  // Extract explicit or embedded order ID (LC-XXXXXXXX)
-  const orderIdMatch =
-    (payload.orderId || "").toUpperCase().match(/LC-[A-F0-9]{6,12}/)?.[0] ||
-    text.toUpperCase().match(/LC-[A-F0-9]{6,12}/)?.[0] ||
-    null;
-
-  // Extract 12-digit UTR if present
-  const utrMatch =
-    (payload.utr || "").replace(/[^\d]/g, "").match(/^\d{12}$/)?.[0] ||
-    text.match(/\b(\d{12})\b/)?.[1] ||
-    null;
-
-  // Extract exact amount (e.g. ₹299.18, Rs. 499.42, INR 749.05)
-  let parsedAmount: number | null = null;
-  if (payload.amount !== undefined && payload.amount !== "") {
-    const cleaned = String(payload.amount).replace(/[^0-9.]/g, "");
-    const n = Number(cleaned);
-    if (Number.isFinite(n) && n > 0) parsedAmount = n;
-  }
-  if (parsedAmount === null && text) {
-    const m =
-      text.match(/(?:₹|Rs\.?|INR)\s*([0-9,]+(?:\.[0-9]{1,2})?)/i) ||
-      text.match(/received\s+([0-9,]+(?:\.[0-9]{1,2})?)/i);
-    if (m?.[1]) {
-      const n = Number(m[1].replace(/,/g, ""));
-      if (Number.isFinite(n) && n > 0) parsedAmount = n;
-    }
+export async function createPremiumInvoice(input: {
+  userId: string;
+  username: string;
+  globalName: string | null;
+  avatarUrl: string | null;
+  email?: string | null;
+  tier: PremiumTier;
+  cycle: BillingCycle;
+  guildId?: string | null;
+  guildName?: string | null;
+  buyerNote?: string | null;
+}): Promise<{ ok: true; invoice: PremiumInvoice } | { ok: false; error: string }> {
+  const plan = PREMIUM_PLANS.find((p) => p.id === input.tier);
+  const cycleSpec = BILLING_CYCLES.find((c) => c.id === input.cycle);
+  if (!plan || !cycleSpec) {
+    return { ok: false, error: "Invalid plan or billing duration selected." };
   }
 
-  // Ensure notification looks like incoming money (ignore outgoing "paid/sent/debited")
+  const siteCfg = await getSiteConfig();
+  const planCfg = siteCfg.pricing[plan.id];
+  const amount = planCfg ? planCfg[cycleSpec.id] : plan.prices[cycleSpec.id];
+  const tierName = planCfg?.name || plan.name;
+  const tierBadge = planCfg?.badge || plan.badge;
+
+  const now = new Date();
+  const dateStamp = [
+    now.getUTCFullYear(),
+    String(now.getUTCMonth() + 1).padStart(2, "0"),
+    String(now.getUTCDate()).padStart(2, "0"),
+  ].join("");
+  const randSuffix = crypto.randomBytes(3).toString("hex").toUpperCase();
+  const invoiceId = `LC-INV-${dateStamp}-${randSuffix}`;
+
+  const verifyHash = crypto
+    .createHash("sha256")
+    .update(`${invoiceId}:${input.userId}:${plan.id}:${amount}:${now.toISOString()}`)
+    .digest("hex")
+    .slice(0, 8)
+    .toUpperCase();
+
+  const invoice: PremiumInvoice = {
+    invoiceId,
+    verificationCode: `VRF-${verifyHash}`,
+    createdAt: now.toISOString(),
+    userId: input.userId,
+    username: input.username,
+    globalName: input.globalName,
+    avatarUrl: input.avatarUrl,
+    email: input.email ? input.email.trim().slice(0, 120) : null,
+    guildId: input.guildId ? input.guildId.trim().slice(0, 24) : null,
+    guildName: input.guildName ? input.guildName.trim().slice(0, 100) : null,
+    tier: plan.id,
+    tierName,
+    tierBadge,
+    features: [...plan.features],
+    cycle: cycleSpec.id,
+    durationLabel: `${cycleSpec.period} (${cycleSpec.days} Days)`,
+    durationDays: cycleSpec.days,
+    amount,
+    currencySymbol: siteCfg.currencySymbol || "₹",
+    currencyCode: siteCfg.currencyCode || "INR",
+    paymentMethod: "Support Server Ticket · Owner QR",
+    activationSla: siteCfg.activationSla || "Instant activation within 24 hours",
+    supportUrl: siteCfg.supportUrl,
+    brandName: siteCfg.brandName,
+    buyerNote: input.buyerNote ? input.buyerNote.trim().slice(0, 240) : null,
+    status: "pending_ticket",
+    fulfilledAt: null,
+    fulfilledBy: null,
+    linkedRecordId: null,
+  };
+
+  await kvSet(invoiceKey(invoiceId), invoice);
+  return { ok: true, invoice };
+}
+
+export async function getPremiumInvoice(
+  invoiceId: string,
+): Promise<PremiumInvoice | null> {
+  if (!invoiceId) return null;
+  return kvGet<PremiumInvoice>(invoiceKey(invoiceId));
+}
+
+export async function listPremiumInvoices(
+  limit = 200,
+): Promise<PremiumInvoice[]> {
+  const all = await kvListValues<PremiumInvoice>(INVOICE_PREFIX, limit);
+  return all
+    .filter((i) => Boolean(i && i.invoiceId && i.userId))
+    .sort(
+      (a, b) =>
+        (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0),
+    );
+}
+
+export async function updateInvoiceStatus(input: {
+  invoiceId: string;
+  status: InvoiceStatus;
+  actor?: string;
+  linkedRecordId?: string | null;
+}): Promise<PremiumInvoice | null> {
+  const inv = await getPremiumInvoice(input.invoiceId);
+  if (!inv) return null;
+  const updated: PremiumInvoice = {
+    ...inv,
+    status: input.status,
+    fulfilledAt:
+      input.status === "fulfilled" ? new Date().toISOString() : inv.fulfilledAt,
+    fulfilledBy: input.actor ?? inv.fulfilledBy,
+    linkedRecordId:
+      input.linkedRecordId !== undefined
+        ? input.linkedRecordId
+        : inv.linkedRecordId,
+  };
+  await kvSet(invoiceKey(updated.invoiceId), updated);
+  return updated;
+}
+
+export async function deletePremiumInvoice(invoiceId: string): Promise<boolean> {
+  const existing = await getPremiumInvoice(invoiceId);
+  if (!existing) return false;
+  await kvDelete(invoiceKey(invoiceId));
+  return true;
+}
+
+async function tryAssignDiscordPremiumRole(userId: string | null): Promise<void> {
+  if (!userId) return;
+  const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
+  const supportGuild = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim();
+  const siteCfg = await getSiteConfig();
+  const roleId = siteCfg.premiumRoleId?.trim();
+  if (!botToken || !supportGuild || !roleId) return;
+
+  try {
+    await fetch(
+      `https://discord.com/api/v10/guilds/${supportGuild}/members/${userId}/roles/${roleId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          "X-Audit-Log-Reason": `${siteCfg.brandName} Premium activated`,
+        },
+        signal: AbortSignal.timeout(4000),
+      },
+    );
+  } catch {
+    // Non-fatal optional sync.
+  }
+}
+
+export async function grantPremiumRecord(input: {
+  targetType: PremiumTargetType;
+  userId?: string | null;
+  username?: string | null;
+  globalName?: string | null;
+  avatarUrl?: string | null;
+  guildId?: string | null;
+  guildName?: string | null;
+  tier: PremiumTier;
+  customTierName?: string | null;
+  durationPreset: string;
+  customAmount?: number;
+  customUnit?: CustomTimeUnit;
+  pricePaid: number;
+  currencyCode?: string;
+  currencySymbol?: string;
+  paymentMethod?: string;
+  paymentReference?: string | null;
+  invoiceId?: string | null;
+  ticketId?: string | null;
+  grantedBy: string;
+  grantedById: string;
+  maxServers?: number;
+  perks?: Partial<PremiumPerks>;
+  notes?: string | null;
+}): Promise<{ ok: true; record: PremiumRecord } | { ok: false; error: string }> {
+  const cleanUserId = (input.userId || "").replace(/\D/g, "").trim();
+  const cleanGuildId = (input.guildId || "").replace(/\D/g, "").trim();
+
   if (
-    text &&
-    /\b(debited|sent to|paid to|failed|declined)\b/i.test(text) &&
-    !/\b(received|credited)\b/i.test(text)
+    (input.targetType === "user" || input.targetType === "both") &&
+    !/^\d{15,22}$/.test(cleanUserId)
   ) {
-    return { matched: false, reason: "Ignored non-credit notification." };
-  }
-
-  const allOrders = await listOrders(300);
-  const candidates = allOrders.filter(
-    (o) => o.status === "pending" || o.status === "verifying",
-  );
-
-  let target: PremiumOrder | undefined;
-
-  if (orderIdMatch) {
-    const byId = candidates.find((o) => o.orderId === orderIdMatch);
-    if (byId) {
-      // If amount was also supplied, ensure buyer paid at least exactAmount
-      if (
-        parsedAmount === null ||
-        parsedAmount + 0.001 >= Number(byId.exactAmount)
-      ) {
-        target = byId;
-      }
-    }
-  }
-
-  if (!target && utrMatch) {
-    const byUtr = candidates.find((o) => o.utr === utrMatch);
-    if (
-      byUtr &&
-      (parsedAmount === null || parsedAmount + 0.001 >= byUtr.baseAmount)
-    ) {
-      target = byUtr;
-    }
-  }
-
-  if (!target && parsedAmount !== null) {
-    const formatted = parsedAmount.toFixed(2);
-    // Strict exact rupee+paise match (never guesses on bare whole amount)
-    const exactMatches = candidates.filter((o) => o.exactAmount === formatted);
-    if (exactMatches.length === 1) {
-      target = exactMatches[0];
-    }
-  }
-
-  if (!target) {
     return {
-      matched: false,
-      reason: "No active order matched the incoming payment amount/reference.",
+      ok: false,
+      error: "Enter a valid Discord User ID (15–22 digits).",
+    };
+  }
+  if (
+    (input.targetType === "guild" || input.targetType === "both") &&
+    !/^\d{15,22}$/.test(cleanGuildId)
+  ) {
+    return {
+      ok: false,
+      error: "Enter a valid Discord Guild / Server ID (15–22 digits).",
     };
   }
 
-  const completed = await completeOrderPayment({
-    orderId: target.orderId,
-    utr: utrMatch ?? target.utr,
-    verifiedBy: "FamPay Auto-Webhook",
-    source: "fampay-auto",
-  });
-
-  if (!completed) {
-    return { matched: false, reason: "Failed to finalize order." };
+  const plan = PREMIUM_PLANS.find((p) => p.id === input.tier);
+  if (!plan) {
+    return { ok: false, error: "Invalid Premium tier selected." };
   }
 
-  return { matched: true, ...completed };
+  // Resolve duration
+  let isLifetime = false;
+  let durationMs: number | null = 30 * 86_400_000;
+  let durationLabel = "1 Month (30 Days)";
+
+  if (input.durationPreset === "lifetime") {
+    isLifetime = true;
+    durationMs = null;
+    durationLabel = "Lifetime";
+  } else if (input.durationPreset === "custom") {
+    const unit: CustomTimeUnit = [
+      "minutes",
+      "hours",
+      "days",
+      "months",
+      "years",
+    ].includes(input.customUnit as string)
+      ? (input.customUnit as CustomTimeUnit)
+      : "days";
+    const resolved = customTimeToMs(Number(input.customAmount) || 30, unit);
+    durationMs = resolved.ms;
+    durationLabel = resolved.label;
+  } else {
+    const preset = DURATION_PRESETS.find((d) => d.id === input.durationPreset);
+    if (preset) {
+      isLifetime = Boolean(preset.isLifetime);
+      durationMs = preset.ms;
+      durationLabel = preset.label;
+    }
+  }
+
+  const siteCfg = await getSiteConfig();
+  const now = Date.now();
+  const startedAt = new Date(now).toISOString();
+  const expiresAt =
+    isLifetime || durationMs === null
+      ? null
+      : new Date(now + durationMs).toISOString();
+
+  const id = `PRM-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+  const basePerks = defaultPerksForTier(plan.id);
+  const perks: PremiumPerks = {
+    noPrefix:
+      typeof input.perks?.noPrefix === "boolean"
+        ? input.perks.noPrefix
+        : basePerks.noPrefix,
+    vanityGuard:
+      typeof input.perks?.vanityGuard === "boolean"
+        ? input.perks.vanityGuard
+        : basePerks.vanityGuard,
+    antiBetray:
+      typeof input.perks?.antiBetray === "boolean"
+        ? input.perks.antiBetray
+        : basePerks.antiBetray,
+    customBot:
+      typeof input.perks?.customBot === "boolean"
+        ? input.perks.customBot
+        : basePerks.customBot,
+    prioritySupport:
+      typeof input.perks?.prioritySupport === "boolean"
+        ? input.perks.prioritySupport
+        : basePerks.prioritySupport,
+  };
+
+  const currencyCode = (
+    input.currencyCode ||
+    siteCfg.currencyCode ||
+    "INR"
+  )
+    .trim()
+    .slice(0, 8)
+    .toUpperCase();
+
+  const currencySymbol =
+    currencyCode === "FREE"
+      ? ""
+      : (input.currencySymbol || siteCfg.currencySymbol || "₹")
+          .trim()
+          .slice(0, 6);
+
+  const safePrice =
+    currencyCode === "FREE"
+      ? 0
+      : Math.max(0, Math.min(9_999_999, Number(input.pricePaid) || 0));
+
+  const useUser = input.targetType === "user" || input.targetType === "both";
+  const useGuild = input.targetType === "guild" || input.targetType === "both";
+
+  const record: PremiumRecord = {
+    id,
+    targetType: input.targetType,
+    userId: useUser ? cleanUserId : null,
+    username: useUser
+      ? (input.username || "").trim().replace(/^@/, "").slice(0, 64) ||
+        `user_${cleanUserId.slice(-4)}`
+      : null,
+    globalName: useUser
+      ? (input.globalName || "").trim().slice(0, 64) || null
+      : null,
+    avatarUrl: useUser ? input.avatarUrl || null : null,
+    guildId: useGuild ? cleanGuildId : null,
+    guildName: useGuild
+      ? (input.guildName || "").trim().slice(0, 100) ||
+        `Server ${cleanGuildId.slice(-4)}`
+      : null,
+    tier: plan.id,
+    tierName:
+      (input.customTierName || "").trim().slice(0, 48) ||
+      siteCfg.pricing[plan.id]?.name ||
+      plan.name,
+    durationLabel,
+    durationMs,
+    isLifetime,
+    pricePaid: safePrice,
+    currencyCode,
+    currencySymbol,
+    paymentMethod:
+      (input.paymentMethod || "Support Ticket QR").trim().slice(0, 48),
+    paymentReference:
+      (input.paymentReference || "").trim().slice(0, 96) || null,
+    invoiceId: (input.invoiceId || "").trim().slice(0, 40) || null,
+    ticketId: (input.ticketId || "").trim().slice(0, 48) || null,
+    grantedBy: (input.grantedBy || "Owner").trim().slice(0, 64),
+    grantedById: input.grantedById,
+    maxServers: Math.max(1, Math.min(50, Math.round(Number(input.maxServers) || 1))),
+    perks,
+    notes: (input.notes || "").trim().slice(0, 400) || null,
+    startedAt,
+    expiresAt,
+    updatedAt: startedAt,
+    status: "active",
+    revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
+  };
+
+  await kvSet(recordKey(record.id), record);
+
+  if (record.invoiceId) {
+    await updateInvoiceStatus({
+      invoiceId: record.invoiceId,
+      status: "fulfilled",
+      actor: record.grantedBy,
+      linkedRecordId: record.id,
+    });
+  }
+
+  await tryAssignDiscordPremiumRole(record.userId);
+  return { ok: true, record };
+}
+
+export async function extendPremiumRecord(input: {
+  id: string;
+  addDays: number;
+  actor: string;
+}): Promise<PremiumRecord | null> {
+  const existing = await getPremiumRecord(input.id);
+  if (!existing) return null;
+
+  const addMs = Math.max(1, Math.min(3650, Math.round(input.addDays))) * 86_400_000;
+  const now = Date.now();
+  const baseEnd =
+    existing.expiresAt && Date.parse(existing.expiresAt) > now && existing.status === "active"
+      ? Date.parse(existing.expiresAt)
+      : now;
+  const nextExpires = new Date(baseEnd + addMs).toISOString();
+
+  const updated: PremiumRecord = {
+    ...existing,
+    isLifetime: false,
+    status: "active",
+    revokedAt: null,
+    revokedBy: null,
+    revokeReason: null,
+    expiresAt: nextExpires,
+    durationMs: (existing.durationMs || 0) + addMs,
+    durationLabel: `${existing.durationLabel} (+${Math.round(input.addDays)}d)`,
+    updatedAt: new Date(now).toISOString(),
+    notes: existing.notes
+      ? `${existing.notes} · Extended +${Math.round(input.addDays)}d by ${input.actor}`
+      : `Extended +${Math.round(input.addDays)}d by ${input.actor}`,
+  };
+
+  await kvSet(recordKey(updated.id), updated);
+  return updated;
+}
+
+export async function revokePremiumRecord(input: {
+  id: string;
+  actor: string;
+  reason?: string | null;
+}): Promise<PremiumRecord | null> {
+  const existing = await getPremiumRecord(input.id);
+  if (!existing) return null;
+  const nowIso = new Date().toISOString();
+  const updated: PremiumRecord = {
+    ...existing,
+    status: "revoked",
+    revokedAt: nowIso,
+    revokedBy: input.actor,
+    revokeReason: (input.reason || "").trim().slice(0, 200) || null,
+    updatedAt: nowIso,
+  };
+  await kvSet(recordKey(updated.id), updated);
+  return updated;
+}
+
+export async function deletePremiumRecord(id: string): Promise<boolean> {
+  const existing = await getPremiumRecord(id);
+  if (!existing) return false;
+  await kvDelete(recordKey(id));
+  return true;
 }

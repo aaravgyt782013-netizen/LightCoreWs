@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, unsealSession } from "@/lib/session";
 import {
-  getPaymentSettings,
   getUserSubscription,
-  isValidUpiId,
-  listOrders,
+  listPremiumInvoices,
   updateSubscriptionGuild,
 } from "@/lib/premium-store";
 import { fetchManageableGuilds } from "@/lib/discord-guilds";
@@ -14,42 +12,34 @@ import { ensureSessionUserRecorded } from "@/lib/auth-store";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const settings = await getPaymentSettings();
-  const fampayEnabled = Boolean(
-    settings.fampayUpiId && isValidUpiId(settings.fampayUpiId),
-  );
-
   const session = unsealSession(req.cookies.get(SESSION_COOKIE)?.value);
   if (!session) {
     return NextResponse.json(
       {
         authenticated: false,
-        fampayEnabled,
         subscription: null,
-        recentOrders: [],
+        invoices: [],
       },
       { headers: { "Cache-Control": "no-store, max-age=0" } },
     );
   }
 
-  const [subscription, allOrders] = await Promise.all([
+  const [subscription, allInvoices] = await Promise.all([
     getUserSubscription(session.user.id),
-    listOrders(120),
+    listPremiumInvoices(150),
     ensureSessionUserRecorded(session),
   ]);
 
-  // Strictly return ONLY orders belonging to this exact authenticated Discord user
-  const recentOrders = allOrders
-    .filter((o) => o.userId === session.user.id)
-    .slice(0, 10);
+  const invoices = allInvoices
+    .filter((i) => i.userId === session.user.id)
+    .slice(0, 12);
 
   return NextResponse.json(
     {
       authenticated: true,
       isOwner: isOwnerId(session.user.id),
-      fampayEnabled,
       subscription,
-      recentOrders,
+      invoices,
     },
     { headers: { "Cache-Control": "no-store, max-age=0" } },
   );

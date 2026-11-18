@@ -7,11 +7,11 @@ import {
 import { fetchBotGuilds } from "@/lib/discord-guilds";
 import { getLogs, getRawLogCount } from "@/lib/log-store";
 import {
-  getPaymentSettings,
-  isValidUpiId,
-  listActiveSubscriptions,
-  listOrders,
+  isRecordCurrentlyActive,
+  listAllPremiumRecords,
+  listPremiumInvoices,
 } from "@/lib/premium-store";
+import { getSiteConfig } from "@/lib/site-config-server";
 import { getStorageEngineName } from "@/lib/kv-store";
 import { site } from "@/lib/site";
 
@@ -22,8 +22,6 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   const { session } = auth;
-
-  // Ensure the owner's own active login is always recorded & visible immediately.
   await ensureSessionUserRecorded(session);
 
   const [
@@ -31,27 +29,36 @@ export async function GET(req: NextRequest) {
     botGuildsData,
     logsData,
     storedLogs,
-    paymentSettings,
-    subscriptions,
-    orders,
+    premiumRecords,
+    invoices,
+    siteConfig,
   ] = await Promise.all([
     listAuthorizedUsers(),
     fetchBotGuilds(),
-    getLogs({ includePrivate: true, limit: 50 }),
+    getLogs({ includePrivate: true, limit: 60 }),
     getRawLogCount(),
-    getPaymentSettings(),
-    listActiveSubscriptions(),
-    listOrders(100),
+    listAllPremiumRecords(500),
+    listPremiumInvoices(200),
+    getSiteConfig(),
   ]);
 
   const avatarUrl = session.user.avatar
     ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
     : null;
 
-  const origin = new URL(req.url).origin;
-  const fampayConfigured = Boolean(
-    paymentSettings.fampayUpiId && isValidUpiId(paymentSettings.fampayUpiId),
+  const now = Date.now();
+  const activeRecords = premiumRecords.filter((r) =>
+    isRecordCurrentlyActive(r, now),
   );
+  const activePremiumUsers = activeRecords.filter(
+    (r) => r.targetType === "user" || r.targetType === "both",
+  ).length;
+  const activePremiumGuilds = activeRecords.filter(
+    (r) => r.targetType === "guild" || r.targetType === "both",
+  ).length;
+  const pendingInvoices = invoices.filter(
+    (i) => i.status === "pending_ticket",
+  ).length;
 
   return NextResponse.json(
     {
@@ -63,16 +70,16 @@ export async function GET(req: NextRequest) {
       },
       config: {
         ownerIds: getOwnerIds(),
-        clientId: site.clientId,
-        prefix: site.prefix,
-        oauthScopes:
-          process.env.DISCORD_OAUTH_SCOPES?.trim() || site.oauthScopes,
+        clientId: process.env.DISCORD_CLIENT_ID || site.clientId,
+        prefix: siteConfig.prefix || site.prefix,
+        oauthScopes: site.oauthScopes,
         autoJoinGuildId: process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim() || null,
         storageEngine: getStorageEngineName(),
         integrations: {
           oauthConfigured: Boolean(
-            process.env.DISCORD_CLIENT_SECRET?.trim() &&
-              (process.env.SESSION_SECRET?.trim().length ?? 0) >= 16,
+            process.env.DISCORD_CLIENT_SECRET &&
+              process.env.SESSION_SECRET &&
+              process.env.SESSION_SECRET.length >= 16,
           ),
           botTokenConfigured: Boolean(process.env.DISCORD_BOT_TOKEN?.trim()),
           logSecretConfigured: Boolean(process.env.LOG_INGEST_SECRET?.trim()),
@@ -80,11 +87,9 @@ export async function GET(req: NextRequest) {
             process.env.DISCORD_LOG_WEBHOOK_URL?.trim(),
           ),
           autoJoinConfigured: Boolean(
-            process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim() &&
-              process.env.DISCORD_BOT_TOKEN?.trim(),
+            process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim(),
           ),
           botApiConfigured: Boolean(process.env.BOT_API_URL?.trim()),
-          fampayConfigured,
         },
       },
       stats: {
@@ -92,18 +97,16 @@ export async function GET(req: NextRequest) {
         joinCapableUsers: authorizedUsers.filter((u) => u.hasJoinScope).length,
         botGuilds: botGuildsData ? botGuildsData.guilds.length : null,
         storedLogs,
-        activePremium: subscriptions.length,
-        pendingOrders: orders.filter(
-          (o) => o.status === "verifying" || o.status === "pending",
-        ).length,
+        activePremium: activeRecords.length,
+        activePremiumUsers,
+        activePremiumGuilds,
+        totalPremiumRecords: premiumRecords.length,
+        pendingInvoices,
       },
+      siteConfig,
       premium: {
-        settings: {
-          ...paymentSettings,
-          webhookUrl: `${origin}/api/premium/webhook/fampay`,
-        },
-        subscriptions,
-        orders,
+        records: premiumRecords,
+        invoices,
       },
       botGuilds: botGuildsData?.guilds ?? [],
       users: authorizedUsers,

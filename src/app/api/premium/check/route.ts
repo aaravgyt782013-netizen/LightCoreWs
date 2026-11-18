@@ -8,8 +8,8 @@ import {
 export const dynamic = "force-dynamic";
 
 /**
- * Authenticated lookup for the LightCore Discord bot to enforce account-locked
- * No-Prefix, Vanity Guard, Anti-Betray, and Ultra Pro features.
+ * Authenticated lookup for the LightCore Discord bot to verify User & Guild
+ * Premium status, tier, perks, lifetime status, and expiry countdown.
  */
 export async function GET(req: NextRequest) {
   const secret =
@@ -39,20 +39,30 @@ export async function GET(req: NextRequest) {
       userPremium: userSub
         ? {
             active: true,
+            id: userSub.id,
             userId: userSub.userId,
             tier: userSub.tier,
             tierName: userSub.tierName,
+            isLifetime: userSub.isLifetime,
             guildId: userSub.guildId,
+            grantedBy: userSub.grantedBy,
+            perks: userSub.perks,
+            activatedAt: userSub.activatedAt,
             expiresAt: userSub.expiresAt,
           }
         : { active: false },
       guildPremium: guildSub
         ? {
             active: true,
+            id: guildSub.id,
             guildId: guildSub.guildId,
-            ownerUserId: guildSub.userId,
+            ownerUserId: guildSub.userId || null,
             tier: guildSub.tier,
             tierName: guildSub.tierName,
+            isLifetime: guildSub.isLifetime,
+            grantedBy: guildSub.grantedBy,
+            perks: guildSub.perks,
+            activatedAt: guildSub.activatedAt,
             expiresAt: guildSub.expiresAt,
           }
         : { active: false },

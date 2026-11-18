@@ -40,7 +40,8 @@ type UserPremium = {
   tierName: string;
   guildId: string | null;
   guildName: string | null;
-  expiresAt: string;
+  expiresAt: string | null;
+  isLifetime?: boolean;
 };
 
 export function DashboardClient() {
@@ -214,7 +215,7 @@ export function DashboardClient() {
                 </span>
               )}
               {premium && (
-                <span className="inline-flex items-center gap-1 rounded-md border border-cyan-300/45 bg-gradient-to-r from-brand-600/30 to-sky-500/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-100">
+                <span className="inline-flex items-center gap-1 rounded-md border border-brand-300/45 bg-gradient-to-r from-brand-600/30 to-sky-500/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-100">
                   <CrownIcon className="size-2.5 text-brand-300" />
                   {premium.tierName}
                 </span>
@@ -290,8 +291,8 @@ export function DashboardClient() {
               </p>
               <p className="mt-0.5 text-[12.5px] text-zinc-400">
                 {premium
-                  ? `Account-locked until ${new Date(premium.expiresAt).toLocaleDateString()}${premium.guildName ? ` · Bound to ${premium.guildName}` : " · Assign a server slot anytime"}`
-                  : "Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Protection, No-Prefix & Custom Branded Bot — instant FamPay UPI from ₹299/mo."}
+                  ? `${premium.expiresAt ? `Valid until ${new Date(premium.expiresAt).toLocaleDateString()}` : "Lifetime access"}${premium.guildName ? ` · Bound to ${premium.guildName}` : " · Assign a server slot anytime"}`
+                  : "Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Protection, No-Prefix & Custom Branded Bot — generate your invoice & activate via Support Ticket from ₹299/mo."}
               </p>
             </div>
           </div>
@@ -402,7 +403,7 @@ export function DashboardClient() {
                   handleOpenGuild(g);
                 }
               }}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-cyan-200/[0.09] bg-ink-900/85 shadow-panel transition-all duration-300 ease-smooth ${
+              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-brand-200/[0.09] bg-ink-900/85 shadow-panel transition-all duration-300 ease-smooth ${
                 g.canManage
                   ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/50 hover:shadow-[0_22px_55px_-22px_rgba(6,182,212,0.55)]"
                   : "opacity-70"

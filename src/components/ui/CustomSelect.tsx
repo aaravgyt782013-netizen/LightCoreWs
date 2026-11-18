@@ -232,8 +232,8 @@ export function CustomSelect({
                 isSelected
                   ? "border border-brand-400/40 bg-brand-500/[0.16] text-white shadow-[inset_0_1px_0_rgba(165,243,252,0.12)]"
                   : isHighlighted
-                    ? "border border-transparent bg-cyan-300/[0.07] text-white"
-                    : "border border-transparent text-zinc-200 hover:bg-cyan-300/[0.06] hover:text-white"
+                    ? "border border-transparent bg-brand-300/[0.07] text-white"
+                    : "border border-transparent text-zinc-200 hover:bg-brand-300/[0.06] hover:text-white"
               }`}
             >
               <span className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -303,7 +303,7 @@ export function CustomSelect({
         className={`group flex w-full items-center justify-between gap-2 rounded-xl border bg-ink-950/90 text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/40 disabled:cursor-not-allowed disabled:opacity-50 ${heightCls} ${
           open
             ? "border-brand-400/65 shadow-[0_0_0_3px_rgba(6,182,212,0.16)]"
-            : "border-cyan-200/[0.12] hover:border-brand-400/40 hover:bg-ink-900/90"
+            : "border-brand-200/[0.12] hover:border-brand-400/40 hover:bg-ink-900/90"
         }`}
       >
         <span className="flex min-w-0 flex-1 items-center gap-2">
@@ -362,23 +362,23 @@ export function CustomSelect({
                 className="pb-safe relative z-10 w-full animate-sheet-up overflow-hidden rounded-t-3xl border-t border-brand-400/35 bg-ink-900/98 shadow-[0_-24px_70px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
               >
                 <div className="flex justify-center pt-3">
-                  <span className="h-1 w-11 rounded-full bg-cyan-200/20" />
+                  <span className="h-1 w-11 rounded-full bg-brand-200/20" />
                 </div>
-                <div className="flex items-center justify-between border-b border-cyan-200/[0.08] px-4 pb-3 pt-2.5">
+                <div className="flex items-center justify-between border-b border-brand-200/[0.08] px-4 pb-3 pt-2.5">
                   <p className="font-display text-[15px] font-semibold text-white">
                     {title || placeholder}
                   </p>
                   <button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="rounded-full border border-cyan-200/15 bg-ink-950/70 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-zinc-300 active:bg-brand-600/20"
+                    className="rounded-full border border-brand-200/15 bg-ink-950/70 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-zinc-300 active:bg-brand-600/20"
                   >
                     Done
                   </button>
                 </div>
 
                 {enableSearch && (
-                  <div className="border-b border-cyan-200/[0.07] px-3.5 py-2.5">
+                  <div className="border-b border-brand-200/[0.07] px-3.5 py-2.5">
                     <div className="relative">
                       <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-brand-400/70" />
                       <input
@@ -387,7 +387,7 @@ export function CustomSelect({
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Filter options…"
-                        className="h-10 w-full rounded-xl border border-cyan-200/12 bg-ink-950/90 pl-9 pr-3 text-[13px] text-white placeholder:text-zinc-500 focus:border-brand-400/60 focus:outline-none"
+                        className="h-10 w-full rounded-xl border border-brand-200/12 bg-ink-950/90 pl-9 pr-3 text-[13px] text-white placeholder:text-zinc-500 focus:border-brand-400/60 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -412,7 +412,7 @@ export function CustomSelect({
                 className="z-[130] animate-pop-in overflow-hidden rounded-2xl border border-brand-400/30 bg-ink-900/98 shadow-[0_24px_65px_-12px_rgba(0,0,0,0.92),0_0_35px_-12px_rgba(6,182,212,0.4)] backdrop-blur-2xl"
               >
                 {enableSearch && (
-                  <div className="border-b border-cyan-200/[0.08] p-2">
+                  <div className="border-b border-brand-200/[0.08] p-2">
                     <div className="relative">
                       <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-brand-400/75" />
                       <input
@@ -421,7 +421,7 @@ export function CustomSelect({
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="Search…"
-                        className="h-8 w-full rounded-lg border border-cyan-200/10 bg-ink-950/90 pl-8 pr-2.5 text-[12px] text-white placeholder:text-zinc-500 focus:border-brand-400/55 focus:outline-none"
+                        className="h-8 w-full rounded-lg border border-brand-200/10 bg-ink-950/90 pl-8 pr-2.5 text-[12px] text-white placeholder:text-zinc-500 focus:border-brand-400/55 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -536,7 +536,7 @@ export function ColorSwatchSelect({
         className={`flex h-10 w-full items-center justify-between gap-2.5 rounded-xl border bg-ink-950/90 px-3.5 text-left transition-all ${
           open
             ? "border-brand-400/65 shadow-[0_0_0_3px_rgba(6,182,212,0.16)]"
-            : "border-cyan-200/[0.12] hover:border-brand-400/40"
+            : "border-brand-200/[0.12] hover:border-brand-400/40"
         }`}
       >
         <span className="flex items-center gap-2.5">
@@ -591,7 +591,7 @@ export function ColorSwatchSelect({
               );
             })}
           </div>
-          <div className="mt-3 flex items-center gap-2 border-t border-cyan-200/[0.08] pt-3">
+          <div className="mt-3 flex items-center gap-2 border-t border-brand-200/[0.08] pt-3">
             <span className="font-mono text-[10px] uppercase text-zinc-400">
               Hex
             </span>
@@ -604,7 +604,7 @@ export function ColorSwatchSelect({
                 onChange(v.startsWith("#") ? v : `#${v}`);
               }}
               placeholder="#06b6d4"
-              className="h-8 flex-1 rounded-lg border border-cyan-200/12 bg-ink-950 px-2.5 font-mono text-[12px] text-white focus:border-brand-400/60 focus:outline-none"
+              className="h-8 flex-1 rounded-lg border border-brand-200/12 bg-ink-950 px-2.5 font-mono text-[12px] text-white focus:border-brand-400/60 focus:outline-none"
             />
             <button
               type="button"

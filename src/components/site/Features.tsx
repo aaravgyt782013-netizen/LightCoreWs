@@ -40,7 +40,7 @@ export function Features() {
                   className={`group relative flex min-w-[168px] items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-300 ${
                     isActive
                       ? "border-brand-400/45 bg-brand-950/55 text-white shadow-[inset_0_1px_0_rgba(165,243,252,0.1),0_18px_45px_-28px_rgba(6,182,212,0.85)]"
-                      : "border-cyan-200/[0.08] bg-white/[0.015] text-zinc-400 hover:border-brand-400/25 hover:bg-cyan-300/[0.04] hover:text-zinc-100"
+                      : "border-brand-200/[0.08] bg-white/[0.015] text-zinc-400 hover:border-brand-400/25 hover:bg-brand-300/[0.04] hover:text-zinc-100"
                   }`}
                 >
                   <span

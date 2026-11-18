@@ -11,26 +11,26 @@ export default {
     extend: {
       colors: {
         ink: {
-          950: "#03070c",
-          900: "#060d16",
-          850: "#091320",
-          800: "#0d1b2b",
-          700: "#13253a",
-          600: "#1b334e",
-          500: "#284869",
+          950: "rgb(var(--ink-950) / <alpha-value>)",
+          900: "rgb(var(--ink-900) / <alpha-value>)",
+          850: "rgb(var(--ink-850) / <alpha-value>)",
+          800: "rgb(var(--ink-800) / <alpha-value>)",
+          700: "rgb(var(--ink-700) / <alpha-value>)",
+          600: "rgb(var(--ink-600) / <alpha-value>)",
+          500: "rgb(var(--ink-500) / <alpha-value>)",
         },
         brand: {
-          50: "#ecfeff",
-          100: "#cffafe",
-          200: "#a5f3fc",
-          300: "#67e8f9",
-          400: "#22d3ee",
-          500: "#06b6d4",
-          600: "#0891b2",
-          700: "#0e7490",
-          800: "#155e75",
-          900: "#164e63",
-          950: "#062836",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
+          950: "rgb(var(--brand-950) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -40,9 +40,9 @@ export default {
       },
       backgroundImage: {
         "grid-fade":
-          "linear-gradient(to right, rgba(103,232,249,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(103,232,249,0.045) 1px, transparent 1px)",
+          "linear-gradient(to right, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px), linear-gradient(to bottom, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px)",
         "brand-fade":
-          "radial-gradient(60% 60% at 50% 0%, rgba(6,182,212,0.22) 0%, rgba(6,182,212,0) 72%)",
+          "radial-gradient(60% 60% at 50% 0%, rgb(var(--brand-500) / 0.22) 0%, rgb(var(--brand-500) / 0) 72%)",
       },
       backgroundSize: {
         grid: "64px 64px",
@@ -120,11 +120,11 @@ export default {
         "fade-in": "fadeIn 0.2s ease-out both",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(34,211,238,0.28), 0 18px 60px -18px rgba(6,182,212,0.5)",
+        glow: "0 0 0 1px rgb(var(--brand-400) / 0.28), 0 18px 60px -18px rgb(var(--brand-500) / 0.5)",
         "glow-lg":
-          "0 0 0 1px rgba(34,211,238,0.38), 0 26px 80px -20px rgba(6,182,212,0.55)",
+          "0 0 0 1px rgb(var(--brand-400) / 0.38), 0 26px 80px -20px rgb(var(--brand-500) / 0.55)",
         panel:
-          "inset 0 1px 0 0 rgba(165,243,252,0.07), 0 28px 75px -38px rgba(0,0,0,0.92)",
+          "inset 0 1px 0 0 rgb(var(--brand-200) / 0.07), 0 28px 75px -38px rgba(0,0,0,0.92)",
       },
     },
   },

@@ -100,8 +100,8 @@ type GuildPayload = {
   }[];
   premium?: {
     activeTier: "plus" | "pro" | "ultra" | null;
-    userSubscription: { tierName: string; expiresAt: string } | null;
-    guildSubscription: { tierName: string; expiresAt: string } | null;
+    userSubscription: { tierName: string; expiresAt: string | null } | null;
+    guildSubscription: { tierName: string; expiresAt: string | null } | null;
   };
   config: GuildConfig;
   syncedWithBot: boolean;
@@ -665,7 +665,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         </div>
 
         {/* Quick Server Switcher (Custom In-Website Picker) */}
-        <div className="border-b border-cyan-200/[0.08] p-3.5">
+        <div className="border-b border-brand-200/[0.08] p-3.5">
           <CustomSelect
             title="Switch Discord Server"
             value={guild.id}
@@ -747,7 +747,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             <p className="mt-1 text-[11px] leading-snug text-zinc-400">
               {data.premium?.activeTier
                 ? "Premium security guards & account perks unlocked."
-                : "Instant FamPay UPI checkout · Anti-Betray, Vanity Guard & No-Prefix from ₹299."}
+                : "Generate instant invoice · Anti-Betray, Vanity Guard & No-Prefix from ₹299."}
             </p>
           </Link>
         </nav>
@@ -1395,7 +1395,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                   type="button"
                   disabled={saving}
                   onClick={handleReset}
-                  className="h-9 rounded-xl border border-cyan-200/15 px-3.5 text-[12.5px] font-medium text-zinc-300 transition-colors hover:border-cyan-200/35 hover:text-white disabled:opacity-50"
+                  className="h-9 rounded-xl border border-brand-200/15 px-3.5 text-[12.5px] font-medium text-zinc-300 transition-colors hover:border-brand-200/35 hover:text-white disabled:opacity-50"
                 >
                   Reset
                 </button>

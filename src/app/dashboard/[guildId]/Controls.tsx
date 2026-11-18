@@ -25,7 +25,7 @@ export function Toggle({
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
         checked
           ? "border-brand-400/80 bg-gradient-to-r from-brand-600 to-brand-500 shadow-[0_0_18px_-2px_rgba(34,211,238,0.75)]"
-          : "border-cyan-200/15 bg-ink-800"
+          : "border-brand-200/15 bg-ink-800"
       }`}
     >
       <span
@@ -74,7 +74,7 @@ export function ModuleHeader({
       </div>
 
       {typeof enabled === "boolean" && onToggle && (
-        <div className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-cyan-200/10 bg-ink-950/75 px-3.5 py-2.5 sm:justify-start">
+        <div className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-brand-200/10 bg-ink-950/75 px-3.5 py-2.5 sm:justify-start">
           <span
             className={`font-mono text-[10px] uppercase tracking-[0.2em] ${
               enabled ? "text-brand-300" : "text-zinc-500"
@@ -210,7 +210,7 @@ export function ToggleRow({
   badge?: string;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-cyan-200/[0.08] bg-ink-950/50 px-4 py-3.5 transition-colors hover:border-brand-400/25">
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-brand-200/[0.08] bg-ink-950/50 px-4 py-3.5 transition-colors hover:border-brand-400/25">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-[13.5px] font-medium text-zinc-100">{title}</p>

@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { site } from "@/lib/site";
 import { RouteLoader } from "@/components/ui/RouteLoader";
+import { SiteConfigProvider } from "@/components/site/SiteConfigProvider";
 
 const geistSans = localFont({
   src: [
@@ -136,8 +137,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-ink-950 font-sans text-zinc-100 antialiased`}
       >
-        <RouteLoader />
-        {children}
+        <SiteConfigProvider>
+          <RouteLoader />
+          {children}
+        </SiteConfigProvider>
       </body>
     </html>
   );

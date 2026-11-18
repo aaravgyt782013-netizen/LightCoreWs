@@ -3,12 +3,37 @@
 @tailwind utilities;
 
 :root {
+  /* Default Aqua Pulse brand scale (space-separated RGB for live theming) */
+  --brand-50: 236 254 255;
+  --brand-100: 207 250 254;
+  --brand-200: 165 243 252;
+  --brand-300: 103 232 249;
+  --brand-400: 34 211 238;
+  --brand-500: 6 182 212;
+  --brand-600: 8 145 178;
+  --brand-700: 14 116 144;
+  --brand-800: 21 94 117;
+  --brand-900: 22 78 99;
+  --brand-950: 6 40 54;
+
+  /* Default Deep Ocean surface scale */
+  --ink-950: 3 7 12;
+  --ink-900: 6 13 22;
+  --ink-850: 9 19 32;
+  --ink-800: 13 27 43;
+  --ink-700: 19 37 58;
+  --ink-600: 27 51 78;
+  --ink-500: 40 72 105;
+
+  --glow-scale: 1;
+  --grid-opacity: 0.048;
+
   --background: #03070c;
   --foreground: #f2f8fb;
   --muted: #93a4b5;
-  --line: rgba(165, 243, 252, 0.085);
-  --line-strong: rgba(34, 211, 238, 0.22);
-  --accent: #22d3ee;
+  --line: rgb(var(--brand-200) / 0.085);
+  --line-strong: rgb(var(--brand-400) / 0.22);
+  --accent: rgb(var(--brand-400));
 }
 
 * {
@@ -23,14 +48,14 @@ html {
 
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: rgb(var(--ink-950));
   font-feature-settings: "ss01", "cv01";
   overflow-x: hidden;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: rgba(34, 211, 238, 0.3);
+  background: rgb(var(--brand-400) / 0.3);
   color: #ffffff;
 }
 
@@ -40,15 +65,15 @@ body {
   height: 9px;
 }
 ::-webkit-scrollbar-track {
-  background: #050b13;
+  background: rgb(var(--ink-950));
 }
 ::-webkit-scrollbar-thumb {
-  background: #163049;
+  background: rgb(var(--ink-700));
   border-radius: 999px;
-  border: 2px solid #050b13;
+  border: 2px solid rgb(var(--ink-950));
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0e7490;
+  background: rgb(var(--brand-700));
 }
 
 @layer utilities {
@@ -68,30 +93,34 @@ body {
     background: linear-gradient(
       90deg,
       transparent,
-      rgba(34, 211, 238, 0.22) 20%,
-      rgba(165, 243, 252, 0.16) 50%,
-      rgba(34, 211, 238, 0.22) 80%,
+      rgb(var(--brand-400) / 0.22) 20%,
+      rgb(var(--brand-200) / 0.16) 50%,
+      rgb(var(--brand-400) / 0.22) 80%,
       transparent
     );
     height: 1px;
   }
 
   .panel {
-    @apply relative rounded-2xl border border-cyan-200/[0.085] bg-ink-900/65 backdrop-blur-md transition-[border-color,box-shadow,transform] duration-300 ease-smooth;
+    @apply relative rounded-2xl border border-brand-200/[0.09] bg-ink-900/65 backdrop-blur-md transition-[border-color,box-shadow,transform] duration-300 ease-smooth;
   }
 
   .panel-inner {
     background:
       radial-gradient(
         120% 140% at 0% 0%,
-        rgba(34, 211, 238, 0.065) 0%,
-        rgba(34, 211, 238, 0) 48%
+        rgb(var(--brand-400) / 0.068) 0%,
+        rgb(var(--brand-400) / 0) 48%
       ),
-      linear-gradient(180deg, rgba(9, 19, 32, 0.84) 0%, rgba(5, 11, 19, 0.9) 100%);
+      linear-gradient(
+        180deg,
+        rgb(var(--ink-850) / 0.86) 0%,
+        rgb(var(--ink-950) / 0.92) 100%
+      );
   }
 
   .input-aqua {
-    @apply h-10 w-full rounded-xl border border-cyan-200/[0.11] bg-ink-950/90 px-3.5 text-[13px] text-zinc-100 placeholder:text-zinc-500 transition-all duration-200 focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
+    @apply h-10 w-full rounded-xl border border-brand-200/[0.12] bg-ink-950/90 px-3.5 text-[13px] text-zinc-100 placeholder:text-zinc-500 transition-all duration-200 focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-500/20;
   }
 
   .pb-safe {
@@ -103,14 +132,20 @@ body {
   }
 
   .text-gradient {
-    background: linear-gradient(180deg, #ffffff 0%, #bae6fd 100%);
+    background: linear-gradient(180deg, #ffffff 0%, rgb(var(--brand-200)) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
 
   .text-gradient-brand {
-    background: linear-gradient(102deg, #a5f3fc 0%, #22d3ee 42%, #06b6d4 75%, #0284c7 100%);
+    background: linear-gradient(
+      102deg,
+      rgb(var(--brand-200)) 0%,
+      rgb(var(--brand-400)) 42%,
+      rgb(var(--brand-500)) 75%,
+      rgb(var(--brand-600)) 100%
+    );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -118,8 +153,8 @@ body {
 
   .ring-brand {
     box-shadow:
-      0 0 0 1px rgba(34, 211, 238, 0.36),
-      0 0 42px -8px rgba(6, 182, 212, 0.55);
+      0 0 0 1px rgb(var(--brand-400) / 0.36),
+      0 0 42px -8px rgb(var(--brand-500) / 0.55);
   }
 
   .mask-fade-x {
@@ -174,8 +209,8 @@ body {
     padding: 1px;
     background: linear-gradient(
       180deg,
-      rgba(165, 243, 252, 0.45),
-      rgba(34, 211, 238, 0) 62%
+      rgb(var(--brand-200) / 0.45),
+      rgb(var(--brand-400) / 0) 62%
     );
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,

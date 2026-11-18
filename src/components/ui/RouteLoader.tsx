@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { site } from "@/lib/site";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { LoadingScreen } from "./LoadingScreen";
 
 function sublabelForPath(pathname: string): string {
@@ -41,6 +42,7 @@ function isSelfManagedAsyncRoute(pathname: string): boolean {
 }
 
 export function RouteLoader() {
+  const { config } = useSiteConfig();
   const pathname = usePathname() || "/";
   const [visible, setVisible] = useState(
     () => !isSelfManagedAsyncRoute(pathname),
@@ -177,7 +179,7 @@ export function RouteLoader() {
     };
   }, []);
 
-  if (!visible) return null;
+  if (!visible || !config.enableRouteLoader) return null;
 
   return (
     <div
@@ -185,7 +187,10 @@ export function RouteLoader() {
         fading ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
-      <LoadingScreen label="Connection Establishing..." sublabel={sublabel} />
+      <LoadingScreen
+        label={config.loaderText || "Connection Establishing..."}
+        sublabel={sublabel}
+      />
     </div>
   );
 }

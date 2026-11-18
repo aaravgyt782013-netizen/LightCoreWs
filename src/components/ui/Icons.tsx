@@ -266,6 +266,64 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+export function DownloadIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 4v11m0 0-4-4m4 4 4-4" />
+      <path d="M4 17v1.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V17" />
+    </svg>
+  );
+}
+
+export function InvoiceIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M6 3.5h12A1.5 1.5 0 0 1 19.5 5v15.5l-2.5-1.8-2.5 1.8-2.5-1.8-2.5 1.8-2.5-1.8-2.5 1.8V5A1.5 1.5 0 0 1 6 3.5Z" />
+      <path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4.5" />
+    </svg>
+  );
+}
+
+export function PaletteIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 3a9 9 0 1 0 0 18h1.3a2.2 2.2 0 0 0 2.2-2.2c0-.6-.2-1.1-.6-1.5a2 2 0 0 1 1.5-3.3H18a3 3 0 0 0 3-3A8 8 0 0 0 12 3Z" />
+      <circle cx="8" cy="10" r="1" fill="currentColor" />
+      <circle cx="11" cy="7.5" r="1" fill="currentColor" />
+      <circle cx="15" cy="8.5" r="1" fill="currentColor" />
+      <circle cx="7.5" cy="14" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ServerIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3.5" y="4" width="17" height="6.5" rx="1.8" />
+      <rect x="3.5" y="13.5" width="17" height="6.5" rx="1.8" />
+      <path d="M7.5 7.2h.01M7.5 16.8h.01M12 7.2h5M12 16.8h5" />
+    </svg>
+  );
+}
+
+export function UploadIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M12 15V4m0 0-4 4m4-4 4 4" />
+      <path d="M4 17v1.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V17" />
+    </svg>
+  );
+}
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+      <circle cx="12" cy="12" r="2.8" />
+    </svg>
+  );
+}
+
 export const featureIcons: Record<
   string,
   (props: IconProps) => React.JSX.Element

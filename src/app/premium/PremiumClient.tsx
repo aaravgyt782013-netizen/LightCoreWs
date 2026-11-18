@@ -7,23 +7,35 @@ import { site } from "@/lib/site";
 import {
   BILLING_CYCLES,
   PREMIUM_PLANS,
+  computeLiveCountdown,
   type BillingCycle,
-  type PremiumOrder,
+  type PremiumInvoice,
   type PremiumPlanSpec,
   type PremiumSubscription,
 } from "@/lib/premium-plans";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
+import { Logo } from "@/components/ui/Logo";
 import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   ArrowRight,
   BoltIcon,
   CheckIcon,
   ChevronLeftIcon,
+  ClockIcon,
   CopyIcon,
   CrownIcon,
   DiscordIcon,
+  DownloadIcon,
+  InvoiceIcon,
   LockIcon,
   ShieldIcon,
 } from "@/components/ui/Icons";
+import {
+  buildInvoicePlainText,
+  downloadInvoicePng,
+  downloadInvoiceText,
+  formatInvoiceDateTime,
+} from "./InvoiceRenderer";
 
 const COMPARISON_ROWS: {
   feature: string;
@@ -44,35 +56,14 @@ const COMPARISON_ROWS: {
   { feature: "Dedicated 24/7 Isolated Hosting", plus: false, pro: false, ultra: true },
 ];
 
-const PREMIUM_FAQS = [
-  {
-    q: "How does automatic FamPay / UPI activation work?",
-    a: `Sign in with Discord, pick your plan, and scan the dynamic QR (on PC) or tap Pay with FamPay / UPI (on mobile). Each order carries a unique exact amount tied strictly to your Discord ID so ${site.name} unlocks Premium automatically on your account only.`,
-  },
-  {
-    q: "Is Premium locked exclusively to my Discord account?",
-    a: "Yes — 100%. Every subscription binds cryptographically to your verified Discord User ID. Nobody else can claim your order, access your No-Prefix perk, or move your server slot.",
-  },
-  {
-    q: "Can I switch which Discord server gets my Premium slot?",
-    a: "Yes! Right from the top of this page you can assign or transfer your active Premium server slot to any server you manage in a single tap.",
-  },
-  {
-    q: "Which UPI apps can I pay with?",
-    a: "FamPay (FamApp), Google Pay, PhonePe, Paytm, BHIM, and every UPI-enabled app in India send payment straight to our verified FamPay ID with zero extra gateway fee.",
-  },
-];
-
 type SimpleGuild = { id: string; name: string; iconUrl?: string | null };
 type SimpleUser = {
   id: string;
   username: string;
   globalName: string | null;
+  email?: string | null;
   isOwner?: boolean;
 };
-
-const customCheckoutUrl =
-  process.env.NEXT_PUBLIC_PREMIUM_CHECKOUT_URL?.trim() || "";
 
 function PremiumQuerySync({
   onParams,
@@ -91,6 +82,8 @@ function PremiumQuerySync({
 }
 
 export function PremiumClient() {
+  const { config: siteCfg } = useSiteConfig();
+
   const [initialGuildId, setInitialGuildId] = useState("");
   const [initialGuildName, setInitialGuildName] = useState("");
 
@@ -101,25 +94,25 @@ export function PremiumClient() {
   const [user, setUser] = useState<SimpleUser | null>(null);
   const [guilds, setGuilds] = useState<SimpleGuild[]>([]);
   const [targetGuildId, setTargetGuildId] = useState("");
+  const [buyerNote, setBuyerNote] = useState("");
 
-  // Account-locked premium & FamPay checkout state
-  const [fampayEnabled, setFampayEnabled] = useState(false);
+  // Active subscription + live ticking timer
   const [subscription, setSubscription] = useState<PremiumSubscription | null>(
     null,
   );
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [slotSaving, setSlotSaving] = useState(false);
   const [slotNotice, setSlotNotice] = useState<string | null>(null);
 
-  const [activeOrder, setActiveOrder] = useState<PremiumOrder | null>(null);
-  const [qrSvg, setQrSvg] = useState<string | null>(null);
-  const [creatingOrder, setCreatingOrder] = useState(false);
-  const [orderError, setOrderError] = useState<string | null>(null);
-
-  const [utrInput, setUtrInput] = useState("");
-  const [utrBusy, setUtrBusy] = useState(false);
-  const [utrMsg, setUtrMsg] = useState<{ ok: boolean; text: string } | null>(
+  // Invoice generation + preview + download state (NO website payment gateway)
+  const [recentInvoices, setRecentInvoices] = useState<PremiumInvoice[]>([]);
+  const [activeInvoice, setActiveInvoice] = useState<PremiumInvoice | null>(
     null,
   );
+  const [generating, setGenerating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadedOnce, setDownloadedOnce] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleQueryParams = useCallback((g: string, n: string) => {
@@ -129,6 +122,13 @@ export function PremiumClient() {
       setTargetGuildId((cur) => cur || g);
     }
   }, []);
+
+  // Live 1s countdown ticker when user holds an active timed subscription
+  useEffect(() => {
+    if (!subscription || subscription.isLifetime) return;
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [subscription]);
 
   useEffect(() => {
     let active = true;
@@ -157,12 +157,14 @@ export function PremiumClient() {
 
         if (premRes.ok) {
           const premJson = (await premRes.json()) as {
-            fampayEnabled?: boolean;
             subscription?: PremiumSubscription | null;
+            invoices?: PremiumInvoice[];
           };
-          setFampayEnabled(Boolean(premJson.fampayEnabled));
           if (premJson.subscription) {
             setSubscription(premJson.subscription);
+          }
+          if (Array.isArray(premJson.invoices)) {
+            setRecentInvoices(premJson.invoices);
           }
         }
       } catch {
@@ -175,46 +177,18 @@ export function PremiumClient() {
     };
   }, []);
 
-  // Poll active order every 3.5s for instant auto-activation when FamPay payment lands
+  const isModalOpen = Boolean(selectedPlan || activeInvoice);
+
+  const closeModal = useCallback(() => {
+    setSelectedPlan(null);
+    setActiveInvoice(null);
+    setInvoiceError(null);
+    setDownloadedOnce(false);
+    setBuyerNote("");
+  }, []);
+
   useEffect(() => {
-    if (
-      !activeOrder ||
-      (activeOrder.status !== "pending" && activeOrder.status !== "verifying")
-    ) {
-      return;
-    }
-
-    let alive = true;
-    const id = window.setInterval(async () => {
-      try {
-        const res = await fetch(
-          `/api/premium/orders/${encodeURIComponent(activeOrder.orderId)}`,
-          { cache: "no-store" },
-        );
-        if (!res.ok || !alive) return;
-        const json = (await res.json()) as {
-          order?: PremiumOrder;
-          subscription?: PremiumSubscription | null;
-        };
-        if (!alive || !json.order) return;
-        setActiveOrder(json.order);
-        if (json.order.status === "paid" && json.subscription) {
-          setSubscription(json.subscription);
-        }
-      } catch {
-        // Continue polling cleanly.
-      }
-    }, 3500);
-
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-    };
-  }, [activeOrder]);
-
-  // Close modal with Escape
-  useEffect(() => {
-    if (!selectedPlan) return;
+    if (!isModalOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
@@ -225,19 +199,30 @@ export function PremiumClient() {
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
     };
-  }, [selectedPlan]);
-
-  const closeModal = () => {
-    setSelectedPlan(null);
-    setActiveOrder(null);
-    setQrSvg(null);
-    setOrderError(null);
-    setUtrInput("");
-    setUtrMsg(null);
-  };
+  }, [isModalOpen, closeModal]);
 
   const activeCycleMeta =
     BILLING_CYCLES.find((b) => b.id === cycle) ?? BILLING_CYCLES[0];
+
+  // Resolve live customizable plan names, badges & prices from Owner Panel
+  const livePlans = useMemo(() => {
+    return PREMIUM_PLANS.map((p) => {
+      const override = siteCfg.pricing[p.id];
+      return {
+        ...p,
+        name: override?.name || p.name,
+        badge: override?.badge || p.badge,
+        prices: {
+          "1m": override ? override["1m"] : p.prices["1m"],
+          "3m": override ? override["3m"] : p.prices["3m"],
+          "1y": override ? override["1y"] : p.prices["1y"],
+        },
+      };
+    });
+  }, [siteCfg.pricing]);
+
+  const curSym = siteCfg.currencySymbol || "₹";
+  const supportUrl = siteCfg.supportUrl || site.discord;
 
   const selectedGuildName = useMemo(() => {
     const found = guilds.find((g) => g.id === targetGuildId);
@@ -260,35 +245,11 @@ export function PremiumClient() {
     }
   };
 
-  const orderSummary = useMemo(() => {
-    if (!selectedPlan) return "";
-    const price = selectedPlan.prices[cycle];
-    return [
-      `${site.name} Premium Order`,
-      `Plan: ${selectedPlan.name} (${selectedPlan.badge})`,
-      `Duration: ${activeCycleMeta.period}`,
-      `Amount: ₹${price.toLocaleString("en-IN")}`,
-      user
-        ? `Account: @${user.username} (${user.id})`
-        : "Account: (your Discord ID)",
-      targetGuildId
-        ? `Server: ${selectedGuildName ? `${selectedGuildName} ` : ""}(${targetGuildId})`
-        : "Server: (assign anytime)",
-    ].join("\n");
-  }, [
-    selectedPlan,
-    cycle,
-    activeCycleMeta,
-    user,
-    targetGuildId,
-    selectedGuildName,
-  ]);
-
-  const handleStartFamPayOrder = async () => {
-    if (!selectedPlan || creatingOrder) return;
-    setCreatingOrder(true);
-    setOrderError(null);
-    setUtrMsg(null);
+  const handleGenerateInvoice = async () => {
+    if (!selectedPlan || generating) return;
+    setGenerating(true);
+    setInvoiceError(null);
+    setDownloadedOnce(false);
     try {
       const res = await fetch("/api/premium/orders", {
         method: "POST",
@@ -298,59 +259,37 @@ export function PremiumClient() {
           cycle,
           guildId: targetGuildId || undefined,
           guildName: selectedGuildName || undefined,
+          buyerNote: buyerNote.trim() || undefined,
         }),
       });
       const json = (await res.json()) as {
         ok?: boolean;
-        order?: PremiumOrder;
-        qrSvg?: string;
+        invoice?: PremiumInvoice;
         error?: string;
       };
-      if (!res.ok || !json.ok || !json.order) {
-        setOrderError(json.error || "Could not create FamPay UPI order.");
+      if (!res.ok || !json.ok || !json.invoice) {
+        setInvoiceError(
+          json.error || "Could not generate your invoice. Please try again.",
+        );
         return;
       }
-      setActiveOrder(json.order);
-      setQrSvg(json.qrSvg || null);
+      setActiveInvoice(json.invoice);
+      setRecentInvoices((prev) => [json.invoice!, ...prev.slice(0, 11)]);
     } catch {
-      setOrderError("Network error while creating your UPI order.");
+      setInvoiceError("Network error while generating invoice.");
     } finally {
-      setCreatingOrder(false);
+      setGenerating(false);
     }
   };
 
-  const handleSubmitUtr = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeOrder || utrBusy) return;
-    setUtrBusy(true);
-    setUtrMsg(null);
+  const handleDownloadPng = async (inv: PremiumInvoice) => {
+    if (downloading) return;
+    setDownloading(true);
     try {
-      const res = await fetch(
-        `/api/premium/orders/${encodeURIComponent(activeOrder.orderId)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ utr: utrInput }),
-        },
-      );
-      const json = (await res.json()) as {
-        ok?: boolean;
-        order?: PremiumOrder;
-        error?: string;
-      };
-      if (!res.ok || !json.ok || !json.order) {
-        setUtrMsg({ ok: false, text: json.error || "Invalid UTR number." });
-        return;
-      }
-      setActiveOrder(json.order);
-      setUtrMsg({
-        ok: true,
-        text: "UTR locked to your order! Keep this window open — your account unlocks automatically once confirmed.",
-      });
-    } catch {
-      setUtrMsg({ ok: false, text: "Network error submitting UTR." });
+      await downloadInvoicePng(inv, siteCfg);
+      setDownloadedOnce(true);
     } finally {
-      setUtrBusy(false);
+      setDownloading(false);
     }
   };
 
@@ -383,6 +322,43 @@ export function PremiumClient() {
     }
   };
 
+  const activeSubCountdown = useMemo(() => {
+    if (!subscription) return null;
+    return computeLiveCountdown(
+      {
+        status: "active",
+        isLifetime: subscription.isLifetime,
+        startedAt: subscription.activatedAt,
+        expiresAt: subscription.expiresAt,
+        durationMs: null,
+      },
+      nowMs,
+    );
+  }, [subscription, nowMs]);
+
+  const premiumFaqs = [
+    {
+      q: "How do I buy and activate Premium?",
+      a: `Click Buy Now on any plan to generate your official ${siteCfg.brandName} invoice, preview & download it, then open a ticket in our Support Server and send the invoice. The owner will provide the payment QR code directly in your ticket.`,
+    },
+    {
+      q: "How fast will I receive Premium after paying?",
+      a: "As soon as your QR payment is confirmed in the support ticket, the owner activates your Premium immediately — guaranteed within 24 hours (typically within minutes).",
+    },
+    {
+      q: "Do I enter any card, bank, or payment details on this website?",
+      a: "No! Zero payments are collected on the website. The website only generates your verified official invoice — payment is handled safely via the owner's QR code inside your private Support Server ticket.",
+    },
+    {
+      q: "Can I switch which Discord server uses my Premium slot?",
+      a: "Yes! Once activated, your active Premium card appears right at the top of this page with a live countdown timer and a 1-click server selector.",
+    },
+  ];
+
+  const invoiceDt = activeInvoice
+    ? formatInvoiceDateTime(activeInvoice.createdAt)
+    : null;
+
   return (
     <div className="space-y-14 sm:space-y-16">
       <Suspense fallback={null}>
@@ -396,7 +372,7 @@ export function PremiumClient() {
             href={
               initialGuildId ? `/dashboard/${initialGuildId}` : "/dashboard"
             }
-            className="inline-flex items-center gap-1.5 rounded-full border border-cyan-200/15 bg-ink-900/70 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-300 transition-all hover:border-brand-400/45 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200/15 bg-ink-900/70 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-300 transition-all hover:border-brand-400/45 hover:text-white"
           >
             <ChevronLeftIcon className="size-3 text-brand-400" />
             {initialGuildName
@@ -407,7 +383,7 @@ export function PremiumClient() {
 
         <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/35 bg-brand-500/12 px-4 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.28em] text-brand-200">
           <CrownIcon className="size-3.5 text-brand-300" />
-          {site.name} Premium
+          {siteCfg.brandName} Premium
         </div>
 
         <h1 className="mt-5 font-display text-[34px] font-bold leading-[1.06] tracking-tight text-white sm:text-[52px]">
@@ -415,11 +391,39 @@ export function PremiumClient() {
           <span className="text-gradient-brand">Server Protection</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-relaxed text-zinc-400 sm:text-[15.5px]">
-          Supercharge your community with {site.name}&apos;s Limit System,
-          Anti-Token Spam, Anti-Betray Mode, Vanity Protection, No-Prefix
-          access, and your own Custom Branded Bot — instant UPI checkout locked
-          exclusively to your Discord account.
+          Choose your plan to generate an instant downloadable invoice, send it
+          in a Support Server ticket to receive the owner&apos;s QR code, and get{" "}
+          <span className="text-zinc-200">
+            Premium activated instantly within 24 hours
+          </span>
+          .
         </p>
+
+        {/* 3-Step How Purchase Works Strip */}
+        <div className="mx-auto mt-6 grid max-w-2xl gap-2 text-left sm:grid-cols-3">
+          {[
+            { step: "01", title: "Generate Invoice", sub: "Preview & download PNG" },
+            { step: "02", title: "Send in Ticket", sub: "Owner shares payment QR" },
+            { step: "03", title: "Instant Premium", sub: "Activated within 24 hours" },
+          ].map((s) => (
+            <div
+              key={s.step}
+              className="flex items-center gap-3 rounded-xl border border-brand-200/10 bg-ink-900/65 px-3.5 py-2.5"
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 font-mono text-[10.5px] font-semibold text-brand-300">
+                {s.step}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[12px] font-semibold text-white">
+                  {s.title}
+                </p>
+                <p className="truncate font-mono text-[9.5px] text-zinc-400">
+                  {s.sub}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {initialGuildName && (
           <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-brand-400/30 bg-brand-950/50 px-4 py-2 font-mono text-[11px] text-brand-200">
@@ -430,7 +434,7 @@ export function PremiumClient() {
         )}
 
         {/* Billing Duration Switcher */}
-        <div className="mt-8 inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-cyan-200/12 bg-ink-900/90 p-1.5 shadow-panel">
+        <div className="mt-8 inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-brand-200/12 bg-ink-900/90 p-1.5 shadow-panel">
           {BILLING_CYCLES.map((opt) => {
             const active = cycle === opt.id;
             return (
@@ -440,7 +444,7 @@ export function PremiumClient() {
                 onClick={() => setCycle(opt.id)}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[12.5px] font-semibold transition-all duration-200 sm:text-[13px] ${
                   active
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_24px_-6px_rgba(34,211,238,0.85)]"
+                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-400)/0.85)]"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -462,30 +466,33 @@ export function PremiumClient() {
         </div>
       </div>
 
-      {/* Account-Locked Active Subscription Manager (visible only to the subscribed user) */}
-      {subscription && user && (
+      {/* Active Subscription Banner with Live Countdown */}
+      {subscription && user && activeSubCountdown && (
         <div className="panel panel-inner mx-auto max-w-4xl rounded-3xl border-brand-400/45 p-5 shadow-glow sm:p-7">
           <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
-            <div>
+            <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-emerald-300">
                   <CheckIcon className="size-3" />
-                  Active Subscription
+                  Active Premium
                 </span>
                 <span className="font-mono text-[10px] text-zinc-400">
-                  Locked to @{user.username} ({user.id})
+                  @{user.username} · Granted by {subscription.grantedBy}
                 </span>
               </div>
-              <h2 className="mt-2 font-display text-[22px] font-bold text-white">
+              <h2 className="font-display text-[22px] font-bold text-white">
                 {subscription.tierName}
               </h2>
-              <p className="mt-1 font-mono text-[11px] text-zinc-400">
-                Valid until{" "}
-                <span className="text-brand-300">
-                  {new Date(subscription.expiresAt).toLocaleDateString()}
-                </span>{" "}
-                · Order {subscription.orderId}
-              </p>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-brand-400/25 bg-ink-950/75 px-3 py-1.5 font-mono text-[12px] text-brand-300">
+                <ClockIcon className="size-3.5 text-brand-400" />
+                <span>{activeSubCountdown.digital}</span>
+              </div>
+              {subscription.expiresAt && (
+                <p className="font-mono text-[10.5px] text-zinc-400">
+                  Expires{" "}
+                  {new Date(subscription.expiresAt).toLocaleString()}
+                </p>
+              )}
             </div>
 
             {guilds.length > 0 && (
@@ -523,7 +530,7 @@ export function PremiumClient() {
 
       {/* 3 Pricing Cards */}
       <div className="grid items-stretch gap-5 sm:gap-6 lg:grid-cols-3">
-        {PREMIUM_PLANS.map((plan) => {
+        {livePlans.map((plan) => {
           const price = plan.prices[cycle];
           const isFeatured = Boolean(plan.featured);
           const isCurrent = subscription?.tier === plan.id;
@@ -534,33 +541,24 @@ export function PremiumClient() {
                 isFeatured
                   ? "border-brand-400/60 bg-gradient-to-b from-brand-950/75 via-ink-900 to-ink-950 shadow-glow-lg lg:-translate-y-2"
                   : plan.id === "ultra"
-                    ? "border-sky-400/35 bg-gradient-to-b from-sky-950/45 via-ink-900/90 to-ink-950 shadow-panel hover:-translate-y-1 hover:border-brand-300/60"
-                    : "border-cyan-200/12 bg-ink-900/80 shadow-panel hover:-translate-y-1 hover:border-brand-400/45"
+                    ? "border-brand-300/35 bg-gradient-to-b from-brand-950/45 via-ink-900/90 to-ink-950 shadow-panel hover:-translate-y-1 hover:border-brand-300/60"
+                    : "border-brand-200/12 bg-ink-900/80 shadow-panel hover:-translate-y-1 hover:border-brand-400/45"
               }`}
             >
-              {/* Ambient top glow */}
               <div
                 aria-hidden
-                className={`pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full blur-2xl ${
-                  isFeatured
-                    ? "bg-[radial-gradient(closest-side,rgba(34,211,238,0.28),transparent)]"
-                    : plan.id === "ultra"
-                      ? "bg-[radial-gradient(closest-side,rgba(56,189,248,0.24),transparent)]"
-                      : "bg-[radial-gradient(closest-side,rgba(6,182,212,0.16),transparent)]"
-                }`}
+                className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full blur-2xl"
+                style={{
+                  background: isFeatured
+                    ? "radial-gradient(closest-side, rgb(var(--brand-400) / 0.28), transparent)"
+                    : "radial-gradient(closest-side, rgb(var(--brand-500) / 0.18), transparent)",
+                }}
               />
 
               <div className="relative">
-                {/* Plan Title + Badge */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span
-                      className={`flex size-9 items-center justify-center rounded-xl border ${
-                        plan.id === "ultra"
-                          ? "border-cyan-300/40 bg-sky-500/15 text-cyan-200"
-                          : "border-brand-400/35 bg-brand-500/15 text-brand-300"
-                      }`}
-                    >
+                    <span className="flex size-9 items-center justify-center rounded-xl border border-brand-400/35 bg-brand-500/15 text-brand-300">
                       {plan.id === "plus" ? (
                         <ShieldIcon className="size-4" />
                       ) : plan.id === "pro" ? (
@@ -575,12 +573,12 @@ export function PremiumClient() {
                   </div>
 
                   <span
-                    className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-medium uppercase tracking-[0.18em] ${
+                    className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] ${
                       isFeatured
-                        ? "border-brand-300/50 bg-brand-500 text-ink-950 font-semibold shadow-[0_0_20px_-4px_#22d3ee]"
+                        ? "border-brand-300/50 bg-brand-500 text-ink-950 shadow-[0_0_20px_-4px_rgb(var(--brand-400))]"
                         : plan.id === "ultra"
-                          ? "border-cyan-300/40 bg-cyan-400/15 text-cyan-200"
-                          : "border-cyan-200/15 bg-cyan-200/[0.06] text-zinc-200"
+                          ? "border-brand-300/40 bg-brand-400/15 text-brand-200"
+                          : "border-brand-200/15 bg-brand-200/[0.06] text-zinc-200"
                     }`}
                   >
                     {isCurrent ? "Active" : plan.badge}
@@ -591,17 +589,16 @@ export function PremiumClient() {
                   {plan.tagline}
                 </p>
 
-                {/* Price */}
-                <div className="mt-6 flex items-baseline gap-2 border-y border-cyan-200/[0.09] py-5">
+                <div className="mt-6 flex items-baseline gap-2 border-y border-brand-200/[0.09] py-5">
                   <span className="font-display text-[42px] font-bold leading-none tracking-tight text-white sm:text-[46px]">
-                    ₹{price.toLocaleString("en-IN")}
+                    {curSym}
+                    {price.toLocaleString("en-IN")}
                   </span>
                   <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-zinc-400">
                     / {activeCycleMeta.period}
                   </span>
                 </div>
 
-                {/* Feature Checklist */}
                 <ul className="mt-6 space-y-3">
                   {plan.features.map((feat) => (
                     <li
@@ -617,24 +614,24 @@ export function PremiumClient() {
                 </ul>
               </div>
 
-              {/* Buy Now Button */}
               <button
                 type="button"
                 onClick={() => {
-                  setOrderError(null);
-                  setActiveOrder(null);
-                  setQrSvg(null);
+                  setInvoiceError(null);
+                  setActiveInvoice(null);
+                  setDownloadedOnce(false);
                   setSelectedPlan(plan);
                 }}
                 className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-semibold transition-all duration-200 ${
                   isFeatured
-                    ? "btn-glow bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-400 text-white shadow-[0_12px_36px_-10px_rgba(34,211,238,0.85)] hover:brightness-110"
+                    ? "btn-glow bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.85)] hover:brightness-110"
                     : plan.id === "ultra"
-                      ? "btn-glow bg-gradient-to-r from-sky-600 via-brand-500 to-teal-400 text-white shadow-[0_12px_36px_-10px_rgba(56,189,248,0.65)] hover:brightness-110"
+                      ? "btn-glow bg-gradient-to-r from-brand-700 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.65)] hover:brightness-110"
                       : "border border-brand-400/40 bg-brand-950/55 text-white hover:border-brand-400 hover:bg-brand-600"
                 }`}
               >
-                {isCurrent ? "Extend Plan" : "Buy Now"}
+                <InvoiceIcon className="size-4" />
+                {isCurrent ? "Renew · Get Invoice" : "Buy Now · Get Invoice"}
                 <ArrowRight className="size-4 transition-transform group-hover/btn:translate-x-0.5" />
               </button>
             </div>
@@ -642,9 +639,91 @@ export function PremiumClient() {
         })}
       </div>
 
+      {/* User's Recent Invoices (click any to preview & re-download) */}
+      {recentInvoices.length > 0 && (
+        <div className="panel panel-inner mx-auto max-w-4xl rounded-3xl p-5 sm:p-7">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
+                Your Invoices
+              </p>
+              <h2 className="mt-0.5 font-display text-[19px] font-semibold text-white">
+                Preview &amp; Re-Download Invoices
+              </h2>
+            </div>
+            <a
+              href={supportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-400/35 bg-brand-500/15 px-3.5 py-1.5 text-[12px] font-medium text-brand-200 hover:text-white"
+            >
+              <DiscordIcon className="size-3.5" />
+              Open Support Ticket
+            </a>
+          </div>
+
+          <div className="mt-4 divide-y divide-brand-200/[0.07]">
+            {recentInvoices.slice(0, 5).map((inv) => {
+              const dt = formatInvoiceDateTime(inv.createdAt);
+              return (
+                <div
+                  key={inv.invoiceId}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[12px] font-semibold text-white">
+                        {inv.invoiceId}
+                      </span>
+                      <span className="text-[12.5px] text-brand-200">
+                        {inv.tierName} · {inv.durationLabel} ·{" "}
+                        {inv.currencySymbol}
+                        {inv.amount.toLocaleString("en-IN")}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-mono text-[9px] uppercase ${
+                          inv.status === "fulfilled"
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : inv.status === "cancelled"
+                              ? "bg-zinc-500/20 text-zinc-400"
+                              : "bg-brand-500/20 text-brand-200"
+                        }`}
+                      >
+                        {inv.status === "fulfilled"
+                          ? "Activated"
+                          : inv.status === "cancelled"
+                            ? "Cancelled"
+                            : "Send in Ticket"}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-[10.5px] text-zinc-400">
+                      {dt.dateStr} at {dt.timeStr}
+                      {inv.guildName ? ` · Server: ${inv.guildName}` : ""}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan(null);
+                      setDownloadedOnce(false);
+                      setActiveInvoice(inv);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/35 bg-ink-950/80 px-3.5 py-2 text-[12px] font-medium text-brand-200 transition-colors hover:border-brand-400 hover:text-white"
+                  >
+                    <InvoiceIcon className="size-3.5" />
+                    Preview &amp; Download
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Feature Comparison Table */}
       <div className="panel panel-inner overflow-hidden rounded-3xl shadow-panel">
-        <div className="border-b border-cyan-200/[0.08] px-5 py-5 sm:px-8">
+        <div className="border-b border-brand-200/[0.08] px-5 py-5 sm:px-8">
           <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-brand-400">
             Compare Tiers
           </p>
@@ -656,22 +735,27 @@ export function PremiumClient() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[540px] text-left text-[13px]">
             <thead>
-              <tr className="border-b border-cyan-200/[0.08] font-mono text-[10.5px] uppercase tracking-[0.18em] text-zinc-400">
+              <tr className="border-b border-brand-200/[0.08] font-mono text-[10.5px] uppercase tracking-[0.18em] text-zinc-400">
                 <th className="px-5 py-4 sm:px-8">Capability</th>
-                <th className="px-4 py-4 text-center">Plus (₹299)</th>
-                <th className="px-4 py-4 text-center text-brand-300">
-                  Pro (₹499)
+                <th className="px-4 py-4 text-center">
+                  {livePlans[0].name} ({curSym}
+                  {livePlans[0].prices[cycle]})
                 </th>
-                <th className="px-4 py-4 text-center text-cyan-200">
-                  Ultra Pro (₹749)
+                <th className="px-4 py-4 text-center text-brand-300">
+                  {livePlans[1].name} ({curSym}
+                  {livePlans[1].prices[cycle]})
+                </th>
+                <th className="px-4 py-4 text-center text-brand-200">
+                  {livePlans[2].name} ({curSym}
+                  {livePlans[2].prices[cycle]})
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-cyan-200/[0.06]">
+            <tbody className="divide-y divide-brand-200/[0.06]">
               {COMPARISON_ROWS.map((row) => (
                 <tr
                   key={row.feature}
-                  className="transition-colors hover:bg-cyan-300/[0.025]"
+                  className="transition-colors hover:bg-brand-300/[0.025]"
                 >
                   <td className="px-5 py-3.5 text-zinc-200 sm:px-8">
                     {row.feature}
@@ -697,13 +781,13 @@ export function PremiumClient() {
       {/* Premium FAQ */}
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
-          <p className="eyebrow">Instant FamPay UPI &amp; Perks</p>
+          <p className="eyebrow">Invoice &amp; Ticket Activation</p>
           <h2 className="mt-2 font-display text-[25px] font-semibold text-white sm:text-[28px]">
             Premium FAQ
           </h2>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {PREMIUM_FAQS.map((item) => (
+          {premiumFaqs.map((item) => (
             <div
               key={item.q}
               className="panel panel-inner rounded-2xl p-5 sm:p-6"
@@ -719,219 +803,326 @@ export function PremiumClient() {
         </div>
       </div>
 
-      {/* Responsive In-Website FamPay Checkout Modal (Sheet on Mobile, Centered on PC) */}
-      {selectedPlan && (
+      {/* In-Website Invoice Generator & Live Preview Modal (Mobile Sheet + PC Modal) */}
+      {isModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Purchase ${selectedPlan.name}`}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-md sm:items-center sm:p-4"
+          aria-label="Premium Invoice"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/82 backdrop-blur-md sm:items-center sm:p-4"
           onClick={closeModal}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="pb-safe relative max-h-[92vh] w-full max-w-lg animate-sheet-up overflow-y-auto rounded-t-3xl border-t border-brand-400/45 bg-ink-900 p-5 shadow-glow-lg sm:animate-pop-in sm:rounded-3xl sm:border sm:p-7"
+            className="pb-safe relative max-h-[92vh] w-full max-w-xl animate-sheet-up overflow-y-auto rounded-t-3xl border-t border-brand-400/45 bg-ink-900 p-5 shadow-glow-lg sm:animate-pop-in sm:rounded-3xl sm:border sm:p-7"
           >
-            {/* Mobile drag handle */}
+            {/* Mobile drag bar */}
             <div className="mb-3 flex justify-center sm:hidden">
-              <span className="h-1 w-11 rounded-full bg-cyan-200/20" />
+              <span className="h-1 w-11 rounded-full bg-brand-200/20" />
             </div>
 
             {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
-                  {selectedPlan.badge} · Account-Locked Checkout
+                  {activeInvoice
+                    ? "Official Invoice Preview"
+                    : `${selectedPlan?.badge} · Generate Invoice`}
                 </span>
-                <h3 className="mt-1 font-display text-[22px] font-bold text-white sm:text-[24px]">
-                  {selectedPlan.name}
+                <h3 className="mt-1 font-display text-[21px] font-bold text-white sm:text-[24px]">
+                  {activeInvoice
+                    ? activeInvoice.invoiceId
+                    : selectedPlan?.name}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={closeModal}
                 aria-label="Close modal"
-                className="flex size-9 items-center justify-center rounded-full border border-cyan-200/15 bg-ink-950/70 text-lg text-zinc-400 hover:border-brand-400/40 hover:text-white"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-brand-200/15 bg-ink-950/70 text-lg text-zinc-400 hover:border-brand-400/40 hover:text-white"
               >
                 ×
               </button>
             </div>
 
-            {/* CASE A: Order PAID & Auto-Activated! */}
-            {activeOrder?.status === "paid" ? (
-              <div className="mt-6 space-y-5 text-center">
-                <div className="mx-auto flex size-16 items-center justify-center rounded-2xl border border-emerald-400/40 bg-emerald-500/15 text-emerald-300 shadow-[0_0_35px_rgba(16,185,129,0.35)]">
-                  <CheckIcon className="size-8" />
-                </div>
-                <div>
-                  <h4 className="font-display text-[22px] font-bold text-white">
-                    Premium Activated!
-                  </h4>
-                  <p className="mt-1.5 text-[13.5px] text-zinc-300">
-                    <strong>{activeOrder.tierName}</strong> is now unlocked
-                    exclusively on{" "}
-                    <span className="font-mono text-brand-300">
-                      @{activeOrder.username}
-                    </span>
-                    .
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-cyan-200/10 bg-ink-950/80 p-4 text-left font-mono text-[11px] text-zinc-300">
-                  <p>Order: {activeOrder.orderId}</p>
-                  <p>Paid: ₹{activeOrder.exactAmount}</p>
-                  <p>Account ID: {activeOrder.userId}</p>
-                  {subscription?.expiresAt && (
-                    <p>
-                      Expires:{" "}
-                      {new Date(subscription.expiresAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-                <Link
-                  href={
-                    activeOrder.guildId
-                      ? `/dashboard/${activeOrder.guildId}`
-                      : "/dashboard"
-                  }
-                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 text-[14px] font-semibold text-white"
-                >
-                  Open Your Dashboard
-                  <ArrowRight className="size-4" />
-                </Link>
-              </div>
-            ) : activeOrder ? (
-              /* CASE B: Live FamPay UPI Payment Screen (PC QR + Mobile Deep Link + Auto-Poll + UTR) */
+            {/* VIEW A: Generated Official Invoice Preview + Download + Open Support Ticket */}
+            {activeInvoice && invoiceDt ? (
               <div className="mt-5 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-400/30 bg-brand-950/50 px-3.5 py-2.5">
-                  <div>
-                    <p className="font-mono text-[9.5px] uppercase tracking-wider text-brand-300">
-                      Pay Exact Amount (Auto-Match)
-                    </p>
-                    <p className="font-display text-[24px] font-bold text-white">
-                      ₹{activeOrder.exactAmount}
+                {/* Visual Official Invoice Preview Card */}
+                <div className="relative overflow-hidden rounded-2xl border border-brand-400/35 bg-ink-950/95 shadow-panel">
+                  <div className="h-1.5 w-full bg-gradient-to-r from-brand-600 via-brand-400 to-brand-300" />
+
+                  <div className="space-y-4 p-4 sm:p-5">
+                    {/* Brand + Status row */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-200/10 pb-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <Logo size={34} />
+                        <div>
+                          <p className="font-display text-[14.5px] font-bold tracking-wider text-white">
+                            {activeInvoice.brandName.toUpperCase()}
+                          </p>
+                          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-brand-400">
+                            Official Premium Invoice
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 font-mono text-[9px] font-semibold uppercase tracking-wider ${
+                          activeInvoice.status === "fulfilled"
+                            ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+                            : "border-brand-400/40 bg-brand-500/15 text-brand-200"
+                        }`}
+                      >
+                        {activeInvoice.status === "fulfilled"
+                          ? "Paid & Activated"
+                          : "Send in Ticket"}
+                      </span>
+                    </div>
+
+                    {/* Date, Time, Invoice ID, Verify Code grid */}
+                    <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-brand-200/[0.08] bg-ink-900/70 p-3 font-mono text-[11px] sm:grid-cols-4">
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Date
+                        </p>
+                        <p className="mt-0.5 font-semibold text-white">
+                          {invoiceDt.dateStr}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Time
+                        </p>
+                        <p className="mt-0.5 font-semibold text-white">
+                          {invoiceDt.timeStr}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Invoice ID
+                        </p>
+                        <p className="mt-0.5 truncate font-semibold text-brand-300">
+                          {activeInvoice.invoiceId}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Verify Code
+                        </p>
+                        <p className="mt-0.5 font-semibold text-brand-300">
+                          {activeInvoice.verificationCode}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* User & Server Details */}
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <div className="rounded-xl border border-brand-200/[0.08] bg-ink-900/50 p-3">
+                        <p className="font-mono text-[9px] uppercase tracking-wider text-brand-400">
+                          Customer (Discord User)
+                        </p>
+                        <p className="mt-1 text-[13.5px] font-semibold text-white">
+                          {activeInvoice.globalName || activeInvoice.username}
+                        </p>
+                        <p className="font-mono text-[11px] text-zinc-300">
+                          @{activeInvoice.username}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
+                          ID: {activeInvoice.userId}
+                        </p>
+                        {activeInvoice.email && (
+                          <p className="truncate font-mono text-[10px] text-zinc-500">
+                            {activeInvoice.email}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl border border-brand-200/[0.08] bg-ink-900/50 p-3">
+                        <p className="font-mono text-[9px] uppercase tracking-wider text-brand-400">
+                          Server &amp; Activation
+                        </p>
+                        <p className="mt-1 truncate text-[13.5px] font-semibold text-white">
+                          {activeInvoice.guildName ||
+                            "Assign in Support Ticket"}
+                        </p>
+                        <p className="font-mono text-[10.5px] text-zinc-400">
+                          {activeInvoice.guildId
+                            ? `Guild ID: ${activeInvoice.guildId}`
+                            : "Share server ID in ticket"}
+                        </p>
+                        <p className="mt-1 font-mono text-[10px] text-emerald-300">
+                          ✓ {activeInvoice.activationSla}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Plan & Total Breakdown */}
+                    <div className="rounded-xl border border-brand-400/25 bg-brand-950/30 p-3.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[14.5px] font-bold text-white">
+                            {activeInvoice.tierName}{" "}
+                            <span className="font-mono text-[10px] font-normal text-brand-300">
+                              ({activeInvoice.tierBadge})
+                            </span>
+                          </p>
+                          <p className="font-mono text-[11px] text-zinc-300">
+                            Duration: {activeInvoice.durationLabel}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono text-[9px] uppercase text-zinc-400">
+                            Total Payable
+                          </p>
+                          <p className="font-display text-[24px] font-bold text-brand-300">
+                            {activeInvoice.currencySymbol}
+                            {activeInvoice.amount.toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-brand-200/10 pt-2.5">
+                        {activeInvoice.features.map((f) => (
+                          <span
+                            key={f}
+                            className="rounded-md border border-brand-200/10 bg-ink-950/75 px-2 py-0.5 text-[10.5px] text-zinc-300"
+                          >
+                            ✓ {f}
+                          </span>
+                        ))}
+                      </div>
+
+                      {activeInvoice.buyerNote && (
+                        <p className="mt-2.5 border-t border-brand-200/10 pt-2 font-mono text-[10.5px] text-zinc-300">
+                          Note: {activeInvoice.buyerNote}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="font-mono text-[9.5px] text-zinc-500">
+                      UTC Timestamp: {invoiceDt.utcStr} · Payment: Owner QR via
+                      Support Ticket (No website payment)
                     </p>
                   </div>
+                </div>
+
+                {/* Clear Ticket & Owner QR Instructions */}
+                <div className="rounded-2xl border border-brand-400/35 bg-brand-950/45 p-4">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-300">
+                    Next Steps · How to Get Your Premium
+                  </p>
+                  <ol className="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-zinc-200">
+                    <li>
+                      <strong className="text-white">1.</strong> Tap{" "}
+                      <strong className="text-brand-300">
+                        Download Invoice (PNG)
+                      </strong>{" "}
+                      below to save your official invoice.
+                    </li>
+                    <li>
+                      <strong className="text-white">2.</strong>{" "}
+                      <strong className="text-white">Open a ticket</strong> in
+                      our Support Server and{" "}
+                      <strong className="text-white">send the invoice</strong>.
+                    </li>
+                    <li>
+                      <strong className="text-white">3.</strong> The{" "}
+                      <strong className="text-brand-200">
+                        Owner will provide the payment QR code
+                      </strong>{" "}
+                      inside your ticket.
+                    </li>
+                    <li>
+                      <strong className="text-white">4.</strong> Once payment is
+                      done, you will receive{" "}
+                      <strong className="text-emerald-300">
+                        Premium instantly within 24 hours
+                      </strong>
+                      !
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Download + Copy Buttons */}
+                <div className="grid gap-2.5 sm:grid-cols-2">
                   <button
                     type="button"
-                    onClick={() => copyText("amt", activeOrder.exactAmount)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-200/15 bg-ink-950/80 px-3 py-1.5 font-mono text-[10.5px] text-brand-200 hover:border-brand-400/50"
+                    disabled={downloading}
+                    onClick={() => void handleDownloadPng(activeInvoice)}
+                    className="btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-4 text-[13.5px] font-semibold text-white shadow-[0_10px_30px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                  >
+                    <DownloadIcon className="size-4" />
+                    {downloading
+                      ? "Preparing Invoice…"
+                      : downloadedOnce
+                        ? "Downloaded! Save Again"
+                        : "Download Invoice (PNG)"}
+                  </button>
+
+                  <a
+                    href={activeInvoice.supportUrl || supportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#4752C4]"
+                  >
+                    <DiscordIcon className="size-4" />
+                    Open Ticket in Support Server
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => downloadInvoiceText(activeInvoice, siteCfg)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/15 bg-ink-950/70 px-3 py-1.5 font-mono text-[10.5px] text-zinc-300 hover:border-brand-400/40 hover:text-white"
+                  >
+                    <DownloadIcon className="size-3.5 text-brand-400" />
+                    Download as .TXT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyText(
+                        "invtxt",
+                        buildInvoicePlainText(activeInvoice, siteCfg),
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/15 bg-ink-950/70 px-3 py-1.5 font-mono text-[10.5px] text-brand-300 hover:border-brand-400/40 hover:text-white"
                   >
                     <CopyIcon className="size-3.5" />
-                    {copiedKey === "amt" ? "Copied!" : "Copy ₹"}
+                    {copiedKey === "invtxt"
+                      ? "✓ Invoice Copied!"
+                      : "Copy Invoice Text"}
                   </button>
                 </div>
-
-                {/* Self-contained In-Website SVG QR Code */}
-                {qrSvg && (
-                  <div className="flex flex-col items-center rounded-2xl border border-cyan-200/12 bg-ink-950/80 p-4">
-                    <div
-                      className="size-52 overflow-hidden rounded-2xl bg-white p-2.5 shadow-[0_0_35px_-8px_rgba(34,211,238,0.45)] sm:size-56 [&>svg]:size-full"
-                      dangerouslySetInnerHTML={{ __html: qrSvg }}
-                    />
-                    <p className="mt-3 text-center text-[12px] text-zinc-300">
-                      Scan with <strong>FamPay</strong>, GPay, PhonePe, or Paytm
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => copyText("upi", activeOrder.upiId)}
-                      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-cyan-200/12 bg-ink-900 px-3 py-1 font-mono text-[11px] text-brand-300 hover:border-brand-400/40"
-                    >
-                      <span>{activeOrder.upiId}</span>
-                      <CopyIcon className="size-3" />
-                      {copiedKey === "upi" && (
-                        <span className="text-emerald-400">✓</span>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* One-Tap Mobile UPI Launch Button */}
-                <a
-                  href={activeOrder.upiUri}
-                  className="btn-glow relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-400 text-[14px] font-semibold text-white shadow-[0_10px_30px_-8px_rgba(34,211,238,0.85)] sm:h-11"
-                >
-                  Open FamPay / UPI App — ₹{activeOrder.exactAmount}
-                  <ArrowRight className="size-4" />
-                </a>
-
-                {/* Live Auto-Detect Indicator */}
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-cyan-200/10 bg-ink-950/60 px-3.5 py-2.5 font-mono text-[10.5px]">
-                  <span className="flex items-center gap-2 text-brand-300">
-                    <span className="size-2 animate-ticker rounded-full bg-brand-400" />
-                    {activeOrder.status === "verifying"
-                      ? "UTR received · verifying payment…"
-                      : "Waiting for FamPay transfer…"}
-                  </span>
-                  <span className="text-zinc-500">{activeOrder.orderId}</span>
-                </div>
-
-                {/* Backup 12-Digit UTR Input */}
-                <form
-                  onSubmit={(e) => void handleSubmitUtr(e)}
-                  className="rounded-xl border border-cyan-200/10 bg-ink-950/60 p-3.5"
-                >
-                  <label className="block font-mono text-[9.5px] uppercase tracking-[0.2em] text-zinc-400">
-                    Paid already? Submit 12-digit UPI UTR / Ref No.
-                  </label>
-                  <div className="mt-2 flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={14}
-                      value={utrInput}
-                      onChange={(e) => setUtrInput(e.target.value)}
-                      placeholder="e.g. 432198765432"
-                      className="input-aqua flex-1 font-mono text-[12px]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={utrBusy || utrInput.replace(/\D/g, "").length < 12}
-                      className="h-10 shrink-0 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500 disabled:opacity-40"
-                    >
-                      {utrBusy ? "Sending…" : "Verify"}
-                    </button>
-                  </div>
-                  {utrMsg && (
-                    <p
-                      className={`mt-2 font-mono text-[10.5px] ${
-                        utrMsg.ok ? "text-emerald-400" : "text-amber-300"
-                      }`}
-                    >
-                      {utrMsg.text}
-                    </p>
-                  )}
-                </form>
-
-                <p className="text-center font-mono text-[10px] text-zinc-500">
-                  Locked solely to @{activeOrder.username} ({activeOrder.userId})
-                </p>
               </div>
-            ) : (
-              /* CASE C: Configure Plan, Duration & Target Server */
+            ) : selectedPlan ? (
+              /* VIEW B: Configure Plan, Duration, Server & Note -> Generate Invoice */
               <div className="mt-5 space-y-4">
-                {/* Account Lock Badge */}
                 {user ? (
                   <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-400/25 bg-brand-950/40 px-3.5 py-2.5">
                     <span className="flex items-center gap-2 text-[12.5px] text-zinc-200">
                       <LockIcon className="size-3.5 text-brand-400" />
-                      Locked to <strong className="text-white">@{user.username}</strong>
+                      Invoice for{" "}
+                      <strong className="text-white">@{user.username}</strong>
                     </span>
                     <span className="font-mono text-[10px] text-brand-300">
-                      Only your account
+                      ID {user.id}
                     </span>
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-brand-400/30 bg-brand-950/40 p-4">
-                    <p className="text-[13px] font-medium text-white">
-                      Sign in with Discord first
+                    <p className="text-[13.5px] font-semibold text-white">
+                      Sign in with Discord to Generate Your Invoice
                     </p>
-                    <p className="mt-1 text-[12px] text-zinc-400">
-                      We bind Premium directly to your verified Discord ID so
-                      nobody else can ever claim your purchase.
+                    <p className="mt-1 text-[12px] leading-relaxed text-zinc-400">
+                      We attach your verified Discord username, User ID,
+                      selected server, and exact timestamp directly onto your
+                      downloadable invoice for fast ticket activation.
                     </p>
                     <a
                       href="/api/auth/discord?next=/premium"
-                      className="mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] text-[13px] font-semibold text-white hover:bg-[#4752C4]"
+                      className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] text-[13.5px] font-semibold text-white hover:bg-[#4752C4]"
                     >
                       <DiscordIcon className="size-4" />
                       Continue with Discord
@@ -942,7 +1133,7 @@ export function PremiumClient() {
                 {/* Billing Duration */}
                 <div>
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                    Billing Duration
+                    Select Duration
                   </span>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     {BILLING_CYCLES.map((opt) => (
@@ -952,13 +1143,14 @@ export function PremiumClient() {
                         onClick={() => setCycle(opt.id)}
                         className={`rounded-xl border px-2.5 py-2.5 text-center transition-all ${
                           cycle === opt.id
-                            ? "border-brand-400 bg-brand-500/20 text-white shadow-[0_0_20px_-8px_#22d3ee]"
-                            : "border-cyan-200/10 bg-ink-950/70 text-zinc-400 hover:text-white"
+                            ? "border-brand-400 bg-brand-500/20 text-white shadow-[0_0_20px_-8px_rgb(var(--brand-400))]"
+                            : "border-brand-200/10 bg-ink-950/70 text-zinc-400 hover:text-white"
                         }`}
                       >
                         <p className="text-[12px] font-semibold">{opt.label}</p>
                         <p className="mt-0.5 font-mono text-[11px] text-brand-300">
-                          ₹{selectedPlan.prices[opt.id].toLocaleString("en-IN")}
+                          {curSym}
+                          {selectedPlan.prices[opt.id].toLocaleString("en-IN")}
                         </p>
                       </button>
                     ))}
@@ -968,19 +1160,19 @@ export function PremiumClient() {
                 {/* Custom In-Website Server Selector */}
                 <div>
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                    Server Slot to Activate
+                    Target Discord Server (Optional)
                   </span>
                   <div className="mt-1.5">
                     {guilds.length > 0 ? (
                       <CustomSelect
-                        title="Select Server to Upgrade"
+                        title="Select Server for Invoice"
                         placeholder="Choose one of your servers…"
                         value={targetGuildId}
                         onChange={setTargetGuildId}
                         options={[
                           {
                             value: "",
-                            label: "Assign later from Dashboard",
+                            label: "Decide in Support Ticket",
                           },
                           ...guilds.map((g) => ({
                             value: g.id,
@@ -995,82 +1187,59 @@ export function PremiumClient() {
                         type="text"
                         value={targetGuildId}
                         onChange={(e) => setTargetGuildId(e.target.value)}
-                        placeholder="Discord Server ID (optional — can assign later)"
+                        placeholder="Discord Server ID (optional)"
                         className="input-aqua font-mono text-[12px]"
                       />
                     )}
                   </div>
                 </div>
 
-                {orderError && (
+                {/* Optional Note on Invoice */}
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                    Additional Note for Owner (Optional)
+                  </span>
+                  <input
+                    type="text"
+                    maxLength={200}
+                    value={buyerNote}
+                    onChange={(e) => setBuyerNote(e.target.value)}
+                    placeholder="e.g. Custom bot name, referral, or extra info…"
+                    className="input-aqua mt-1.5"
+                  />
+                </div>
+
+                {/* How It Works Notice */}
+                <div className="rounded-xl border border-brand-200/10 bg-ink-950/75 px-3.5 py-3 text-[12px] leading-relaxed text-zinc-300">
+                  {siteCfg.ticketInstructions}
+                </div>
+
+                {invoiceError && (
                   <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3.5 py-2.5 font-mono text-[11px] text-amber-200">
-                    {orderError}
+                    {invoiceError}
                   </p>
                 )}
 
-                {user?.isOwner && !fampayEnabled && (
-                  <Link
-                    href="/admin"
-                    className="block rounded-xl border border-brand-400/35 bg-brand-950/50 px-3.5 py-2.5 text-center font-mono text-[11px] text-brand-200 hover:border-brand-400"
-                  >
-                    Owner Tip: Add your FamPay UPI ID (@fam) in Owner Panel →
-                    enable live QR checkout →
-                  </Link>
-                )}
-
-                {/* Primary Checkout CTA */}
-                {user && fampayEnabled ? (
+                {user && (
                   <button
                     type="button"
-                    disabled={creatingOrder}
-                    onClick={() => void handleStartFamPayOrder()}
-                    className="btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-400 px-5 text-[14px] font-semibold text-white shadow-[0_12px_34px_-8px_rgba(34,211,238,0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                    disabled={generating}
+                    onClick={() => void handleGenerateInvoice()}
+                    className="btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-5 text-[14px] font-semibold text-white shadow-[0_12px_34px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
                   >
-                    {creatingOrder
-                      ? "Generating FamPay QR…"
-                      : `Pay ₹${selectedPlan.prices[cycle].toLocaleString("en-IN")} via FamPay / UPI`}
-                    <ArrowRight className="size-4" />
+                    <InvoiceIcon className="size-4" />
+                    {generating
+                      ? "Generating Invoice…"
+                      : `Generate & Preview Invoice — ${curSym}${selectedPlan.prices[cycle].toLocaleString("en-IN")}`}
                   </button>
-                ) : (
-                  <>
-                    <div className="rounded-xl border border-cyan-200/10 bg-ink-950/85 p-3.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
-                          Order Summary
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => copyText("sum", orderSummary)}
-                          className="rounded-md border border-cyan-200/15 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] text-brand-300 hover:border-brand-400/40 hover:text-white"
-                        >
-                          {copiedKey === "sum" ? "✓ Copied!" : "Copy Summary"}
-                        </button>
-                      </div>
-                      <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-300">
-                        {orderSummary}
-                      </pre>
-                    </div>
-
-                    <a
-                      href={customCheckoutUrl || site.discord}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => copyText("sum", orderSummary)}
-                      className="btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-400 px-5 text-[14px] font-semibold text-white hover:brightness-110"
-                    >
-                      <DiscordIcon className="size-4" />
-                      Purchase via Billing Desk — ₹
-                      {selectedPlan.prices[cycle].toLocaleString("en-IN")}
-                    </a>
-                  </>
                 )}
 
                 <p className="text-center font-mono text-[10px] text-zinc-500">
-                  Direct FamPay / UPI · 0% Gateway Fee · Account-Locked Instant
-                  Unlock
+                  No payment collected on website · Owner QR in Support Ticket ·
+                  Instant within 24h
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

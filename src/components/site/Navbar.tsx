@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { InviteButton } from "@/components/ui/InviteButton";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { nav, site } from "@/lib/site";
 
 export function Navbar() {
+  const { config } = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -27,9 +29,10 @@ export function Navbar() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+        style={{ top: "var(--top-banner-offset, 0px)" }}
+        className={`fixed inset-x-0 z-50 transition-all duration-500 ${
           scrolled
-            ? "border-b border-white/[0.07] bg-ink-950/80 backdrop-blur-xl"
+            ? "border-b border-brand-200/[0.09] bg-ink-950/85 backdrop-blur-xl"
             : "border-b border-transparent bg-transparent"
         }`}
       >
@@ -37,16 +40,18 @@ export function Navbar() {
           <Link
             href="/"
             className="group flex items-center gap-3"
-            aria-label={`${site.name} home`}
+            aria-label={`${config.brandName} home`}
           >
             <Logo size={34} />
             <span className="flex flex-col leading-none">
               <span className="font-display text-[16px] font-semibold tracking-[0.16em] text-white">
                 <Wordmark />
               </span>
-              <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.36em] text-brand-400/80">
-                All-in-One
-              </span>
+              {config.navBadge && (
+                <span className="mt-1 font-mono text-[8px] uppercase tracking-[0.36em] text-brand-400/85">
+                  {config.navBadge}
+                </span>
+              )}
             </span>
           </Link>
 
@@ -64,7 +69,7 @@ export function Navbar() {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-cyan-300/[0.06] hover:text-white"
+                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-brand-300/[0.06] hover:text-white"
                 >
                   {item.label}
                 </a>
@@ -74,7 +79,7 @@ export function Navbar() {
 
           <div className="hidden items-center gap-3 md:flex">
             <a
-              href={site.discord}
+              href={config.supportUrl || site.discord}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[13.5px] font-medium text-zinc-400 transition-colors hover:text-white"
@@ -164,7 +169,7 @@ export function Navbar() {
               ),
             )}
             <a
-              href={site.discord}
+              href={config.supportUrl || site.discord}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setOpen(false)}
