@@ -1,4 +1,5 @@
 import { site } from "@/lib/site";
+import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 
 export type ThemePresetId =
   | "aqua"
@@ -576,7 +577,10 @@ export function mergeSiteConfig(
     loaderText: cleanStr(p.loaderText, base.loaderText, 60),
 
     supportUrl: cleanUrl(p.supportUrl, base.supportUrl, false),
-    inviteUrl: cleanUrl(p.inviteUrl, base.inviteUrl, false),
+    inviteUrl:
+      typeof p.inviteUrl === "string" && p.inviteUrl.trim()
+        ? sanitizeDiscordInviteUrl(p.inviteUrl, site.clientId)
+        : sanitizeDiscordInviteUrl(base.inviteUrl, site.clientId),
     inviteButtonLabel: cleanStr(p.inviteButtonLabel, base.inviteButtonLabel, 28),
     footerStatusText: cleanStr(p.footerStatusText, base.footerStatusText, 48),
     footerCopyright: cleanStr(p.footerCopyright, base.footerCopyright, 48),
