@@ -83,10 +83,12 @@ export function Footer() {
             {config.footerCopyright || config.brandName}. Independent Discord
             bot — not affiliated with Discord Inc.
           </p>
-          <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-            <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-            {config.footerStatusText || "all systems operational"}
-          </div>
+          <Link
+            href="/status"
+            className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-zinc-200"
+          >
+            View service status
+          </Link>
         </div>
       </div>
     </footer>
