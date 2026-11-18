@@ -87,8 +87,6 @@ export async function GET(req: NextRequest) {
           siteConfig.inviteUrl || site.invite,
           site.clientId,
         ),
-        autoJoinGuildId:
-          cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID) || null,
         storageEngine: getStorageEngineName(),
         integrations: {
           oauthConfigured: Boolean(
@@ -104,15 +102,11 @@ export async function GET(req: NextRequest) {
           webhookConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_LOG_WEBHOOK_URL),
           ),
-          autoJoinConfigured: Boolean(
-            cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID),
-          ),
           botApiConfigured: Boolean(cleanEnvString(process.env.BOT_API_URL)),
         },
       },
       stats: {
         authorizedUsers: authorizedUsers.length,
-        joinCapableUsers: authorizedUsers.filter((u) => u.hasJoinScope).length,
         botGuilds: botGuildsData ? botGuildsData.guilds.length : null,
         storedLogs,
         activePremium: activeRecords.length,
