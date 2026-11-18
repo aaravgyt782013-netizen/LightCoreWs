@@ -43,20 +43,17 @@ type AdminOverview = {
     oauthScopes: string;
     redirectUri?: string;
     inviteUrl?: string;
-    autoJoinGuildId: string | null;
     storageEngine: string;
     integrations: {
       oauthConfigured: boolean;
       botTokenConfigured: boolean;
       logSecretConfigured: boolean;
       webhookConfigured: boolean;
-      autoJoinConfigured: boolean;
       botApiConfigured: boolean;
     };
   };
   stats: {
     authorizedUsers: number;
-    joinCapableUsers: number;
     botGuilds: number | null;
     storedLogs: number;
     activePremium: number;
@@ -387,7 +384,7 @@ export function AdminClient() {
       ok: data.config.integrations.oauthConfigured,
     },
     {
-      label: "Bot Token (DISCORD_BOT_TOKEN — server list, roles & guild join)",
+      label: "Bot Token (DISCORD_BOT_TOKEN — bot API access)",
       ok: data.config.integrations.botTokenConfigured,
     },
     {
@@ -397,10 +394,6 @@ export function AdminClient() {
     {
       label: "Discord Log Webhook (DISCORD_LOG_WEBHOOK_URL)",
       ok: data.config.integrations.webhookConfigured,
-    },
-    {
-      label: "Auto-Join Server on Login (DISCORD_AUTO_JOIN_GUILD_ID)",
-      ok: data.config.integrations.autoJoinConfigured,
     },
     {
       label: "External Bot API Sync (BOT_API_URL)",
@@ -1014,10 +1007,6 @@ export function AdminClient() {
               value={data.config.storageEngine}
             />
             <ConfigRow label="OAuth2 Scopes" value={data.config.oauthScopes} />
-            <ConfigRow
-              label="Auto-Join Guild"
-              value={data.config.autoJoinGuildId || "not configured"}
-            />
           </div>
         </div>
       )}
