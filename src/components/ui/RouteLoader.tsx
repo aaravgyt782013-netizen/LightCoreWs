@@ -183,13 +183,14 @@ export function RouteLoader() {
 
   return (
     <div
-      className={`fixed inset-0 z-[110] transition-opacity duration-300 ${
+      className={`fixed inset-x-0 top-0 z-[110] h-[100svh] min-h-[100svh] w-full transition-opacity duration-300 ${
         fading ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
     >
       <LoadingScreen
         label={config.loaderText || "Connection Establishing..."}
         sublabel={sublabel}
+        fullScreen={false}
       />
     </div>
   );
