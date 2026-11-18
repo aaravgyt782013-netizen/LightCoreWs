@@ -339,15 +339,15 @@ export function PremiumClient() {
   const premiumFaqs = [
     {
       q: "How do I buy and activate Premium?",
-      a: `Click Buy Now on any plan to create a ${siteCfg.brandName} order summary, preview & download it, then open a ticket in our Support Server and send the order summary. The owner will provide the payment QR code directly in your ticket.`,
+      a: "Choose a plan to create an order summary. Review the plan and amount, then contact our Support Server for payment instructions. Do not send passwords or one-time codes.",
     },
     {
       q: "How fast will I receive Premium after paying?",
-      a: "As soon as your QR payment is confirmed in the support ticket, the owner activates your Premium immediately — guaranteed within 24 hours (typically within minutes).",
+      a: "Premium is activated after the owner confirms your payment. Ask the Support Server for the current processing time before paying.",
     },
     {
       q: "Do I enter any card, bank, or payment details on this website?",
-      a: "No! Zero payments are collected on the website. The website only generates your order summary — payment is handled safely via the owner's QR code inside your private Support Server ticket.",
+      a: "No. This website does not collect payment details. The order summary is not a tax invoice or proof of payment. Confirm the seller and amount in the official Support Server, and never share passwords or one-time codes.",
     },
     {
       q: "Can I switch which Discord server uses my Premium slot?",
@@ -391,26 +391,23 @@ export function PremiumClient() {
           <span className="text-gradient-brand">Server Protection</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-relaxed text-zinc-400 sm:text-[15.5px]">
-          Choose your plan to create an order summary. Review it before contacting
-          in a Support Server ticket to receive the owner&apos;s QR code, and get{" "}
-          <span className="text-zinc-200">
-            after the owner confirms payment
-          </span>
-          .
+          Choose a plan to create an order summary. Review the plan and amount,
+          then contact our Support Server for payment instructions. Premium is
+          activated after the owner confirms payment.
         </p>
 
         <p className="mx-auto mt-4 max-w-2xl text-[12px] leading-relaxed text-zinc-500">
-          The downloaded document is an order summary, not a tax invoice or proof of payment.
-          No payment is taken on this website. Confirm the seller and amount in the official
-          Support Server before paying. Never share your Discord password or one-time codes.
+          This document is an order summary, not a tax invoice or proof of payment. No payment
+          is taken here. Confirm the seller and amount in the official Support Server before
+          paying. Never share your Discord password or one-time codes.
         </p>
 
         {/* 3-Step How Purchase Works Strip */}
         <div className="mx-auto mt-6 grid max-w-2xl gap-2 text-left sm:grid-cols-3">
           {[
-            { step: "01", title: "Generate Invoice", sub: "Preview & download PNG" },
+            { step: "01", title: "Create Order Summary", sub: "Review & download" },
             { step: "02", title: "Send in Ticket", sub: "Owner shares payment QR" },
-            { step: "03", title: "Instant Premium", sub: "Activated within 24 hours" },
+            { step: "03", title: "Activation", sub: "After payment confirmation" },
           ].map((s) => (
             <div
               key={s.step}
@@ -833,7 +830,7 @@ export function PremiumClient() {
                 <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
                   {activeInvoice
                     ? "Order Summary Preview"
-                    : `${selectedPlan?.badge} · Generate Invoice`}
+                    : `${selectedPlan?.badge} · Create Order Summary`}
                 </span>
                 <h3 className="mt-1 font-display text-[21px] font-bold text-white sm:text-[24px]">
                   {activeInvoice
@@ -936,11 +933,6 @@ export function PremiumClient() {
                         <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
                           ID: {activeInvoice.userId}
                         </p>
-                        {activeInvoice.email && (
-                          <p className="truncate font-mono text-[10px] text-zinc-500">
-                            {activeInvoice.email}
-                          </p>
-                        )}
                       </div>
 
                       <div className="rounded-xl border border-brand-200/[0.08] bg-ink-900/50 p-3">
@@ -1235,14 +1227,13 @@ export function PremiumClient() {
                   >
                     <InvoiceIcon className="size-4" />
                     {generating
-                      ? "Generating Invoice…"
-                      : `Generate & Preview Invoice — ${curSym}${selectedPlan.prices[cycle].toLocaleString("en-IN")}`}
+                      ? "Creating Order Summary…"
+                      : `Create Order Summary — ${curSym}${selectedPlan.prices[cycle].toLocaleString("en-IN")}`}
                   </button>
                 )}
 
                 <p className="text-center font-mono text-[10px] text-zinc-500">
-                  No payment collected on website · Owner QR in Support Ticket ·
-                  Instant within 24h
+                  No payment collected here · Confirm seller details before paying
                 </p>
               </div>
             ) : null}
