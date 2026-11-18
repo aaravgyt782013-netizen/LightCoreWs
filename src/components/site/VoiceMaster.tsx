@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { voiceCards } from "@/lib/site";
+import { site, voiceCards } from "@/lib/site";
 import { Reveal } from "@/components/ui/Reveal";
 import { VoiceIcon, CheckIcon, PlusIcon } from "@/components/ui/Icons";
 import { FancyName } from "@/components/site/FancyName";
@@ -46,10 +46,11 @@ function VoicePanelMock() {
               <div key={i} className="flex items-center gap-2 py-1">
                 <span className="relative size-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/10">
                   <Image
-                    src="/brand/lightcore-512.png"
+                    src={site.logo}
                     alt=""
                     width={20}
                     height={20}
+                    unoptimized
                     className="size-full object-cover opacity-70"
                   />
                 </span>
@@ -66,7 +67,7 @@ function VoicePanelMock() {
 
         <div className="mt-4 rounded-lg border border-white/[0.06] bg-ink-950/60 p-2.5 font-mono text-[10.5px] leading-relaxed">
           <p className="text-zinc-500">
-            <span className="text-brand-400">/voicemaster</span> setup
+            <span className="text-brand-400">{site.prefix}voicemaster</span> setup
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-emerald-400/90">
             <CheckIcon className="size-3" /> Configured server
@@ -87,10 +88,11 @@ function MemberCard() {
       <div className="flex items-center gap-3">
         <span className="relative size-10 shrink-0 overflow-hidden rounded-full ring-2 ring-brand-600/40">
           <Image
-            src="/brand/lightcore-512.png"
+            src={site.logo}
             alt=""
             width={40}
             height={40}
+            unoptimized
             className="size-full object-cover"
           />
         </span>

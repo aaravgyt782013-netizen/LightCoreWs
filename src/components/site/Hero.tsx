@@ -1,21 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
+import { Wordmark } from "@/components/ui/Logo";
 import { featureIcons, ArrowRight } from "@/components/ui/Icons";
-import { features, site, stats } from "@/lib/site";
+import { defaultLogs, features, site, stats, type LogEntry } from "@/lib/site";
 import { useCountUp } from "@/components/ui/useCountUp";
-
-const logs = [
-  { t: "GUARD", ok: true, msg: "gateway session established · shard 07" },
-  { t: "SCAN", ok: true, msg: "26 modules armed · thresholds loaded" },
-  { t: "WARN", ok: false, msg: "mass channel delete by @raider (7/3 per min)" },
-  { t: "DENY", ok: false, msg: "action blocked in 41ms · actor quarantined" },
-  { t: "FIX", ok: true, msg: "rollback restored 6 channels · 4 roles" },
-  { t: "AUDIT", ok: true, msg: "incident #4471 written to audit stream" },
-  { t: "GUARD", ok: true, msg: "heartbeat ok · latency 38ms" },
-];
 
 export function Hero() {
   return (
@@ -29,30 +21,32 @@ export function Hero() {
                 <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-500/60" />
                 <span className="size-1.5 rounded-full bg-brand-500" />
               </span>
-              <span className="font-mono text-[10.5px] uppercase tracking-[0.24em] text-zinc-300">
-                All systems operational
+              <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-zinc-300 sm:text-[10.5px] sm:tracking-[0.22em]">
+                {site.tagline}
               </span>
             </div>
 
             <h1 className="mt-7 font-display text-[38px] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[54px] lg:text-[64px]">
-              <span className="text-zinc-400">LIGHT</span><span className="text-brand-500">CORE</span>
+              <Wordmark leadClassName="text-zinc-400" />
             </h1>
 
-            <p className="mt-6 max-w-[34rem] text-balance text-[15.5px] leading-relaxed text-zinc-400 sm:text-[16.5px]">
-              Real-time raid prevention, auto-moderation, and nuke blocking. Keep
-              your Discord server protected around the clock, with zero setup
-              latency.
+            <p className="mt-6 max-w-[34rem] text-balance text-[15.5px] leading-relaxed text-zinc-300 sm:text-[17px]">
+              {site.description}.{" "}
+              <span className="text-zinc-400">
+                Real-time raid prevention, auto-moderation, tickets,
+                VoiceMaster, and nuke blocking around the clock.
+              </span>
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <InviteButton size="lg" />
-              <a
+              <Link
                 href={site.dashboard}
                 className="group inline-flex h-[52px] items-center gap-3 rounded-full border border-white/12 bg-white/[0.03] px-6 text-[15px] font-medium text-zinc-200 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
               >
                 Open Dashboard
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-              </a>
+              </Link>
             </div>
 
             {/* feature chips */}
@@ -85,15 +79,50 @@ export function Hero() {
 }
 
 function ConsolePanel() {
+  const [entries, setEntries] = useState<LogEntry[]>(defaultLogs);
+  const [isLive, setIsLive] = useState(false);
   const [step, setStep] = useState(4);
   const scroller = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      try {
+        const res = await fetch("/api/logs?limit=12", { cache: "no-store" });
+        if (!res.ok || !active) return;
+        const data = (await res.json()) as {
+          live?: boolean;
+          logs?: LogEntry[];
+        };
+        if (active && data.live && Array.isArray(data.logs) && data.logs.length > 0) {
+          setEntries(data.logs);
+          setIsLive(true);
+        }
+      } catch {
+        // Keep default animated stream when offline or statically hosted.
+      }
+    };
+
+    void load();
+    const poll = window.setInterval(() => void load(), 8000);
+    return () => {
+      active = false;
+      window.clearInterval(poll);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLive) return;
     const id = window.setInterval(() => {
-      setStep((s) => (s + 1 > logs.length ? 4 : s + 1));
+      setStep((s) => (s + 1 > entries.length ? Math.min(4, entries.length) : s + 1));
     }, 1650);
     return () => window.clearInterval(id);
-  }, []);
+  }, [isLive, entries.length]);
+
+  const visible = isLive
+    ? entries.slice(-6)
+    : entries.slice(Math.max(0, step - 6), step);
 
   return (
     <div className="relative">
@@ -104,11 +133,11 @@ function ConsolePanel() {
           <div className="flex items-center gap-2.5">
             <span className="size-2 rounded-full bg-brand-500 shadow-[0_0_10px_2px_rgba(255,43,43,0.6)]" />
             <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-zinc-400">
-              guard engine
+              {site.name.toLowerCase()} · guard engine
             </span>
           </div>
           <span className="font-mono text-[10px] text-emerald-400/80">
-            ● live
+            ● {isLive ? "live stream" : "live"}
           </span>
         </div>
 
@@ -119,11 +148,9 @@ function ConsolePanel() {
             ref={scroller}
             className="flex h-[286px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto"
           >
-            {logs
-              .slice(Math.max(0, step - 6), step)
-              .map((l, i) => (
+            {visible.map((l, i) => (
               <div
-                key={`${l.t}-${i}`}
+                key={l.id ?? `${l.t}-${i}`}
                 className="flex items-start gap-2.5 rounded-lg border border-white/[0.05] bg-white/[0.015] px-2.5 py-2"
               >
                 <span
@@ -152,11 +179,12 @@ function ConsolePanel() {
       {/* floating badge */}
       <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-white/10 bg-ink-900/90 px-3.5 py-2.5 shadow-panel backdrop-blur sm:flex">
         <Image
-          src="/brand/lightcore-512.png"
+          src={site.logo}
           alt=""
           width={22}
           height={22}
-          className="size-[22px] object-contain"
+          unoptimized
+          className="size-[22px] rounded-md object-cover ring-1 ring-white/10"
         />
         <div className="leading-tight">
           <p className="text-[11px] font-medium text-white">Nuke blocked</p>

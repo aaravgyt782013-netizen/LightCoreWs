@@ -14,7 +14,8 @@ import { site } from "@/lib/site";
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "LIGHTCORE",
+  name: site.name,
+  slogan: site.tagline,
   applicationCategory: "SecurityApplication",
   operatingSystem: "Discord",
   description: site.description,

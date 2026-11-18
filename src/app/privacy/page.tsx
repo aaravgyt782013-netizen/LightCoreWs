@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { PageShell, Prose } from "@/components/site/PageShell";
+import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description:
-    "How LIGHTCORE collects, processes and retains Discord guild data while protecting your server.",
+  description: `How ${site.name} collects, processes and retains Discord guild data while protecting your server.`,
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <PageShell
       eyebrow="privacy"
       title="Privacy Policy"
-      intro="LIGHTCORE processes the minimum amount of Discord data required to keep your server safe. This page explains exactly what that means."
+      intro={`${site.name} processes the minimum amount of Discord data required to keep your server safe. This page explains exactly what that means.`}
     >
       <Prose>
         <p>
@@ -41,7 +41,18 @@ export default function PrivacyPage() {
         <h2>Your controls</h2>
         <ul>
           <li>Remove the bot at any time to stop all processing.</li>
-          <li>Request export or deletion of incident records via a ticket.</li>
+          <li>
+            Request export or deletion of incident records via a ticket in our{" "}
+            <a
+              href={site.discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-400 underline decoration-brand-500/40 underline-offset-4 hover:text-brand-300"
+            >
+              support server
+            </a>
+            .
+          </li>
           <li>Disable individual modules without losing the audit stream.</li>
         </ul>
         <h2>Third parties</h2>

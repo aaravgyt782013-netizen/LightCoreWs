@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { PageShell, Prose } from "@/components/site/PageShell";
+import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
-  description:
-    "The terms that govern use of the LIGHTCORE Discord security bot and dashboard.",
+  description: `The terms that govern use of the ${site.name} Discord bot and dashboard.`,
 };
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
     <PageShell
       eyebrow="terms"
       title="Terms of Service"
-      intro="By inviting LIGHTCORE to a guild you agree to the terms below. They exist to keep the guard engine predictable."
+      intro={`By inviting ${site.name} to a guild you agree to the terms below. They exist to keep the guard engine predictable.`}
     >
       <Prose>
         <p>
@@ -20,9 +20,10 @@ export default function TermsPage() {
         </p>
         <h2>Acceptable use</h2>
         <p>
-          LIGHTCORE is provided for the protection of Discord communities. You may
-          not use it to harass members, to bypass Discord&apos;s Terms of
-          Service, or to target guilds you do not own or moderate.
+          {site.name} is provided for the protection and management of Discord
+          communities. You may not use it to harass members, to bypass
+          Discord&apos;s Terms of Service, or to target guilds you do not own or
+          moderate.
         </p>
         <h2>Permissions and hierarchy</h2>
         <p>
@@ -34,12 +35,21 @@ export default function TermsPage() {
         <p>
           We target 99.99% uptime and publish latency in the status panel, but
           the service is provided &quot;as is&quot; without warranty. Scheduled
-          maintenance is announced in the support server.
+          maintenance is announced in our{" "}
+          <a
+            href={site.discord}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-400 underline decoration-brand-500/40 underline-offset-4 hover:text-brand-300"
+          >
+            support server
+          </a>
+          .
         </p>
         <h2>Limitation of liability</h2>
         <p>
-          To the maximum extent permitted by law, LightCore Security is not liable
-          for indirect damages arising from moderation actions, rollbacks or
+          To the maximum extent permitted by law, {site.name} is not liable for
+          indirect damages arising from moderation actions, rollbacks or
           downtime.
         </p>
         <h2>Termination</h2>
