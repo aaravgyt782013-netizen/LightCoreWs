@@ -155,7 +155,6 @@ export function AdminClient() {
         u.username.toLowerCase().includes(q) ||
         (u.globalName && u.globalName.toLowerCase().includes(q)) ||
         u.id.includes(q) ||
-        (u.email && u.email.toLowerCase().includes(q)),
     );
   }, [data, userSearch]);
 
