@@ -633,7 +633,7 @@ export function PremiumClient() {
                 }`}
               >
                 <InvoiceIcon className="size-4" />
-                {isCurrent ? "Renew · Get Invoice" : "Buy Now · Get Invoice"}
+                {isCurrent ? "Renew · Order Summary" : "Create Order Summary"}
                 <ArrowRight className="size-4 transition-transform group-hover/btn:translate-x-0.5" />
               </button>
             </div>
@@ -805,7 +805,7 @@ export function PremiumClient() {
         </div>
       </div>
 
-      {/* In-Website Invoice Generator & Live Preview Modal (Mobile Sheet + PC Modal) */}
+      {/* In-Website Order Summary Generator & Live Preview Modal (Mobile Sheet + PC Modal) */}
       {isModalOpen && (
         <div
           role="dialog"
@@ -881,7 +881,7 @@ export function PremiumClient() {
                       </span>
                     </div>
 
-                    {/* Date, Time, Invoice ID, Verify Code grid */}
+                    {/* Date, Time, Order Reference, Verify Code grid */}
                     <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-brand-200/[0.08] bg-ink-900/70 p-3 font-mono text-[11px] sm:grid-cols-4">
                       <div>
                         <p className="text-[9px] uppercase text-zinc-500">
@@ -901,7 +901,7 @@ export function PremiumClient() {
                       </div>
                       <div>
                         <p className="text-[9px] uppercase text-zinc-500">
-                          Invoice ID
+                          Order Reference
                         </p>
                         <p className="mt-0.5 truncate font-semibold text-brand-300">
                           {activeInvoice.invoiceId}
@@ -1049,7 +1049,7 @@ export function PremiumClient() {
                   >
                     <DownloadIcon className="size-4" />
                     {downloading
-                      ? "Preparing Invoice…"
+                      ? "Preparing Order Summary…"
                       : downloadedOnce
                         ? "Downloaded! Save Again"
                         : "Download Order Summary (PNG)"}
@@ -1087,19 +1087,19 @@ export function PremiumClient() {
                   >
                     <CopyIcon className="size-3.5" />
                     {copiedKey === "invtxt"
-                      ? "✓ Invoice Copied!"
-                      : "Copy Invoice Text"}
+                      ? "✓ Order Summary Copied!"
+                      : "Copy Order Summary Text"}
                   </button>
                 </div>
               </div>
             ) : selectedPlan ? (
-              /* VIEW B: Configure Plan, Duration, Server & Note -> Generate Invoice */
+              /* VIEW B: Configure Plan, Duration, Server & Note -> Create Order Summary */
               <div className="mt-5 space-y-4">
                 {user ? (
                   <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-400/25 bg-brand-950/40 px-3.5 py-2.5">
                     <span className="flex items-center gap-2 text-[12.5px] text-zinc-200">
                       <LockIcon className="size-3.5 text-brand-400" />
-                      Invoice for{" "}
+                      Order summary for{" "}
                       <strong className="text-white">@{user.username}</strong>
                     </span>
                     <span className="font-mono text-[10px] text-brand-300">
@@ -1109,7 +1109,7 @@ export function PremiumClient() {
                 ) : (
                   <div className="rounded-2xl border border-brand-400/30 bg-brand-950/40 p-4">
                     <p className="text-[13.5px] font-semibold text-white">
-                      Sign in with Discord to Generate Your Invoice
+                      Sign in with Discord to Create an Order Summary
                     </p>
                     <p className="mt-1 text-[12px] leading-relaxed text-zinc-400">
                       We attach your verified Discord username, User ID,
@@ -1161,7 +1161,7 @@ export function PremiumClient() {
                   <div className="mt-1.5">
                     {guilds.length > 0 ? (
                       <CustomSelect
-                        title="Select Server for Invoice"
+                        title="Select Server for Order Summary"
                         placeholder="Choose one of your servers…"
                         value={targetGuildId}
                         onChange={setTargetGuildId}
@@ -1190,7 +1190,7 @@ export function PremiumClient() {
                   </div>
                 </div>
 
-                {/* Optional Note on Invoice */}
+                {/* Optional Note on Order Summary */}
                 <div>
                   <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
                     Additional Note for Owner (Optional)
