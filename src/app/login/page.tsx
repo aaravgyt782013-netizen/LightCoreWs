@@ -9,6 +9,7 @@ import { DiscordLoginButton, LoginNotice } from "./LoginNotice";
 export const metadata: Metadata = {
   title: "Dashboard",
   description: `Continue with Discord to manage your ${site.name} servers.`,
+  robots: { index: false, follow: false },
 };
 
 export default function LoginPage() {
