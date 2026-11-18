@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { DiscordIcon } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
+import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 import { nav, site } from "@/lib/site";
 
 const legal = [
@@ -55,7 +56,10 @@ export function Footer() {
               { label: "Owner panel", href: site.admin },
               {
                 label: "Invite bot",
-                href: config.inviteUrl || site.invite,
+                href: sanitizeDiscordInviteUrl(
+                  config.inviteUrl || site.invite,
+                  site.clientId,
+                ),
                 external: true,
               },
               {

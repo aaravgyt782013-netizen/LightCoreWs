@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { DiscordIcon, ArrowRight } from "@/components/ui/Icons";
-import { useSiteConfig } from "@/components/site/SiteConfigProvider";
+import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 import { site } from "@/lib/site";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 
 type Props = {
   size?: "sm" | "md" | "lg";
@@ -36,9 +37,14 @@ export function InviteButton({
     );
   }
 
+  const safeInviteUrl = sanitizeDiscordInviteUrl(
+    config.inviteUrl || site.invite,
+    site.clientId,
+  );
+
   return (
     <a
-      href={config.inviteUrl || site.invite}
+      href={safeInviteUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={`btn-glow group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 font-semibold text-white shadow-[0_10px_40px_-10px_rgb(var(--brand-500)/0.8)] transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_16px_50px_-10px_rgb(var(--brand-400)/0.9)] active:translate-y-0 ${sizes[size]} ${className}`}

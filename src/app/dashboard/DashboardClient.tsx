@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { site } from "@/lib/site";
+import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import {
   ArrowRight,
@@ -46,6 +48,11 @@ type UserPremium = {
 
 export function DashboardClient() {
   const router = useRouter();
+  const { config: siteCfg } = useSiteConfig();
+  const safeInviteHref = sanitizeDiscordInviteUrl(
+    siteCfg.inviteUrl || site.invite,
+    site.clientId,
+  );
   const [state, setState] = useState<"loading" | "guest" | "authed">("loading");
   const [openingGuild, setOpeningGuild] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -358,7 +365,7 @@ export function DashboardClient() {
             />
           </div>
           <a
-            href={site.invite}
+            href={safeInviteHref}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.04] px-3.5 text-[12.5px] font-medium text-zinc-200 transition-colors hover:border-brand-500/40 hover:text-white"
@@ -381,7 +388,7 @@ export function DashboardClient() {
               : "You need Manage Server or Administrator permissions in a Discord server to configure it."}
           </p>
           <a
-            href={site.invite}
+            href={safeInviteHref}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-brand-600 px-5 text-[13px] font-semibold text-white hover:bg-brand-500"

@@ -2,8 +2,14 @@ import crypto from "node:crypto";
 import { NextRequest } from "next/server";
 import { site } from "@/lib/site";
 import {
+  cleanEnvString,
+  resolveDiscordClientId,
+  resolveOAuthScopes,
+} from "@/lib/discord-oauth";
+import {
   getRedirectUri,
   OAUTH_NEXT_COOKIE,
+  OAUTH_REDIRECT_COOKIE,
   OAUTH_STATE_COOKIE,
   relativeRedirect,
   sealSession,
@@ -32,44 +38,62 @@ function statesMatch(a: string | undefined, b: string | null): boolean {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-export async function GET(req: NextRequest) {
+function clearOAuthCookies(res: ReturnType<typeof relativeRedirect>) {
+  res.cookies.delete(OAUTH_STATE_COOKIE);
+  res.cookies.delete(OAUTH_NEXT_COOKIE);
+  res.cookies.delete(OAUTH_REDIRECT_COOKIE);
+  return res;
+}
+
+export async function handleDiscordOAuthCallback(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  const oauthError = searchParams.get("error");
   const code = searchParams.get("code");
   const state = searchParams.get("state");
   const storedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
   const storedNext = req.cookies.get(OAUTH_NEXT_COOKIE)?.value;
-  const clientSecret = process.env.DISCORD_CLIENT_SECRET?.trim();
+  const storedRedirect = req.cookies.get(OAUTH_REDIRECT_COOKIE)?.value;
+  const clientSecret = cleanEnvString(process.env.DISCORD_CLIENT_SECRET);
+  const clientId = resolveDiscordClientId();
 
   if (!clientSecret) {
-    return relativeRedirect("/login?error=oauth_not_configured");
+    return clearOAuthCookies(relativeRedirect("/login?error=oauth_not_configured"));
+  }
+
+  if (oauthError) {
+    const mapped =
+      oauthError === "access_denied"
+        ? "access_denied"
+        : oauthError === "invalid_scope"
+          ? "invalid_scope"
+          : "oauth_failed";
+    return clearOAuthCookies(relativeRedirect(`/login?error=${mapped}`));
   }
 
   if (!code || !statesMatch(storedState, state)) {
-    const res = relativeRedirect("/login?error=invalid_state");
-    res.cookies.delete(OAUTH_STATE_COOKIE);
-    res.cookies.delete(OAUTH_NEXT_COOKIE);
-    return res;
+    return clearOAuthCookies(relativeRedirect("/login?error=invalid_state"));
   }
+
+  const redirectUri = getRedirectUri(req.url, req.headers, storedRedirect);
 
   try {
     const tokenRes = await fetch("https://discord.com/api/v10/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: site.clientId,
+        client_id: clientId,
         client_secret: clientSecret,
         grant_type: "authorization_code",
         code,
-        redirect_uri: getRedirectUri(req.url, req.headers),
+        redirect_uri: redirectUri,
       }),
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!tokenRes.ok) {
-      const res = relativeRedirect("/login?error=token_exchange_failed");
-      res.cookies.delete(OAUTH_STATE_COOKIE);
-      res.cookies.delete(OAUTH_NEXT_COOKIE);
-      return res;
+      return clearOAuthCookies(
+        relativeRedirect("/login?error=token_exchange_failed"),
+      );
     }
 
     const tokenData = (await tokenRes.json()) as {
@@ -79,14 +103,16 @@ export async function GET(req: NextRequest) {
       scope?: string;
     };
 
-    const grantedScopes = (tokenData.scope || site.oauthScopes)
+    const grantedScopes = (
+      tokenData.scope || resolveOAuthScopes(site.oauthScopes)
+    )
       .split(/\s+/)
       .filter(Boolean);
 
     const [userRes, rawGuilds] = await Promise.all([
       fetch("https://discord.com/api/v10/users/@me", {
         headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(10000),
       }),
       grantedScopes.includes("guilds")
         ? fetchAllUserGuilds(tokenData.access_token)
@@ -94,10 +120,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     if (!userRes.ok) {
-      const res = relativeRedirect("/login?error=user_fetch_failed");
-      res.cookies.delete(OAUTH_STATE_COOKIE);
-      res.cookies.delete(OAUTH_NEXT_COOKIE);
-      return res;
+      return clearOAuthCookies(
+        relativeRedirect("/login?error=user_fetch_failed"),
+      );
     }
 
     const rawUser = (await userRes.json()) as {
@@ -132,7 +157,8 @@ export async function GET(req: NextRequest) {
         globalName: rawUser.global_name ?? null,
         avatarUrl,
         email: rawUser.email ?? null,
-        verified: typeof rawUser.verified === "boolean" ? rawUser.verified : null,
+        verified:
+          typeof rawUser.verified === "boolean" ? rawUser.verified : null,
         locale: rawUser.locale ?? null,
         scopes: grantedScopes,
         hasJoinScope,
@@ -147,8 +173,10 @@ export async function GET(req: NextRequest) {
 
     // Optionally auto-add user to configured guild (e.g. support server) using guilds.join scope.
     let autoJoinStatus: string | null = null;
-    const autoJoinGuildId = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim();
-    const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
+    const autoJoinGuildId = cleanEnvString(
+      process.env.DISCORD_AUTO_JOIN_GUILD_ID,
+    );
+    const botToken = cleanEnvString(process.env.DISCORD_BOT_TOKEN);
     if (
       hasJoinScope &&
       botToken &&
@@ -178,7 +206,9 @@ export async function GET(req: NextRequest) {
     });
 
     if (!sealed) {
-      return relativeRedirect("/login?error=oauth_not_configured");
+      return clearOAuthCookies(
+        relativeRedirect("/login?error=oauth_not_configured"),
+      );
     }
 
     const ownerLogin = isOwnerId(rawUser.id);
@@ -222,21 +252,21 @@ export async function GET(req: NextRequest) {
         ? (storedNext as `/${string}`)
         : "/dashboard";
 
-    const res = relativeRedirect(destination);
-    res.cookies.delete(OAUTH_STATE_COOKIE);
-    res.cookies.delete(OAUTH_NEXT_COOKIE);
+    const isHttps = redirectUri.startsWith("https://");
+    const res = clearOAuthCookies(relativeRedirect(destination));
     res.cookies.set(SESSION_COOKIE, sealed, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: isHttps,
       path: "/",
       maxAge: ttl,
     });
     return res;
   } catch {
-    const res = relativeRedirect("/login?error=oauth_failed");
-    res.cookies.delete(OAUTH_STATE_COOKIE);
-    res.cookies.delete(OAUTH_NEXT_COOKIE);
-    return res;
+    return clearOAuthCookies(relativeRedirect("/login?error=oauth_failed"));
   }
+}
+
+export async function GET(req: NextRequest) {
+  return handleDiscordOAuthCallback(req);
 }

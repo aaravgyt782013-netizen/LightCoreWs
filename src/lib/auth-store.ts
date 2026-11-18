@@ -260,7 +260,9 @@ async function getValidAccessToken(
   }
 
   const refresh = decryptSecret(stored.encryptedRefreshToken);
-  const clientSecret = process.env.DISCORD_CLIENT_SECRET?.trim();
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET
+    ?.trim()
+    .replace(/^["']|["']$/g, "");
   if (!refresh || !clientSecret) return current;
 
   try {

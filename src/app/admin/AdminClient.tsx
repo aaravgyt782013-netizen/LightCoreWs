@@ -41,6 +41,8 @@ type AdminOverview = {
     clientId: string;
     prefix: string;
     oauthScopes: string;
+    redirectUri?: string;
+    inviteUrl?: string;
     autoJoinGuildId: string | null;
     storageEngine: string;
     integrations: {
@@ -1115,6 +1117,18 @@ export function AdminClient() {
               value={data.config.ownerIds.join(", ")}
             />
             <ConfigRow label="Client ID" value={data.config.clientId} />
+            {data.config.redirectUri && (
+              <ConfigRow
+                label="OAuth2 Redirect URI"
+                value={data.config.redirectUri}
+              />
+            )}
+            {data.config.inviteUrl && (
+              <ConfigRow
+                label="Bot Invite URL"
+                value={data.config.inviteUrl}
+              />
+            )}
             <ConfigRow label="Command Prefix" value={data.config.prefix} />
             <ConfigRow
               label="Website Payment"

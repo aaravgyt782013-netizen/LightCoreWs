@@ -17,6 +17,7 @@ import {
   getGuildSubscription,
   getUserSubscription,
 } from "@/lib/premium-store";
+import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
@@ -114,7 +115,10 @@ export async function GET(req: NextRequest, context: RouteContext) {
         name: guild.name,
         iconUrl: guildIconUrl(guild.id, guild.icon),
         owner: guild.owner,
-        inviteUrl: buildGuildInviteUrl(guild.id),
+        inviteUrl: buildGuildInviteUrl(
+          guild.id,
+          (await getSiteConfig()).inviteUrl,
+        ),
         botInGuild: liveDetails ? liveDetails.botInGuild : null,
         memberCount: liveDetails?.memberCount ?? null,
         onlineCount: liveDetails?.onlineCount ?? null,

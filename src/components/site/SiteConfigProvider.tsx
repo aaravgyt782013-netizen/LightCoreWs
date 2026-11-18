@@ -12,6 +12,7 @@ import {
 import {
   buildThemeCssVariables,
   createDefaultSiteConfig,
+  mergeSiteConfig,
   type SiteConfig,
 } from "@/lib/site-config";
 import { ArrowRight, ShieldIcon } from "@/components/ui/Icons";
@@ -92,8 +93,9 @@ export function SiteConfigProvider({
       if (raw) {
         const cached = JSON.parse(raw) as SiteConfig;
         if (cached && cached.brandName) {
-          setConfig(cached);
-          applySiteThemeToDom(cached);
+          const safe = mergeSiteConfig(createDefaultSiteConfig(), cached);
+          setConfig(safe);
+          applySiteThemeToDom(safe);
         }
       }
     } catch {

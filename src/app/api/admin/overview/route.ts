@@ -13,6 +13,13 @@ import {
 } from "@/lib/premium-store";
 import { getSiteConfig } from "@/lib/site-config-server";
 import { getStorageEngineName } from "@/lib/kv-store";
+import {
+  cleanEnvString,
+  resolveDiscordClientId,
+  resolveOAuthScopes,
+  sanitizeDiscordInviteUrl,
+} from "@/lib/discord-oauth";
+import { getRedirectUri, getSessionSecret } from "@/lib/session";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -70,26 +77,37 @@ export async function GET(req: NextRequest) {
       },
       config: {
         ownerIds: getOwnerIds(),
-        clientId: process.env.DISCORD_CLIENT_ID || site.clientId,
+        clientId: resolveDiscordClientId(),
         prefix: siteConfig.prefix || site.prefix,
-        oauthScopes: site.oauthScopes,
-        autoJoinGuildId: process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim() || null,
+        oauthScopes: resolveOAuthScopes(
+          process.env.DISCORD_OAUTH_SCOPES || site.oauthScopes,
+        ),
+        redirectUri: getRedirectUri(req.url, req.headers),
+        inviteUrl: sanitizeDiscordInviteUrl(
+          siteConfig.inviteUrl || site.invite,
+          site.clientId,
+        ),
+        autoJoinGuildId:
+          cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID) || null,
         storageEngine: getStorageEngineName(),
         integrations: {
           oauthConfigured: Boolean(
-            process.env.DISCORD_CLIENT_SECRET &&
-              process.env.SESSION_SECRET &&
-              process.env.SESSION_SECRET.length >= 16,
+            cleanEnvString(process.env.DISCORD_CLIENT_SECRET) &&
+              getSessionSecret().length >= 16,
           ),
-          botTokenConfigured: Boolean(process.env.DISCORD_BOT_TOKEN?.trim()),
-          logSecretConfigured: Boolean(process.env.LOG_INGEST_SECRET?.trim()),
+          botTokenConfigured: Boolean(
+            cleanEnvString(process.env.DISCORD_BOT_TOKEN),
+          ),
+          logSecretConfigured: Boolean(
+            cleanEnvString(process.env.LOG_INGEST_SECRET),
+          ),
           webhookConfigured: Boolean(
-            process.env.DISCORD_LOG_WEBHOOK_URL?.trim(),
+            cleanEnvString(process.env.DISCORD_LOG_WEBHOOK_URL),
           ),
           autoJoinConfigured: Boolean(
-            process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim(),
+            cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID),
           ),
-          botApiConfigured: Boolean(process.env.BOT_API_URL?.trim()),
+          botApiConfigured: Boolean(cleanEnvString(process.env.BOT_API_URL)),
         },
       },
       stats: {

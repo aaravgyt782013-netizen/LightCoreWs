@@ -1,47 +1,79 @@
-const clientId =
-  process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || "1559607601115955210";
-const prefix = process.env.NEXT_PUBLIC_BOT_PREFIX || ".";
+import {
+  buildCanonicalBotInviteUrl,
+  cleanEnvString,
+  DEFAULT_BOT_INVITE_URL,
+  resolveDiscordClientId,
+  resolveOAuthScopes,
+  sanitizeDiscordInviteUrl,
+  sanitizeOriginUrl,
+} from "@/lib/discord-oauth";
+
+const clientId = resolveDiscordClientId();
+const prefix = cleanEnvString(process.env.NEXT_PUBLIC_BOT_PREFIX) || ".";
+
+const resolvedInviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL
+  ? sanitizeDiscordInviteUrl(
+      process.env.NEXT_PUBLIC_DISCORD_INVITE_URL,
+      clientId,
+      { enforceClientId: true },
+    )
+  : clientId === "1559607601115955210"
+    ? DEFAULT_BOT_INVITE_URL
+    : buildCanonicalBotInviteUrl(clientId);
 
 export const site = {
-  name: process.env.NEXT_PUBLIC_SITE_NAME || "LightCore",
+  name: cleanEnvString(process.env.NEXT_PUBLIC_SITE_NAME) || "LightCore",
   wordmark: {
-    lead: process.env.NEXT_PUBLIC_WORDMARK_LEAD || "LIGHT",
-    accent: process.env.NEXT_PUBLIC_WORDMARK_ACCENT || "CORE",
+    lead: cleanEnvString(process.env.NEXT_PUBLIC_WORDMARK_LEAD) || "LIGHT",
+    accent: cleanEnvString(process.env.NEXT_PUBLIC_WORDMARK_ACCENT) || "CORE",
   },
   tagline:
-    process.env.NEXT_PUBLIC_SITE_TAGLINE || "LIGHT FOR YOU HEAVY FOR NUKERS",
+    cleanEnvString(process.env.NEXT_PUBLIC_SITE_TAGLINE) ||
+    "LIGHT FOR YOU HEAVY FOR NUKERS",
   description:
-    process.env.NEXT_PUBLIC_SITE_DESCRIPTION ||
+    cleanEnvString(process.env.NEXT_PUBLIC_SITE_DESCRIPTION) ||
     "As your choice for an all in one bot",
-  url: (
-    process.env.NEXT_PUBLIC_SITE_URL || "https://lightcorews.wasmer.app"
-  ).replace(/\/+$/, ""),
+  url:
+    sanitizeOriginUrl(process.env.NEXT_PUBLIC_SITE_URL) ||
+    sanitizeOriginUrl(process.env.URL) ||
+    "https://lightcorews.netlify.app",
   clientId,
-  ownerId: process.env.NEXT_PUBLIC_OWNER_ID || "1538907226671022111",
+  ownerId:
+    cleanEnvString(process.env.NEXT_PUBLIC_OWNER_ID) || "1538907226671022111",
   prefix,
-  oauthScopes:
-    process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES ||
-    "identify email guilds guilds.join",
-  invite:
-    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL ||
-    `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=8&integration_type=0&scope=bot`,
-  dashboard: process.env.NEXT_PUBLIC_DASHBOARD_URL || "/login",
+  oauthScopes: resolveOAuthScopes(process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES),
+  invite: resolvedInviteUrl,
+  dashboard:
+    cleanEnvString(process.env.NEXT_PUBLIC_DASHBOARD_URL) || "/login",
   premium: "/premium",
   admin: "/admin",
   discord:
-    process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL ||
+    cleanEnvString(process.env.NEXT_PUBLIC_DISCORD_SUPPORT_URL) ||
     "https://discord.gg/np8M2TZgqa",
-  logo: process.env.NEXT_PUBLIC_LOGO_URL || "/brand/logo.png",
+  logo: cleanEnvString(process.env.NEXT_PUBLIC_LOGO_URL) || "/brand/logo.png",
 } as const;
 
-export function buildGuildInviteUrl(guildId: string): string {
+export function buildGuildInviteUrl(
+  guildId: string,
+  customInviteBase?: string,
+): string {
+  const safeBase = sanitizeDiscordInviteUrl(
+    customInviteBase || site.invite,
+    site.clientId,
+  );
   try {
-    const url = new URL(site.invite);
-    url.searchParams.set("guild_id", guildId);
-    url.searchParams.set("disable_guild_select", "true");
+    const url = new URL(safeBase);
+    if (/^\d{15,22}$/.test(guildId.trim())) {
+      url.searchParams.set("guild_id", guildId.trim());
+      url.searchParams.set("disable_guild_select", "true");
+    }
+    url.searchParams.delete("redirect_uri");
+    url.searchParams.delete("response_type");
+    url.searchParams.delete("state");
+    url.searchParams.delete("prompt");
     return url.toString();
   } catch {
-    return site.invite;
+    return DEFAULT_BOT_INVITE_URL;
   }
 }
 

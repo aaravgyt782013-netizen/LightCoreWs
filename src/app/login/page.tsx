@@ -6,12 +6,10 @@ import { Logo, Wordmark } from "@/components/ui/Logo";
 import {
   DiscordIcon,
   ShieldIcon,
-  ArrowRight,
   CheckIcon,
-  CrownIcon,
 } from "@/components/ui/Icons";
 import { site } from "@/lib/site";
-import { LoginNotice } from "./LoginNotice";
+import { LoginNotice, LoginQuickActions } from "./LoginNotice";
 
 export const metadata: Metadata = {
   title: "Dashboard Login",
@@ -93,33 +91,7 @@ export default function LoginPage() {
                 <span className="h-px flex-1 bg-white/10" />
               </div>
 
-              <div className="grid gap-2.5">
-                <a
-                  href={site.invite}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-500/30 bg-brand-950/35 text-[13px] font-medium text-white transition-colors hover:border-brand-500/60 hover:bg-brand-900/40"
-                >
-                  Add {site.name} to a Server
-                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-                </a>
-                <Link
-                  href="/premium"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-400/35 bg-brand-500/10 text-[13px] font-medium text-brand-200 transition-all hover:border-brand-400/60 hover:bg-brand-500/20 hover:text-white"
-                >
-                  <CrownIcon className="size-4 text-brand-300" />
-                  View Premium Plans
-                </Link>
-                <a
-                  href={site.discord}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] text-[13px] font-medium text-zinc-300 transition-colors hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-                >
-                  <DiscordIcon className="size-4 text-[#5865F2]" />
-                  Join Support Server
-                </a>
-              </div>
+              <LoginQuickActions />
 
               <p className="mt-5 flex items-start gap-2 text-[11px] leading-relaxed text-zinc-500">
                 <ShieldIcon className="mt-px size-3.5 shrink-0 text-brand-500/70" />

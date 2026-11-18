@@ -10,6 +10,7 @@ import {
 import { isOwnerId } from "@/lib/admin";
 import { ensureSessionUserRecorded } from "@/lib/auth-store";
 import { getUserSubscription } from "@/lib/premium-store";
+import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const [rawGuilds, botGuilds, premium] = await Promise.all([
+  const [rawGuilds, botGuilds, premium, siteCfg] = await Promise.all([
     fetchAllUserGuilds(session.accessToken),
     fetchBotGuilds(),
     getUserSubscription(session.user.id),
+    getSiteConfig(),
   ]);
 
   // Persist/refresh this signed-in user so the Owner Panel always lists every active login.
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
         owner: g.owner,
         canManage,
         botPresent: botGuilds ? botGuilds.ids.has(g.id) : null,
-        inviteUrl: buildGuildInviteUrl(g.id),
+        inviteUrl: buildGuildInviteUrl(g.id, siteCfg.inviteUrl),
       };
     })
     .sort(

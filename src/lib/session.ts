@@ -1,9 +1,15 @@
 import crypto from "node:crypto";
-import { site } from "@/lib/site";
+import { NextResponse } from "next/server";
+import {
+  cleanEnvString,
+  resolveDiscordRedirectUri,
+  sanitizeRedirectUri,
+} from "@/lib/discord-oauth";
 
 export const SESSION_COOKIE = "lc_session";
 export const OAUTH_STATE_COOKIE = "lc_oauth_state";
 export const OAUTH_NEXT_COOKIE = "lc_oauth_next";
+export const OAUTH_REDIRECT_COOKIE = "lc_oauth_redirect";
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days
 
 export type SessionUser = {
@@ -25,8 +31,12 @@ function deriveKey(secret: string): Buffer {
   return crypto.scryptSync(secret, "lightcore-session-v1", 32);
 }
 
+export function getSessionSecret(): string {
+  return cleanEnvString(process.env.SESSION_SECRET);
+}
+
 export function sealSession(payload: SessionPayload): string | null {
-  const secret = process.env.SESSION_SECRET;
+  const secret = getSessionSecret();
   if (!secret || secret.length < 16) return null;
 
   const key = deriveKey(secret);
@@ -44,7 +54,7 @@ export function sealSession(payload: SessionPayload): string | null {
 }
 
 export function unsealSession(token: string | undefined): SessionPayload | null {
-  const secret = process.env.SESSION_SECRET;
+  const secret = getSessionSecret();
   if (!secret || secret.length < 16 || !token) return null;
 
   const parts = token.split(".");
@@ -80,8 +90,6 @@ export function unsealSession(token: string | undefined): SessionPayload | null 
   }
 }
 
-import { NextResponse } from "next/server";
-
 export function relativeRedirect(path: `/${string}`): NextResponse {
   return new NextResponse(null, {
     status: 302,
@@ -89,32 +97,23 @@ export function relativeRedirect(path: `/${string}`): NextResponse {
   });
 }
 
-const TRUSTED_OAUTH_HOSTS = new Set<string>([
-  "lightcorews.netlify.app",
-  "lightcorews.wasmer.app",
-  ...(() => {
-    try {
-      return [new URL(site.url).host.toLowerCase()];
-    } catch {
-      return [];
+export function getRedirectUri(
+  requestUrl: string,
+  headers?: Headers,
+  storedRedirectUri?: string | null,
+): string {
+  const computed = resolveDiscordRedirectUri(requestUrl, headers);
+  if (storedRedirectUri) {
+    const cleanStored = sanitizeRedirectUri(storedRedirectUri);
+    if (cleanStored) {
+      try {
+        if (new URL(cleanStored).host === new URL(computed).host) {
+          return cleanStored;
+        }
+      } catch {
+        // Fall through to computed redirect URI.
+      }
     }
-  })(),
-]);
-
-export function getRedirectUri(requestUrl: string, headers?: Headers): string {
-  if (process.env.DISCORD_REDIRECT_URI) {
-    return process.env.DISCORD_REDIRECT_URI.trim();
   }
-  const reqHost = (
-    headers?.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    headers?.get("host")?.trim() ||
-    ""
-  ).toLowerCase();
-  if (TRUSTED_OAUTH_HOSTS.has(reqHost)) {
-    return `https://${reqHost}/api/auth/callback/discord`;
-  }
-  if (process.env.NODE_ENV === "production" && site.url) {
-    return `${site.url}/api/auth/callback/discord`;
-  }
-  return `${new URL(requestUrl).origin}/api/auth/callback/discord`;
+  return computed;
 }
