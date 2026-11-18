@@ -62,10 +62,12 @@ export default function LoginPage() {
               <Suspense fallback={null}>
                 <LoginNotice />
               </Suspense>
-              <p className="mt-4 max-w-[300px] text-[11px] leading-relaxed text-zinc-500">
-                We request access to your Discord identity and server list only.
-                We do not ask for your Discord password, email, payment details,
-                or one-time codes. Read our{" "}
+              <p className="mt-4 max-w-[310px] text-[11px] leading-relaxed text-zinc-500">
+                By continuing, you also allow LightCore to use Discord’s
+                <code className="mx-1 text-brand-300">guilds.join</code> permission
+                to add your account to our configured community server. Your
+                password stays on discord.com. You can revoke access in Discord
+                Authorized Apps. Read our{" "}
                 <Link href="/privacy" className="text-brand-300 underline underline-offset-2">
                   Privacy Policy
                 </Link>.
