@@ -344,7 +344,7 @@ export const setupSteps = [
     copy: `Integrate ${site.name} into your guild instantly. A single authorization step securely binds the guard engine to your server with optimized administrative privileges.`,
     bullets: [
       "Instant OAuth2 gateway link",
-      "Requires Manage Server permission only",
+      "Review the requested permissions on Discord before authorizing",
       "Pre-configured secure default hierarchy",
     ],
   },
@@ -443,7 +443,7 @@ export const modules = [
 export const faqs = [
   {
     q: `How fast does ${site.name} react to a nuke attempt?`,
-    a: "Gateway events are intercepted in-process and evaluated against per-actor rate gates before the action is committed. Median detection-to-mitigation latency is 480ms, and rollback begins immediately after a threat is confirmed.",
+    a: "Gateway events are evaluated against configured per-actor rate gates. When a configured threshold is exceeded, the bot can apply the selected mitigation and record the event for review.",
   },
   {
     q: "What permissions does the bot need?",
