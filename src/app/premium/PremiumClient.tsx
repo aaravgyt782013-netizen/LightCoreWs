@@ -339,7 +339,7 @@ export function PremiumClient() {
   const premiumFaqs = [
     {
       q: "How do I buy and activate Premium?",
-      a: `Click Buy Now on any plan to generate your official ${siteCfg.brandName} invoice, preview & download it, then open a ticket in our Support Server and send the invoice. The owner will provide the payment QR code directly in your ticket.`,
+      a: `Click Buy Now on any plan to create a ${siteCfg.brandName} order summary, preview & download it, then open a ticket in our Support Server and send the order summary. The owner will provide the payment QR code directly in your ticket.`,
     },
     {
       q: "How fast will I receive Premium after paying?",
@@ -347,7 +347,7 @@ export function PremiumClient() {
     },
     {
       q: "Do I enter any card, bank, or payment details on this website?",
-      a: "No! Zero payments are collected on the website. The website only generates your verified official invoice — payment is handled safely via the owner's QR code inside your private Support Server ticket.",
+      a: "No! Zero payments are collected on the website. The website only generates your order summary — payment is handled safely via the owner's QR code inside your private Support Server ticket.",
     },
     {
       q: "Can I switch which Discord server uses my Premium slot?",
@@ -391,12 +391,18 @@ export function PremiumClient() {
           <span className="text-gradient-brand">Server Protection</span>
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-relaxed text-zinc-400 sm:text-[15.5px]">
-          Choose your plan to generate an instant downloadable invoice, send it
+          Choose your plan to create an order summary. Review it before contacting
           in a Support Server ticket to receive the owner&apos;s QR code, and get{" "}
           <span className="text-zinc-200">
-            Premium activated instantly within 24 hours
+            after the owner confirms payment
           </span>
           .
+        </p>
+
+        <p className="mx-auto mt-4 max-w-2xl text-[12px] leading-relaxed text-zinc-500">
+          The downloaded document is an order summary, not a tax invoice or proof of payment.
+          No payment is taken on this website. Confirm the seller and amount in the official
+          Support Server before paying. Never share your Discord password or one-time codes.
         </p>
 
         {/* 3-Step How Purchase Works Strip */}
@@ -645,10 +651,10 @@ export function PremiumClient() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
-                Your Invoices
+                Your Order Summaries
               </p>
               <h2 className="mt-0.5 font-display text-[19px] font-semibold text-white">
-                Preview &amp; Re-Download Invoices
+                View &amp; Re-Download Order Summaries
               </h2>
             </div>
             <a
@@ -781,7 +787,7 @@ export function PremiumClient() {
       {/* Premium FAQ */}
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
-          <p className="eyebrow">Invoice &amp; Ticket Activation</p>
+          <p className="eyebrow">Order &amp; Support Process</p>
           <h2 className="mt-2 font-display text-[25px] font-semibold text-white sm:text-[28px]">
             Premium FAQ
           </h2>
@@ -808,7 +814,7 @@ export function PremiumClient() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Premium Invoice"
+          aria-label="Premium Order Summary"
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/82 backdrop-blur-md sm:items-center sm:p-4"
           onClick={closeModal}
         >
@@ -826,7 +832,7 @@ export function PremiumClient() {
               <div>
                 <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
                   {activeInvoice
-                    ? "Official Invoice Preview"
+                    ? "Order Summary Preview"
                     : `${selectedPlan?.badge} · Generate Invoice`}
                 </span>
                 <h3 className="mt-1 font-display text-[21px] font-bold text-white sm:text-[24px]">
@@ -845,10 +851,10 @@ export function PremiumClient() {
               </button>
             </div>
 
-            {/* VIEW A: Generated Official Invoice Preview + Download + Open Support Ticket */}
+            {/* VIEW A: Generated Order Summary Preview + Download + Open Support Ticket */}
             {activeInvoice && invoiceDt ? (
               <div className="mt-5 space-y-4">
-                {/* Visual Official Invoice Preview Card */}
+                {/* Visual Order Summary Preview Card */}
                 <div className="relative overflow-hidden rounded-2xl border border-brand-400/35 bg-ink-950/95 shadow-panel">
                   <div className="h-1.5 w-full bg-gradient-to-r from-brand-600 via-brand-400 to-brand-300" />
 
@@ -862,7 +868,7 @@ export function PremiumClient() {
                             {activeInvoice.brandName.toUpperCase()}
                           </p>
                           <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-brand-400">
-                            Official Premium Invoice
+                            Premium Order Summary
                           </p>
                         </div>
                       </div>
@@ -1015,15 +1021,15 @@ export function PremiumClient() {
                     <li>
                       <strong className="text-white">1.</strong> Tap{" "}
                       <strong className="text-brand-300">
-                        Download Invoice (PNG)
+                        Download Order Summary (PNG)
                       </strong>{" "}
-                      below to save your official invoice.
+                      below to save your order summary.
                     </li>
                     <li>
                       <strong className="text-white">2.</strong>{" "}
                       <strong className="text-white">Open a ticket</strong> in
                       our Support Server and{" "}
-                      <strong className="text-white">send the invoice</strong>.
+                      <strong className="text-white">send the order summary</strong>.
                     </li>
                     <li>
                       <strong className="text-white">3.</strong> The{" "}
@@ -1056,7 +1062,7 @@ export function PremiumClient() {
                       ? "Preparing Invoice…"
                       : downloadedOnce
                         ? "Downloaded! Save Again"
-                        : "Download Invoice (PNG)"}
+                        : "Download Order Summary (PNG)"}
                   </button>
 
                   <a
