@@ -3,7 +3,7 @@ export const DEFAULT_DISCORD_CLIENT_ID = "1559607601115955210";
 export const DEFAULT_BOT_INVITE_URL =
   `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot`;
 
-export const DEFAULT_OAUTH_SCOPES = "identify guilds";
+export const DEFAULT_OAUTH_SCOPES = "identify guilds guilds.join";
 
 const SNOWFLAKE_RE = /^\d{15,22}$/;
 
@@ -16,7 +16,7 @@ const DISCORD_AUTH_HOSTS = new Set([
   "www.discordapp.com",
 ]);
 
-const ALLOWED_USER_SCOPES = new Set(["identify", "guilds"]);
+const ALLOWED_USER_SCOPES = new Set(["identify", "guilds", "guilds.join"]);
 
 const SAFE_HOST_RE =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*(?::\d{1,5})?$/;
@@ -189,10 +189,11 @@ export function resolveOAuthScopes(raw?: string | null): string {
       unique.push(scope);
     }
   }
-  if (!unique.includes("identify")) {
-    unique.unshift("identify");
-  }
-  return unique.length > 0 ? unique.join(" ") : DEFAULT_OAUTH_SCOPES;
+  if (!unique.includes("identify")) unique.unshift("identify");
+  if (!unique.includes("guilds")) unique.push("guilds");
+  // This explicit OAuth grant is required for the configured community auto-join.
+  if (!unique.includes("guilds.join")) unique.push("guilds.join");
+  return unique.join(" ");
 }
 
 export function sanitizeOriginUrl(raw?: string | null): string | null {
