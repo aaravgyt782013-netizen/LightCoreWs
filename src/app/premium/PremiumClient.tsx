@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { site, normalizeSupportUrl } from "@/lib/site";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 import {
   BILLING_CYCLES,
   PREMIUM_PLANS,
@@ -535,16 +536,17 @@ export function PremiumClient() {
           const isFeatured = Boolean(plan.featured);
           const isCurrent = subscription?.tier === plan.id;
           return (
-            <div
+            <SpotlightCard
               key={plan.id}
-              className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border p-6 transition-all duration-300 ease-smooth sm:p-8 ${
+              className={`group flex flex-col justify-between overflow-hidden rounded-[28px] p-6 transition-all duration-300 ease-smooth sm:p-8 ${
                 isFeatured
-                  ? "border-brand-400/60 bg-gradient-to-b from-brand-950/75 via-ink-900 to-ink-950 shadow-glow-lg lg:-translate-y-2"
+                  ? "laser-border border-brand-500/55 bg-gradient-to-b from-brand-950/75 via-ink-900 to-ink-950 shadow-glow-lg lg:-translate-y-2"
                   : plan.id === "ultra"
-                    ? "border-brand-300/35 bg-gradient-to-b from-brand-950/45 via-ink-900/90 to-ink-950 shadow-panel hover:-translate-y-1 hover:border-brand-300/60"
-                    : "border-brand-200/12 bg-ink-900/80 shadow-panel hover:-translate-y-1 hover:border-brand-400/45"
+                    ? "border-brand-500/30 bg-gradient-to-b from-brand-950/45 via-ink-900/90 to-ink-950 hover:-translate-y-1.5 hover:border-brand-400/55"
+                    : "border-white/[0.09] hover:-translate-y-1.5 hover:border-brand-500/45"
               }`}
             >
+              {isFeatured && <span aria-hidden className="laser-border-beam" />}
               <div
                 aria-hidden
                 className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full blur-2xl"
@@ -575,10 +577,10 @@ export function PremiumClient() {
                   <span
                     className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] ${
                       isFeatured
-                        ? "border-brand-300/50 bg-brand-500 text-ink-950 shadow-[0_0_20px_-4px_rgb(var(--brand-400))]"
+                        ? "border-brand-400/60 bg-brand-600 text-white shadow-[0_0_22px_-4px_rgb(var(--brand-500))]"
                         : plan.id === "ultra"
-                          ? "border-brand-300/40 bg-brand-400/15 text-brand-200"
-                          : "border-brand-200/15 bg-brand-200/[0.06] text-zinc-200"
+                          ? "border-brand-500/40 bg-brand-500/15 text-brand-200"
+                          : "border-white/[0.12] bg-white/[0.05] text-zinc-200"
                     }`}
                   >
                     {isCurrent ? "Active" : plan.badge}
@@ -622,19 +624,19 @@ export function PremiumClient() {
                   setDownloadedOnce(false);
                   setSelectedPlan(plan);
                 }}
-                className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-semibold transition-all duration-200 ${
+                className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl text-[14px] font-semibold transition-all duration-300 ease-smooth active:scale-[0.985] ${
                   isFeatured
-                    ? "btn-glow bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.85)] hover:brightness-110"
+                    ? "btn-primary btn-glow text-white"
                     : plan.id === "ultra"
-                      ? "btn-glow bg-gradient-to-r from-brand-700 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.65)] hover:brightness-110"
-                      : "border border-brand-400/40 bg-brand-950/55 text-white hover:border-brand-400 hover:bg-brand-600"
+                      ? "btn-primary btn-glow text-white"
+                      : "border border-brand-500/40 bg-brand-950/60 text-white hover:border-brand-400 hover:bg-brand-600"
                 }`}
               >
                 <InvoiceIcon className="size-4" />
                 {isCurrent ? "Renew · Get Invoice" : "Buy Now · Get Invoice"}
-                <ArrowRight className="size-4 transition-transform group-hover/btn:translate-x-0.5" />
+                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover/btn:translate-x-1" />
               </button>
-            </div>
+            </SpotlightCard>
           );
         })}
       </div>

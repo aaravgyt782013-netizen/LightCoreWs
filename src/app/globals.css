@@ -354,6 +354,68 @@ body {
     animation-play-state: paused;
   }
 
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ---------- rotating conic crimson laser border beam ---------- */
+  .laser-border {
+    position: relative;
+  }
+  .laser-border > .laser-border-beam {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    overflow: hidden;
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+  .laser-border > .laser-border-beam::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 200%;
+    aspect-ratio: 1 / 1;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg,
+      transparent 285deg,
+      rgb(var(--brand-600) / 0.55) 325deg,
+      rgb(var(--brand-300) / 0.95) 352deg,
+      transparent 360deg
+    );
+    animation: laserSpin 6.5s linear infinite;
+    will-change: transform;
+  }
+
+  /* ---------- exact-center SVG orbital rings (zero mobile wobble) ---------- */
+  .loader-ring-fast,
+  .loader-ring-slow,
+  .loader-ring-reverse {
+    transform-box: view-box;
+    transform-origin: 80px 80px;
+    will-change: transform;
+  }
+  .loader-ring-fast {
+    animation: loaderSpinCw 1.65s linear infinite;
+  }
+  .loader-ring-slow {
+    animation: loaderSpinCw 5.2s linear infinite;
+  }
+  .loader-ring-reverse {
+    animation: loaderSpinCcw 2.6s linear infinite;
+  }
+
   .btn-glow::before {
     content: "";
     position: absolute;
@@ -446,6 +508,47 @@ body {
     transform: translate3d(-48%, 14px, 0) scale(1.06);
     opacity: 1;
   }
+}
+
+@keyframes loaderSpinCw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loaderSpinCcw {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes laserSpin {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes wavePulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-wave-pulse {
+  animation: wavePulse 2.8s ease-in-out infinite;
 }
 
 .animate-hero-in {

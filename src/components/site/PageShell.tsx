@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageBackground } from "@/components/site/Background";
 import { Navbar } from "@/components/site/Navbar";
 import { Footer } from "@/components/site/Footer";
+import { ScrollTopButton } from "@/components/ui/ScrollTopButton";
 
 export function PageShell({
   eyebrow,
@@ -18,20 +19,20 @@ export function PageShell({
     <>
       <PageBackground />
       <Navbar />
-      <main className="relative pb-24 pt-[126px] sm:pt-[138px]">
+      <main className="relative pb-24 pt-[118px] sm:pt-[138px]">
         <div className="container-x">
           <div className="animate-hero-in max-w-3xl">
-            <nav className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/70 px-3.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-500 backdrop-blur-md">
+            <nav className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/75 px-3.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-500 shadow-[inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-md">
               <Link
                 href="/"
                 className="transition-colors duration-200 hover:text-zinc-200"
               >
                 home
               </Link>
-              <span className="text-brand-500/60">/</span>
+              <span className="text-brand-500/65">/</span>
               <span className="text-brand-300">{eyebrow}</span>
             </nav>
-            <h1 className="mt-5 font-display text-[36px] font-bold leading-[1.04] tracking-tight text-white sm:text-[54px]">
+            <h1 className="mt-5 font-display text-[34px] font-bold leading-[1.04] tracking-tight text-white sm:text-[54px]">
               {title}
             </h1>
             {intro && (
@@ -40,15 +41,12 @@ export function PageShell({
               </p>
             )}
           </div>
-          <div
-            className="animate-hero-in mt-12"
-            style={{ animationDelay: "90ms" }}
-          >
-            {children}
-          </div>
+          {/* Never put CSS transform on children wrapper so fixed modals/loaders stay viewport-centered */}
+          <div className="animate-fade-in mt-10 sm:mt-12">{children}</div>
         </div>
       </main>
       <Footer />
+      <ScrollTopButton />
     </>
   );
 }

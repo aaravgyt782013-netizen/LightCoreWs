@@ -2,6 +2,7 @@ import { PageBackground } from "@/components/site/Background";
 import { Navbar } from "@/components/site/Navbar";
 import { Hero } from "@/components/site/Hero";
 import { TrustedBy } from "@/components/site/TrustedBy";
+import { DefenseBento } from "@/components/site/DefenseBento";
 import { Features } from "@/components/site/Features";
 import { Setup } from "@/components/site/Setup";
 import { Protocol } from "@/components/site/Protocol";
@@ -9,6 +10,7 @@ import { VoiceMaster } from "@/components/site/VoiceMaster";
 import { Faq } from "@/components/site/Faq";
 import { CtaSection } from "@/components/site/CtaSection";
 import { Footer } from "@/components/site/Footer";
+import { ScrollTopButton } from "@/components/ui/ScrollTopButton";
 import { site } from "@/lib/site";
 
 const jsonLd = {
@@ -40,6 +42,7 @@ export default function Home() {
       <main>
         <Hero />
         <TrustedBy />
+        <DefenseBento />
         <Features />
         <Setup />
         <Protocol />
@@ -48,6 +51,7 @@ export default function Home() {
         <CtaSection />
       </main>
       <Footer />
+      <ScrollTopButton />
     </>
   );
 }

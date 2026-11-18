@@ -8,33 +8,33 @@ import { LoadingScreen } from "./LoadingScreen";
 
 function sublabelForPath(pathname: string): string {
   if (pathname.startsWith("/login")) {
-    return "Preparing Discord OAuth2 gateway";
+    return "Opening sign-in portal";
   }
   if (pathname.startsWith("/api/auth/discord")) {
-    return "Redirecting to Discord authorization";
+    return "Connecting to Discord";
   }
   if (pathname.startsWith("/premium")) {
-    return `Loading ${site.name} Premium plans`;
+    return `${site.name} Premium plans`;
   }
   if (pathname.startsWith("/admin")) {
-    return "Verifying owner clearance";
+    return "Syncing owner workspace";
   }
   if (pathname.startsWith("/dashboard/")) {
-    return `Binding ${site.name} server modules`;
+    return "Loading server modules";
   }
   if (pathname.startsWith("/dashboard")) {
-    return "Syncing your Discord servers";
+    return "Syncing server workspace";
   }
   if (pathname.startsWith("/status")) {
-    return "Checking live gateway & shard telemetry";
+    return "Live shard telemetry";
   }
   if (pathname.startsWith("/docs")) {
-    return `Loading ${site.name} command reference`;
+    return "Command & module docs";
   }
   if (pathname.startsWith("/privacy") || pathname.startsWith("/terms")) {
-    return `Loading ${site.name} legal documentation`;
+    return "Legal documentation";
   }
-  return `Initializing ${site.name} guard engine`;
+  return `${site.name} guard engine`;
 }
 
 function isSelfManagedAsyncRoute(pathname: string): boolean {
@@ -44,63 +44,43 @@ function isSelfManagedAsyncRoute(pathname: string): boolean {
 export function RouteLoader() {
   const { config } = useSiteConfig();
   const pathname = usePathname() || "/";
-  const [visible, setVisible] = useState(
-    () => !isSelfManagedAsyncRoute(pathname),
-  );
+  const [visible, setVisible] = useState(false);
   const [fading, setFading] = useState(false);
   const [sublabel, setSublabel] = useState(() => sublabelForPath(pathname));
-  const lastPathRef = useRef<string | null>(null);
+  const lastPathRef = useRef<string>(pathname);
+  const timersRef = useRef<number[]>([]);
 
-  // Trigger splash loader on initial entry & pathname changes for static/SSR pages
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  };
+
+  // Smooth fade-out once the target route has arrived (no blink on initial paint, no double-flash!)
+  useEffect(() => {
+    if (lastPathRef.current === pathname) return;
+    lastPathRef.current = pathname;
+    clearTimers();
+
+    if (!visible) return;
+
+    // For /dashboard & /admin, fade smoothly over the destination's own identical LoadingScreen
+    const holdMs = isSelfManagedAsyncRoute(pathname) ? 60 : 160;
+    const fadeId = window.setTimeout(() => setFading(true), holdMs);
+    const hideId = window.setTimeout(() => {
+      setVisible(false);
+      setFading(false);
+    }, holdMs + 320);
+    timersRef.current.push(fadeId, hideId);
+
+    return clearTimers;
+  }, [pathname, visible]);
+
+  // Show rock-solid centered loader on internal page navigations & Discord sign-in
   useEffect(() => {
     const prefersReduced =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (prefersReduced) {
-      setVisible(false);
-      setFading(false);
-      lastPathRef.current = pathname;
-      return;
-    }
-
-    // Dashboard & Admin hold their own LoadingScreen until live API data arrives
-    if (isSelfManagedAsyncRoute(pathname)) {
-      setVisible(false);
-      setFading(false);
-      lastPathRef.current = pathname;
-      return;
-    }
-
-    const isInitial = lastPathRef.current === null;
-    lastPathRef.current = pathname;
-
-    setSublabel(sublabelForPath(pathname));
-    setVisible(true);
-    setFading(false);
-
-    const holdMs = isInitial ? 340 : 220;
-    const fadeTimer = window.setTimeout(() => setFading(true), holdMs);
-    const hideTimer = window.setTimeout(() => {
-      setVisible(false);
-      setFading(false);
-    }, holdMs + 240);
-
-    return () => {
-      window.clearTimeout(fadeTimer);
-      window.clearTimeout(hideTimer);
-    };
-  }, [pathname]);
-
-  // Show loader immediately on internal link clicks & Discord OAuth redirects
-  useEffect(() => {
-    let safetyTimer: number | null = null;
-    const clearSafety = () => {
-      if (safetyTimer !== null) {
-        window.clearTimeout(safetyTimer);
-        safetyTimer = null;
-      }
-    };
+    if (prefersReduced) return;
 
     const onClick = (e: MouseEvent) => {
       if (
@@ -132,18 +112,13 @@ export function RouteLoader() {
       }
 
       if (url.origin !== window.location.origin) return;
-
-      // Same-page section anchor jump (e.g. /#features while on /) — skip loader
       if (url.pathname === window.location.pathname && url.hash) return;
-      // Same exact URL — skip loader
       if (
         url.pathname === window.location.pathname &&
         url.search === window.location.search
       ) {
         return;
       }
-
-      // Skip other raw API links except OAuth redirect
       if (
         url.pathname.startsWith("/api/") &&
         !url.pathname.startsWith("/api/auth/discord")
@@ -151,20 +126,25 @@ export function RouteLoader() {
         return;
       }
 
+      clearTimers();
       setSublabel(sublabelForPath(url.pathname));
       setFading(false);
       setVisible(true);
-      clearSafety();
-      safetyTimer = window.setTimeout(() => {
-        setVisible(false);
-        setFading(false);
-      }, 10_000);
+
+      const safety = window.setTimeout(() => {
+        setFading(true);
+        const done = window.setTimeout(() => {
+          setVisible(false);
+          setFading(false);
+        }, 320);
+        timersRef.current.push(done);
+      }, 9000);
+      timersRef.current.push(safety);
     };
 
-    // Clear stuck overlay if user hits browser Back from Discord OAuth page (bfcache)
     const onPageShow = (e: PageTransitionEvent) => {
       if (e.persisted) {
-        clearSafety();
+        clearTimers();
         setVisible(false);
         setFading(false);
       }
@@ -173,7 +153,7 @@ export function RouteLoader() {
     document.addEventListener("click", onClick, true);
     window.addEventListener("pageshow", onPageShow);
     return () => {
-      clearSafety();
+      clearTimers();
       document.removeEventListener("click", onClick, true);
       window.removeEventListener("pageshow", onPageShow);
     };
@@ -182,15 +162,10 @@ export function RouteLoader() {
   if (!visible || !config.enableRouteLoader) return null;
 
   return (
-    <div
-      className={`fixed inset-0 z-[110] transition-opacity duration-300 ${
-        fading ? "pointer-events-none opacity-0" : "opacity-100"
-      }`}
-    >
-      <LoadingScreen
-        label={config.loaderText || "Connection Establishing..."}
-        sublabel={sublabel}
-      />
-    </div>
+    <LoadingScreen
+      label={config.loaderText || "Loading Workspace"}
+      sublabel={sublabel}
+      fading={fading}
+    />
   );
 }

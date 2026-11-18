@@ -14,7 +14,8 @@ export function CtaSection() {
     <section className="relative py-22 sm:py-28">
       <div className="container-x">
         <Reveal>
-          <SpotlightCard className="overflow-hidden rounded-[32px] border-brand-500/30 px-6 py-16 text-center shadow-[0_40px_110px_-40px_rgba(0,0,0,0.98),0_0_90px_-34px_rgb(var(--brand-600)/0.6)] sm:px-12 sm:py-22">
+          <SpotlightCard className="laser-border overflow-hidden rounded-[32px] border-brand-500/30 px-6 py-16 text-center shadow-[0_40px_110px_-40px_rgba(0,0,0,0.98),0_0_90px_-34px_rgb(var(--brand-600)/0.6)] sm:px-12 sm:py-22">
+            <span aria-hidden className="laser-border-beam" />
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-12 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500 to-transparent"

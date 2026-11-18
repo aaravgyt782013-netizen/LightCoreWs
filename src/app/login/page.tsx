@@ -27,7 +27,8 @@ export default function LoginPage() {
         />
 
         <div className="animate-hero-in relative w-full max-w-[396px]">
-          <div className="glass-card relative overflow-hidden rounded-[26px] p-8 text-center sm:p-10">
+          <div className="glass-card laser-border relative overflow-hidden rounded-[28px] p-8 text-center sm:p-10">
+            <span aria-hidden className="laser-border-beam" />
             {/* Precision top crimson laser filament */}
             <div
               aria-hidden

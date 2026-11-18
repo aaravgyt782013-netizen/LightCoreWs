@@ -230,7 +230,8 @@ function ConsolePanel() {
         }}
       />
 
-      <SpotlightCard className="overflow-hidden rounded-[24px] border-brand-500/25 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
+      <SpotlightCard className="laser-border overflow-hidden rounded-[24px] border-brand-500/25 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
+        <span aria-hidden className="laser-border-beam" />
         {/* Top laser accent filament */}
         <div
           aria-hidden

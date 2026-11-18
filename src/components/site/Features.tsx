@@ -98,7 +98,7 @@ export function Features() {
 
         <div className="mt-12 grid gap-6 lg:grid-cols-[368px_minmax(0,1fr)]">
           {/* Interactive Module Rail */}
-          <div className="flex gap-2.5 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
+          <div className="no-scrollbar flex gap-2.5 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible lg:pb-0">
             {features.map((f, i) => {
               const Icon = featureIcons[f.icon];
               const isActive = i === active;
