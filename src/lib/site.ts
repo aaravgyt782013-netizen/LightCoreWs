@@ -447,7 +447,7 @@ export const faqs = [
   },
   {
     q: "What permissions does the bot need?",
-    a: "Only what is required to defend your server: Manage Server plus the moderation scopes for the modules you enable. Administrative access is optional and never assumed by default.",
+    a: "The current bot invite link requests Administrator permission. Review the exact permission list on Discord before authorizing, and cancel if you are not comfortable granting it.",
   },
   {
     q: "Will it interfere with my existing moderators?",
