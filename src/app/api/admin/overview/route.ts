@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
           ),
           autoJoinConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_BOT_TOKEN) &&
-              /^\\d{15,22}$/.test(cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID)),
+              /^\d{15,22}$/.test(cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID)),
           ),
           logSecretConfigured: Boolean(
             cleanEnvString(process.env.LOG_INGEST_SECRET),
