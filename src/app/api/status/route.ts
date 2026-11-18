@@ -11,15 +11,6 @@ export type ServiceStatus = {
   state: "operational" | "degraded" | "offline";
 };
 
-const defaultServices: ServiceStatus[] = [
-  { name: "Gateway Listener", region: "global", p99: "41ms", uptime: "99.997%", state: "operational" },
-  { name: "Anti-Nuke Engine", region: "global", p99: "38ms", uptime: "99.994%", state: "operational" },
-  { name: "AutoMod Pipeline", region: "global", p99: "52ms", uptime: "99.991%", state: "operational" },
-  { name: "VoiceMaster Broker", region: "global", p99: "61ms", uptime: "99.989%", state: "operational" },
-  { name: "Dashboard API", region: "global", p99: "84ms", uptime: "99.995%", state: "operational" },
-  { name: "Audit Stream", region: "global", p99: "27ms", uptime: "99.998%", state: "operational" },
-];
-
 export async function GET() {
   const botApiUrl = process.env.BOT_API_URL?.replace(/\/+$/, "");
 
@@ -49,9 +40,15 @@ export async function GET() {
         const services =
           Array.isArray(payload.services) && payload.services.length > 0
             ? payload.services
-            : defaultServices.map((s, i) =>
-                i === 0 ? { ...s, p99: pingLabel } : s,
-              );
+            : [
+                {
+                  name: "Bot API",
+                  region: "configured endpoint",
+                  p99: pingLabel,
+                  uptime: "Not reported",
+                  state: payload.ok === false ? "degraded" : "operational",
+                } satisfies ServiceStatus,
+              ];
         return NextResponse.json(
           {
             live: true,
@@ -87,16 +84,22 @@ export async function GET() {
         return NextResponse.json(
           {
             live: true,
-            operational: true,
+            operational: false,
             botName: bot.username || site.name,
             clientId: bot.id || site.clientId,
             latencyMs,
             guilds: null,
             users: null,
             checkedAt: new Date().toISOString(),
-            services: defaultServices.map((s, i) =>
-              i === 0 ? { ...s, p99: `${latencyMs}ms` } : s,
-            ),
+            services: [
+              {
+                name: "Discord API connection",
+                region: "global",
+                p99: `${latencyMs}ms`,
+                uptime: "Not reported",
+                state: "operational",
+              } satisfies ServiceStatus,
+            ],
           },
           { headers: { "Cache-Control": "no-store, max-age=0" } },
         );
@@ -116,7 +119,7 @@ export async function GET() {
       guilds: null,
       users: null,
       checkedAt: new Date().toISOString(),
-      services: defaultServices,
+      services: [],
     },
     { headers: { "Cache-Control": "no-store, max-age=0" } },
   );
