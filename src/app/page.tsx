@@ -1,7 +1,6 @@
 import { PageBackground } from "@/components/site/Background";
 import { Navbar } from "@/components/site/Navbar";
 import { Hero } from "@/components/site/Hero";
-import { TrustedBy } from "@/components/site/TrustedBy";
 import { Features } from "@/components/site/Features";
 import { Setup } from "@/components/site/Setup";
 import { Protocol } from "@/components/site/Protocol";
@@ -21,11 +20,6 @@ const jsonLd = {
   description: site.description,
   url: site.url,
   offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    ratingCount: "2148",
-  },
 };
 
 export default function Home() {
@@ -39,8 +33,7 @@ export default function Home() {
       <Navbar />
       <main>
         <Hero />
-        <TrustedBy />
-        <Features />
+          <Features />
         <Setup />
         <Protocol />
         <VoiceMaster />
