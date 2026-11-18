@@ -352,7 +352,7 @@ export function createDefaultSiteConfig(): SiteConfig {
     supportUrl: site.discord,
     inviteUrl: site.invite,
     inviteButtonLabel: "Add to Discord",
-    footerStatusText: "all systems operational",
+    footerStatusText: "view service status",
     footerCopyright: site.name,
 
     announcementEnabled: false,
@@ -366,11 +366,11 @@ export function createDefaultSiteConfig(): SiteConfig {
 
     currencySymbol: "₹",
     currencyCode: "INR",
-    activationSla: "Instant activation within 24 hours",
+    activationSla: "Activation after payment confirmation",
     ticketInstructions:
-      "Download your invoice below, open a ticket in our Support Server, and send the invoice. The owner will share the payment QR code — once paid, your Premium will be activated instantly within 24 hours.",
+      "Review the order summary, then contact the Support Server for payment instructions. Confirm the seller and amount before paying. Never share passwords or one-time codes.",
     invoiceFooterNote:
-      "No payment is collected on this website. Present this official invoice in a Support Server ticket to receive the owner's payment QR.",
+      "This is an order summary, not a tax invoice or proof of payment. No payment is collected here. Confirm seller details before paying. Never share passwords or one-time codes.",
     premiumRoleId: "",
     pricing: {
       plus: { name: "Plus Plan", badge: "Popular", "1m": 299, "3m": 799, "1y": 2699 },
