@@ -11,7 +11,7 @@ const legal = [
 
 export function Footer() {
   return (
-    <footer className="relative border-t border-white/[0.07] bg-ink-950">
+    <footer className="relative border-t border-cyan-200/[0.08] bg-ink-950/95">
       <div className="container-x py-14">
         <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
           <div>
@@ -31,7 +31,7 @@ export function Footer() {
               href={site.discord}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition-colors hover:border-[#5865F2]/50 hover:text-white"
+              className="mt-5 inline-flex items-center gap-2 rounded-full border border-cyan-200/15 bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-200 transition-all hover:border-brand-400/50 hover:text-white"
             >
               <DiscordIcon className="size-4 text-[#5865F2]" />
               Join the support server

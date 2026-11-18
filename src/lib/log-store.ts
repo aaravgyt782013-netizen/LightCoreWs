@@ -1,19 +1,9 @@
 import crypto from "node:crypto";
 import { defaultLogs, type LogEntry } from "@/lib/site";
+import { kvDelete, kvGet, kvSet } from "@/lib/kv-store";
 
-const MAX_LOGS = 100;
-
-type GlobalStore = typeof globalThis & {
-  __lightcoreLogs?: LogEntry[];
-};
-
-function getBuffer(): LogEntry[] {
-  const g = globalThis as GlobalStore;
-  if (!g.__lightcoreLogs) {
-    g.__lightcoreLogs = [];
-  }
-  return g.__lightcoreLogs;
-}
+const LOGS_KEY = "logs/stream";
+const MAX_LOGS = 120;
 
 export function verifyBearerSecret(
   authHeader: string | null,
@@ -67,21 +57,24 @@ export function sanitizeLogInput(input: unknown): LogEntry | null {
   return entry;
 }
 
-export function appendLogs(entries: LogEntry[]): void {
-  const buf = getBuffer();
-  buf.push(...entries);
-  if (buf.length > MAX_LOGS) {
-    buf.splice(0, buf.length - MAX_LOGS);
-  }
+async function readStoredLogs(): Promise<LogEntry[]> {
+  const stored = await kvGet<LogEntry[]>(LOGS_KEY);
+  return Array.isArray(stored) ? stored : [];
 }
 
-export function clearLogs(): void {
-  const buf = getBuffer();
-  buf.length = 0;
+export async function appendLogs(entries: LogEntry[]): Promise<void> {
+  const buf = await readStoredLogs();
+  const next = [...buf, ...entries].slice(-MAX_LOGS);
+  await kvSet(LOGS_KEY, next);
 }
 
-export function getRawLogCount(): number {
-  return getBuffer().length;
+export async function clearLogs(): Promise<void> {
+  await kvDelete(LOGS_KEY);
+}
+
+export async function getRawLogCount(): Promise<number> {
+  const buf = await readStoredLogs();
+  return buf.length;
 }
 
 export async function getLogs(options?: {
@@ -130,11 +123,11 @@ export async function getLogs(options?: {
         }
       }
     } catch {
-      // Fall back to in-memory buffer or default logs below.
+      // Fall back to persistent store below.
     }
   }
 
-  const buf = getBuffer();
+  const buf = await readStoredLogs();
   const filtered = options?.guildId
     ? buf.filter((l) => l.guildId === options.guildId)
     : options?.includePrivate

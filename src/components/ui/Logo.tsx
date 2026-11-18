@@ -20,7 +20,7 @@ export function Logo({
       {glow && (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-brand-600/40 blur-xl"
+          className="absolute inset-0 rounded-full bg-brand-400/35 blur-xl"
         />
       )}
       <Image
@@ -30,7 +30,7 @@ export function Logo({
         height={size}
         priority
         unoptimized
-        className="relative size-full rounded-[24%] object-cover ring-1 ring-white/10 drop-shadow-[0_0_12px_rgba(239,16,16,0.55)]"
+        className="relative size-full rounded-[24%] object-cover ring-1 ring-cyan-200/15 drop-shadow-[0_0_14px_rgba(34,211,238,0.5)]"
       />
     </span>
   );
@@ -38,7 +38,7 @@ export function Logo({
 
 export function Wordmark({
   leadClassName = "",
-  accentClassName = "text-brand-500",
+  accentClassName = "text-brand-400",
 }: {
   leadClassName?: string;
   accentClassName?: string;

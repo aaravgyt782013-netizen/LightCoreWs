@@ -14,7 +14,7 @@ export default function AdminPage() {
     <PageShell
       eyebrow="admin"
       title="Owner Panel"
-      intro={`Owner-only control center for ${site.name} — manage OAuth2 users, server joins, connected guilds, and live audit logs.`}
+      intro={`Owner-only control center for ${site.name} — view every logged-in Discord user, configure direct FamPay UPI Premium checkout, manage server joins, and monitor live logs.`}
     >
       <AdminClient />
     </PageShell>

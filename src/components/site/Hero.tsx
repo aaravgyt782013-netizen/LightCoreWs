@@ -126,12 +126,12 @@ function ConsolePanel() {
 
   return (
     <div className="relative">
-      <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(239,16,16,0.18),transparent_75%)] blur-2xl" />
+      <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(6,182,212,0.2),transparent_75%)] blur-2xl" />
       <div className="panel panel-inner relative overflow-hidden rounded-[22px] shadow-panel">
         {/* header */}
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-cyan-200/[0.08] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <span className="size-2 rounded-full bg-brand-500 shadow-[0_0_10px_2px_rgba(255,43,43,0.6)]" />
+            <span className="size-2 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgba(34,211,238,0.65)]" />
             <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-zinc-400">
               {site.name.toLowerCase()} · guard engine
             </span>

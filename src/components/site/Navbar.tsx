@@ -56,7 +56,7 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-amber-300/95 transition-colors duration-200 hover:bg-amber-500/10 hover:text-amber-200"
+                  className="rounded-full border border-brand-400/25 bg-brand-500/10 px-4 py-1.5 text-[13px] font-semibold text-brand-200 transition-all duration-200 hover:border-brand-400/50 hover:bg-brand-500/20 hover:text-white"
                 >
                   {item.label}
                 </Link>
@@ -64,7 +64,7 @@ export function Navbar() {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
+                  className="rounded-full px-4 py-2 text-[13.5px] font-medium text-zinc-400 transition-colors duration-200 hover:bg-cyan-300/[0.06] hover:text-white"
                 >
                   {item.label}
                 </a>
@@ -154,10 +154,10 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-medium text-amber-300 transition-colors hover:bg-amber-500/10 hover:text-amber-200"
+                  className="flex items-center justify-between rounded-xl px-3 py-3.5 text-[15px] font-semibold text-brand-300 transition-colors hover:bg-brand-500/10 hover:text-white"
                 >
                   {item.label}
-                  <span className="font-mono text-[10px] text-amber-400/70">
+                  <span className="font-mono text-[10px] text-brand-400/80">
                     plans
                   </span>
                 </Link>

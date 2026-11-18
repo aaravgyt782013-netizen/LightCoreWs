@@ -17,6 +17,10 @@ import type {
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import {
+  ColorSwatchSelect,
+  CustomSelect,
+} from "@/components/ui/CustomSelect";
+import {
   ArrowRight,
   BellIcon,
   BotIcon,
@@ -94,6 +98,11 @@ type GuildPayload = {
     iconUrl: string | null;
     owner: boolean;
   }[];
+  premium?: {
+    activeTier: "plus" | "pro" | "ultra" | null;
+    userSubscription: { tierName: string; expiresAt: string } | null;
+    guildSubscription: { tierName: string; expiresAt: string } | null;
+  };
   config: GuildConfig;
   syncedWithBot: boolean;
   logs: LogEntry[];
@@ -151,16 +160,6 @@ const MODULE_LABELS: Record<ModuleId, string> = {
   logging: "Audit Logging",
   utility: "AutoResponder & Giveaways",
 };
-
-const COLOR_PRESETS = [
-  "#ef1010",
-  "#ff2b2b",
-  "#f59e0b",
-  "#10b981",
-  "#5865f2",
-  "#a855f7",
-  "#ffffff",
-];
 
 function stripMeta(cfg: GuildConfig): string {
   return JSON.stringify({ ...cfg, updatedAt: null, updatedBy: null });
@@ -665,38 +664,21 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           </Link>
         </div>
 
-        {/* Quick Server Switcher */}
-        <div className="border-b border-white/[0.07] p-3.5">
-          <div className="flex items-center gap-2.5">
-            {guild.iconUrl ? (
-              <Image
-                src={guild.iconUrl}
-                alt={guild.name}
-                width={36}
-                height={36}
-                unoptimized
-                className="size-9 shrink-0 rounded-xl object-cover ring-1 ring-white/15"
-              />
-            ) : (
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-950/70 font-display text-xs font-bold text-brand-300 ring-1 ring-brand-500/30">
-                {guild.name.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0 flex-1">
-              <select
-                aria-label="Switch Discord server"
-                value={guild.id}
-                onChange={(e) => handleSwitchGuild(e.target.value)}
-                className="w-full cursor-pointer truncate rounded-lg border border-white/[0.08] bg-ink-950/80 px-2.5 py-1.5 text-[12.5px] font-semibold text-white focus:border-brand-500/50 focus:outline-none"
-              >
-                {switcherGuilds.map((sg) => (
-                  <option key={sg.id} value={sg.id}>
-                    {sg.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* Quick Server Switcher (Custom In-Website Picker) */}
+        <div className="border-b border-cyan-200/[0.08] p-3.5">
+          <CustomSelect
+            title="Switch Discord Server"
+            value={guild.id}
+            onChange={handleSwitchGuild}
+            searchable={switcherGuilds.length >= 5}
+            options={switcherGuilds.map((sg) => ({
+              value: sg.id,
+              label: sg.name,
+              iconUrl: sg.iconUrl,
+              badge: sg.owner ? "Owner" : "Admin",
+              description: `ID ${sg.id}`,
+            }))}
+          />
         </div>
 
         {/* Module Navigation */}
@@ -752,17 +734,20 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           {/* Sidebar Premium Card */}
           <Link
             href={premiumHref}
-            className="block rounded-2xl border border-amber-400/30 bg-gradient-to-br from-brand-950/70 via-ink-950 to-amber-950/35 p-3.5 transition-all hover:border-amber-400/60"
+            className="block rounded-2xl border border-brand-400/35 bg-gradient-to-br from-brand-950/85 via-ink-950 to-sky-950/50 p-3.5 transition-all hover:border-brand-400/65 hover:shadow-glow"
           >
-            <div className="flex items-center gap-2 text-amber-300">
+            <div className="flex items-center gap-2 text-brand-300">
               <CrownIcon className="size-4" />
-              <span className="font-display text-[13px] font-semibold">
-                Buy {site.name} Premium
+              <span className="font-display text-[13px] font-semibold text-white">
+                {data.premium?.activeTier
+                  ? `${data.premium.activeTier.toUpperCase()} Active`
+                  : `Buy ${site.name} Premium`}
               </span>
             </div>
             <p className="mt-1 text-[11px] leading-snug text-zinc-400">
-              Unlock Anti-Betray, Vanity Guard, No-Prefix &amp; Custom Bot from
-              ₹299/mo.
+              {data.premium?.activeTier
+                ? "Premium security guards & account perks unlocked."
+                : "Instant FamPay UPI checkout · Anti-Betray, Vanity Guard & No-Prefix from ₹299."}
             </p>
           </Link>
         </nav>
@@ -862,10 +847,14 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           <div className="flex shrink-0 items-center gap-2">
             <Link
               href={premiumHref}
-              className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-amber-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgba(239,16,16,0.85)] transition-transform hover:-translate-y-0.5"
+              className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgba(6,182,212,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-110"
             >
               <CrownIcon className="size-3.5" />
-              <span className="hidden sm:inline">Buy Premium</span>
+              <span className="hidden sm:inline">
+                {data.premium?.activeTier
+                  ? `${data.premium.activeTier.toUpperCase()} Plan`
+                  : "Buy Premium"}
+              </span>
               <span className="sm:hidden">Pro</span>
             </Link>
 
@@ -1020,53 +1009,19 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                     <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
                       Embed Accent Color
                     </span>
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <input
-                        type="color"
+                    <div className="mt-1.5">
+                      <ColorSwatchSelect
                         value={draft.general.embedColor}
-                        onChange={(e) =>
+                        onChange={(embedColor) =>
                           updateDraft((p) => ({
                             ...p,
                             general: {
                               ...p.general,
-                              embedColor: e.target.value,
+                              embedColor,
                             },
                           }))
                         }
-                        className="h-10 w-12 cursor-pointer rounded-xl border border-white/10 bg-ink-950 p-1"
                       />
-                      <input
-                        type="text"
-                        maxLength={7}
-                        value={draft.general.embedColor}
-                        onChange={(e) =>
-                          updateDraft((p) => ({
-                            ...p,
-                            general: {
-                              ...p.general,
-                              embedColor: e.target.value,
-                            },
-                          }))
-                        }
-                        className="h-10 w-28 rounded-xl border border-white/10 bg-ink-950/90 px-3 font-mono text-[12.5px] text-white focus:outline-none"
-                      />
-                      <div className="hidden items-center gap-1.5 sm:flex">
-                        {COLOR_PRESETS.map((c) => (
-                          <button
-                            key={c}
-                            type="button"
-                            aria-label={`Set color ${c}`}
-                            onClick={() =>
-                              updateDraft((p) => ({
-                                ...p,
-                                general: { ...p.general, embedColor: c },
-                              }))
-                            }
-                            className="size-6 rounded-full border border-white/20 transition-transform hover:scale-110"
-                            style={{ backgroundColor: c }}
-                          />
-                        ))}
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1105,20 +1060,21 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                     <div className="mt-1.5 flex gap-2">
                       {guild.channels.filter((c) => c.type === "text").length >
                       0 ? (
-                        <select
+                        <CustomSelect
+                          className="flex-1"
+                          size="sm"
+                          title="Select Ignored Channel"
+                          placeholder="Select channel…"
                           value={ignChanInput}
-                          onChange={(e) => setIgnChanInput(e.target.value)}
-                          className="h-9 flex-1 rounded-lg border border-white/10 bg-ink-950 px-2.5 text-[12px] text-white focus:outline-none"
-                        >
-                          <option value="">Select channel…</option>
-                          {guild.channels
+                          onChange={setIgnChanInput}
+                          options={guild.channels
                             .filter((c) => c.type === "text")
-                            .map((c) => (
-                              <option key={c.id} value={c.id}>
-                                # {c.name}
-                              </option>
-                            ))}
-                        </select>
+                            .map((c) => ({
+                              value: c.id,
+                              label: c.name,
+                              prefix: "#",
+                            }))}
+                        />
                       ) : (
                         <input
                           type="text"
@@ -1189,18 +1145,19 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                     </span>
                     <div className="mt-1.5 flex gap-2">
                       {guild.roles.length > 0 ? (
-                        <select
+                        <CustomSelect
+                          className="flex-1"
+                          size="sm"
+                          title="Select Ignored Role"
+                          placeholder="Select role…"
                           value={ignRoleInput}
-                          onChange={(e) => setIgnRoleInput(e.target.value)}
-                          className="h-9 flex-1 rounded-lg border border-white/10 bg-ink-950 px-2.5 text-[12px] text-white focus:outline-none"
-                        >
-                          <option value="">Select role…</option>
-                          {guild.roles.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              @ {r.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={setIgnRoleInput}
+                          options={guild.roles.map((r) => ({
+                            value: r.id,
+                            label: `@${r.name}`,
+                            colorDot: r.color || "#22d3ee",
+                          }))}
+                        />
                       ) : (
                         <input
                           type="text"
@@ -1425,12 +1382,12 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
 
         {/* Floating Unsaved Changes Save Bar (Discord / Xieron / Zynrax style) */}
         {isDirty && (
-          <div className="fixed inset-x-0 bottom-4 z-40 px-4 lg:left-[274px]">
-            <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-500/45 bg-ink-900/95 px-5 py-3.5 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.9),0_0_30px_-8px_rgba(239,16,16,0.45)] backdrop-blur-xl">
+          <div className="pb-safe fixed inset-x-0 bottom-3 z-40 px-3 sm:bottom-4 sm:px-4 lg:left-[274px]">
+            <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/45 bg-ink-900/95 px-4 py-3 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.92),0_0_34px_-8px_rgba(6,182,212,0.5)] backdrop-blur-2xl sm:px-5 sm:py-3.5">
               <div className="flex items-center gap-2.5">
-                <span className="size-2 animate-ticker rounded-full bg-brand-500" />
-                <p className="text-[13px] font-medium text-white">
-                  Careful — you have unsaved changes!
+                <span className="size-2 animate-ticker rounded-full bg-brand-400 shadow-[0_0_8px_#22d3ee]" />
+                <p className="text-[12.5px] font-medium text-white sm:text-[13px]">
+                  Unsaved changes ready
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1438,7 +1395,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                   type="button"
                   disabled={saving}
                   onClick={handleReset}
-                  className="h-9 rounded-xl border border-white/10 px-3.5 text-[12.5px] font-medium text-zinc-300 hover:border-white/25 hover:text-white disabled:opacity-50"
+                  className="h-9 rounded-xl border border-cyan-200/15 px-3.5 text-[12.5px] font-medium text-zinc-300 transition-colors hover:border-cyan-200/35 hover:text-white disabled:opacity-50"
                 >
                   Reset
                 </button>
@@ -1446,7 +1403,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                   type="button"
                   disabled={saving}
                   onClick={() => void handleSave()}
-                  className="h-9 rounded-xl bg-emerald-600 px-4 text-[12.5px] font-semibold text-white transition-colors hover:bg-emerald-500 disabled:opacity-60"
+                  className="h-9 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_6px_20px_-6px_rgba(34,211,238,0.8)] transition-all hover:brightness-110 disabled:opacity-60"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>

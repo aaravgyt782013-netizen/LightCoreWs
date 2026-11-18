@@ -23,7 +23,7 @@ export function InviteButton({
     return (
       <Link
         href={site.dashboard}
-        className={`group inline-flex items-center justify-center rounded-full border border-white/12 bg-white/[0.03] font-medium text-zinc-200 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.07] hover:text-white ${sizes[size]} ${className}`}
+        className={`group inline-flex items-center justify-center rounded-full border border-cyan-200/15 bg-cyan-300/[0.04] font-medium text-zinc-100 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/45 hover:bg-brand-500/10 hover:text-white ${sizes[size]} ${className}`}
       >
         Open Dashboard
         <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
@@ -36,7 +36,7 @@ export function InviteButton({
       href={site.invite}
       target="_blank"
       rel="noopener noreferrer"
-      className={`btn-glow group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-brand-600 font-semibold text-white shadow-[0_10px_40px_-12px_rgba(239,16,16,0.9)] transition-all duration-300 hover:bg-brand-500 hover:shadow-[0_16px_50px_-12px_rgba(255,43,43,0.95)] ${sizes[size]} ${className}`}
+      className={`btn-glow group relative inline-flex items-center justify-center overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-500 font-semibold text-white shadow-[0_10px_40px_-10px_rgba(6,182,212,0.8)] transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:brightness-110 hover:shadow-[0_16px_50px_-10px_rgba(34,211,238,0.9)] active:translate-y-0 ${sizes[size]} ${className}`}
     >
       <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/25 to-transparent opacity-60" />
       <DiscordIcon className="relative size-[18px]" />

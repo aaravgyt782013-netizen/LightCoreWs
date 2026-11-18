@@ -77,7 +77,7 @@ export function RouteLoader() {
     setVisible(true);
     setFading(false);
 
-    const holdMs = isInitial ? 650 : 520;
+    const holdMs = isInitial ? 480 : 360;
     const fadeTimer = window.setTimeout(() => setFading(true), holdMs);
     const hideTimer = window.setTimeout(() => {
       setVisible(false);

@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOwnerIds, requireOwner } from "@/lib/admin";
-import { listAuthorizedUsers } from "@/lib/auth-store";
+import {
+  ensureSessionUserRecorded,
+  listAuthorizedUsers,
+} from "@/lib/auth-store";
 import { fetchBotGuilds } from "@/lib/discord-guilds";
 import { getLogs, getRawLogCount } from "@/lib/log-store";
+import {
+  getPaymentSettings,
+  isValidUpiId,
+  listActiveSubscriptions,
+  listOrders,
+} from "@/lib/premium-store";
+import { getStorageEngineName } from "@/lib/kv-store";
 import { site } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
@@ -12,15 +22,36 @@ export async function GET(req: NextRequest) {
   if (!auth.ok) return auth.response;
 
   const { session } = auth;
-  const [botGuildsData, logsData] = await Promise.all([
+
+  // Ensure the owner's own active login is always recorded & visible immediately.
+  await ensureSessionUserRecorded(session);
+
+  const [
+    authorizedUsers,
+    botGuildsData,
+    logsData,
+    storedLogs,
+    paymentSettings,
+    subscriptions,
+    orders,
+  ] = await Promise.all([
+    listAuthorizedUsers(),
     fetchBotGuilds(),
     getLogs({ includePrivate: true, limit: 50 }),
+    getRawLogCount(),
+    getPaymentSettings(),
+    listActiveSubscriptions(),
+    listOrders(100),
   ]);
 
-  const authorizedUsers = listAuthorizedUsers();
   const avatarUrl = session.user.avatar
     ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
     : null;
+
+  const origin = new URL(req.url).origin;
+  const fampayConfigured = Boolean(
+    paymentSettings.fampayUpiId && isValidUpiId(paymentSettings.fampayUpiId),
+  );
 
   return NextResponse.json(
     {
@@ -37,6 +68,7 @@ export async function GET(req: NextRequest) {
         oauthScopes:
           process.env.DISCORD_OAUTH_SCOPES?.trim() || site.oauthScopes,
         autoJoinGuildId: process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim() || null,
+        storageEngine: getStorageEngineName(),
         integrations: {
           oauthConfigured: Boolean(
             process.env.DISCORD_CLIENT_SECRET?.trim() &&
@@ -52,13 +84,26 @@ export async function GET(req: NextRequest) {
               process.env.DISCORD_BOT_TOKEN?.trim(),
           ),
           botApiConfigured: Boolean(process.env.BOT_API_URL?.trim()),
+          fampayConfigured,
         },
       },
       stats: {
         authorizedUsers: authorizedUsers.length,
         joinCapableUsers: authorizedUsers.filter((u) => u.hasJoinScope).length,
         botGuilds: botGuildsData ? botGuildsData.guilds.length : null,
-        storedLogs: getRawLogCount(),
+        storedLogs,
+        activePremium: subscriptions.length,
+        pendingOrders: orders.filter(
+          (o) => o.status === "verifying" || o.status === "pending",
+        ).length,
+      },
+      premium: {
+        settings: {
+          ...paymentSettings,
+          webhookUrl: `${origin}/api/premium/webhook/fampay`,
+        },
+        subscriptions,
+        orders,
       },
       botGuilds: botGuildsData?.guilds ?? [],
       users: authorizedUsers,
