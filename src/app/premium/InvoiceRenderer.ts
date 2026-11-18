@@ -41,10 +41,10 @@ export function buildInvoicePlainText(
 
   const lines = [
     `================================================`,
-    `  ${(inv.brandName || siteCfg.brandName).toUpperCase()} — OFFICIAL PREMIUM INVOICE`,
+    `  ${(inv.brandName || siteCfg.brandName).toUpperCase()} — PREMIUM ORDER SUMMARY`,
     `================================================`,
-    `Invoice ID        : ${inv.invoiceId}`,
-    `Verification Code : ${inv.verificationCode}`,
+    `Order Reference        : ${inv.invoiceId}`,
+    `Reference Code : ${inv.verificationCode}`,
     `Status            : ${statusLabel}`,
     `Date              : ${dt.dateStr}`,
     `Time              : ${dt.timeStr}`,
@@ -54,7 +54,7 @@ export function buildInvoicePlainText(
     `Display Name      : ${inv.globalName || inv.username}`,
     `Username          : @${inv.username}`,
     `Discord User ID   : ${inv.userId}`,
-    ...(inv.email ? [`Email             : ${inv.email}`] : []),
+
     `Target Server     : ${
       inv.guildId
         ? `${inv.guildName || "Selected Server"} (${inv.guildId})`
@@ -64,7 +64,7 @@ export function buildInvoicePlainText(
     `SELECTED PLAN & PRICING`,
     `Plan              : ${inv.tierName} (${inv.tierBadge})`,
     `Duration          : ${inv.durationLabel}`,
-    `Payment Method    : Owner QR in Support Server Ticket`,
+    `Payment Process   : Confirm payment instructions in Support Server`,
     `Activation SLA    : ${inv.activationSla}`,
     `Total Amount      : ${inv.currencySymbol}${inv.amount.toLocaleString("en-IN")} ${inv.currencyCode}`,
     ``,
@@ -77,11 +77,11 @@ export function buildInvoicePlainText(
     `NEXT STEPS TO ACTIVATE PREMIUM:`,
     `1. Join Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
     `2. Open a Support Ticket and upload/send this invoice.`,
-    `3. The Owner will provide the official payment QR code.`,
+    `3. The support team will explain the available payment method.`,
     `4. Once payment is completed, Premium is granted instantly (within 24 hours).`,
     `================================================`,
     siteCfg.invoiceFooterNote ||
-      "No payment is collected on the website. Official ticket verification only.",
+      "This is an order summary, not a tax invoice or proof of payment. No payment is collected on this website. Confirm seller details before paying. Never share passwords or one-time codes.",
   ];
   return lines.join("\n");
 }
@@ -222,7 +222,7 @@ export async function downloadInvoicePng(
   ctx.fillStyle = accent;
   ctx.font = "600 11px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.fillText(
-    (siteCfg.tagline || "OFFICIAL PREMIUM INVOICE").toUpperCase().slice(0, 48),
+    (siteCfg.tagline || "PREMIUM ORDER SUMMARY").toUpperCase().slice(0, 48),
     textStartX,
     118,
   );
@@ -231,7 +231,7 @@ export async function downloadInvoicePng(
   ctx.textAlign = "right";
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 24px system-ui, -apple-system, Segoe UI, sans-serif";
-  ctx.fillText("INVOICE", W - 64, 88);
+  ctx.fillText("ORDER SUMMARY", W - 64, 88);
 
   const statusText =
     inv.status === "fulfilled"
@@ -275,10 +275,10 @@ export async function downloadInvoicePng(
   ctx.stroke();
 
   const metaCols = [
-    { label: "INVOICE NUMBER", val: inv.invoiceId, accent: true },
+    { label: "ORDER REFERENCE", val: inv.invoiceId, accent: true },
     { label: "ISSUE DATE", val: dt.dateStr, accent: false },
     { label: "ISSUE TIME", val: dt.timeStr, accent: false },
-    { label: "VERIFY CODE", val: inv.verificationCode, accent: true },
+    { label: "REFERENCE CODE", val: inv.verificationCode, accent: true },
   ];
   const colW = (W - 128) / 4;
   metaCols.forEach((m, idx) => {
@@ -317,7 +317,7 @@ export async function downloadInvoicePng(
   ctx.fillStyle = "#94a3b8";
   ctx.font = "500 12px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.fillText(
-    inv.email ? `Email    : ${inv.email.slice(0, 30)}` : `UTC      : ${dt.utcStr}`,
+    `UTC      : ${dt.utcStr}`,
     84,
     boxY + 134,
   );
@@ -466,7 +466,7 @@ export async function downloadInvoicePng(
   const steps = [
     `1. Open a ticket in our Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
     `2. Send / attach this invoice (${inv.invoiceId}) inside your ticket.`,
-    `3. The Owner will provide the official payment QR code directly in your ticket.`,
+    `3. The Owner will provide the payment instructions in your ticket.`,
     `4. Once payment is done, your Premium is activated instantly within 24 hours!`,
   ];
   ctx.font = "500 13.5px system-ui, -apple-system, Segoe UI, sans-serif";
@@ -480,7 +480,7 @@ export async function downloadInvoicePng(
   const footLines = wrapLines(
     ctx,
     siteCfg.invoiceFooterNote ||
-      "No payment is collected on the website. Present this official invoice in a Support Server ticket.",
+      "No payment is collected on the website. Present this order summary in a Support Server ticket.",
     W - 176,
   );
   footLines.slice(0, 2).forEach((ln, i) => {
