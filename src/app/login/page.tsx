@@ -56,7 +56,7 @@ export default function LoginPage() {
               </h1>
 
               <p className="mt-2.5 text-[13.5px] leading-relaxed text-zinc-400">
-                Sign in with Discord. We use your profile and server list to show servers you can manage. Your Discord password is entered only on discord.com.
+                LightCore is an independent service, not affiliated with Discord Inc. Sign-in is handled securely by Discord at discord.com. We use your profile and server list to show servers you can manage.
               </p>
 
               <Suspense fallback={null}>
