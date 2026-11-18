@@ -244,9 +244,9 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
     }
 
     const tokenData = exchanged.data;
-    const grantedScopes = (
-      tokenData.scope || resolveOAuthScopes(site.oauthScopes)
-    )
+    // Only trust scopes returned by Discord. Never infer a granted permission
+    // from our requested scopes when the token response omits its scope field.
+    const grantedScopes = (tokenData.scope || "")
       .split(/\s+/)
       .filter(Boolean);
 
