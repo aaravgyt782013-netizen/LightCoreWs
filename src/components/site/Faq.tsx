@@ -47,9 +47,9 @@ export function Faq() {
                         {f.q}
                       </span>
                     </span>
-                    <span className="relative mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border border-white/10 transition-colors group-hover:border-brand-600/40">
-                      <span className="absolute h-[1.5px] w-2.5 rounded bg-zinc-400" />
-                      <span className="absolute h-2.5 w-[1.5px] rounded bg-zinc-400 transition-transform duration-300 group-open:rotate-90 group-open:opacity-0" />
+                    <span className="relative mt-1 flex size-6 shrink-0 items-center justify-center rounded-full border border-white/12 bg-ink-900 transition-all duration-300 group-hover:border-brand-500/50 group-open:border-brand-500/60 group-open:bg-brand-600/15">
+                      <span className="absolute h-[1.5px] w-2.5 rounded bg-zinc-300 group-open:bg-brand-400" />
+                      <span className="absolute h-2.5 w-[1.5px] rounded bg-zinc-300 transition-transform duration-300 group-open:rotate-90 group-open:opacity-0" />
                     </span>
                   </summary>
                   <p className="ml-[26px] mt-3 max-w-2xl pr-8 text-[13.5px] leading-relaxed text-zinc-400">

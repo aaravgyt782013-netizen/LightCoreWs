@@ -2,13 +2,31 @@
 
 import { useState } from "react";
 import { features, modules } from "@/lib/site";
-import { featureIcons, CheckIcon } from "@/components/ui/Icons";
+import { featureIcons, CheckIcon, CopyIcon } from "@/components/ui/Icons";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { Reveal } from "@/components/ui/Reveal";
 
 export function Features() {
+  const { config } = useSiteConfig();
   const [active, setActive] = useState(0);
+  const [copiedCmd, setCopiedCmd] = useState(false);
   const feature = features[active];
   const ActiveIcon = featureIcons[feature.icon];
+
+  const liveCommand = feature.command
+    ? feature.command.replace(/^\S?(?=[a-z])/, config.prefix || ".")
+    : undefined;
+
+  const handleCopyCommand = async () => {
+    if (!liveCommand) return;
+    try {
+      await navigator.clipboard.writeText(liveCommand);
+      setCopiedCmd(true);
+      window.setTimeout(() => setCopiedCmd(false), 1600);
+    } catch {
+      // Ignore clipboard failures.
+    }
+  };
 
   return (
     <section id="features" className="relative py-20 sm:py-28">
@@ -35,85 +53,93 @@ export function Features() {
                 <button
                   key={f.key}
                   type="button"
-                  onClick={() => setActive(i)}
+                  onClick={() => {
+                    setActive(i);
+                    setCopiedCmd(false);
+                  }}
                   aria-pressed={isActive}
-                  className={`group relative flex min-w-[168px] items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-300 ${
+                  className={`group relative flex min-w-[172px] items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-300 ease-smooth ${
                     isActive
-                      ? "border-brand-400/45 bg-brand-950/55 text-white shadow-[inset_0_1px_0_rgba(165,243,252,0.1),0_18px_45px_-28px_rgba(6,182,212,0.85)]"
-                      : "border-brand-200/[0.08] bg-white/[0.015] text-zinc-400 hover:border-brand-400/25 hover:bg-brand-300/[0.04] hover:text-zinc-100"
+                      ? "border-brand-500/50 bg-gradient-to-r from-brand-950/75 via-ink-900 to-ink-900 text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_18px_45px_-26px_rgb(var(--brand-500)/0.85)]"
+                      : "border-white/[0.07] bg-ink-900/55 text-zinc-400 hover:border-brand-500/30 hover:bg-ink-850/80 hover:text-zinc-100"
                   }`}
                 >
                   <span
-                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-lg border transition-all duration-300 ${
                       isActive
-                        ? "bg-brand-600/20 text-brand-400"
-                        : "bg-white/[0.04] text-zinc-500 group-hover:text-zinc-300"
+                        ? "border-brand-500/35 bg-brand-600/20 text-brand-400 shadow-[0_0_20px_-6px_rgb(var(--brand-500)/0.8)]"
+                        : "border-white/[0.06] bg-white/[0.03] text-zinc-500 group-hover:border-brand-500/20 group-hover:text-zinc-200"
                     }`}
                   >
                     <Icon className="size-[18px]" />
                   </span>
                   <span className="flex-1">
-                    <span className="block text-[13.5px] font-medium">
+                    <span className="block text-[13.5px] font-semibold">
                       {f.key}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-600">
+                    <span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
                       module 0{i + 1}
                     </span>
                   </span>
                   {isActive && (
-                    <span className="size-1.5 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgba(34,211,238,0.65)]" />
+                    <span className="size-2 rounded-full bg-brand-500 shadow-[0_0_12px_2px_rgb(var(--brand-500)/0.75)]" />
                   )}
                 </button>
               );
             })}
 
-            <div className="mt-1 hidden rounded-xl border border-white/[0.06] bg-white/[0.012] px-4 py-3.5 lg:block">
-              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-zinc-600">
+            <div className="mt-1 hidden rounded-xl border border-white/[0.07] bg-ink-900/55 px-4 py-3.5 lg:block">
+              <p className="font-mono text-[9px] uppercase tracking-[0.24em] text-zinc-500">
                 module coverage
               </p>
-              <div className="mt-2 flex flex-wrap gap-1">
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
                 {modules.slice(0, 10).map((m) => (
                   <span
                     key={m}
-                    className="rounded border border-white/[0.06] bg-white/[0.02] px-1.5 py-0.5 font-mono text-[9px] text-zinc-500"
+                    className="rounded border border-white/[0.07] bg-black/40 px-1.5 py-0.5 font-mono text-[9px] text-zinc-400"
                   >
                     {m}
                   </span>
                 ))}
-                <span className="rounded border border-brand-600/30 bg-brand-950/40 px-1.5 py-0.5 font-mono text-[9px] text-brand-300">
+                <span className="rounded border border-brand-500/35 bg-brand-950/55 px-1.5 py-0.5 font-mono text-[9px] font-medium text-brand-300">
                   +16 more
                 </span>
               </div>
             </div>
           </div>
 
-          {/* panel */}
-          <div className="panel panel-inner relative overflow-hidden rounded-2xl p-6 shadow-panel sm:p-8">
+          {/* active feature panel */}
+          <div className="panel panel-inner relative overflow-hidden rounded-2xl border-brand-500/20 p-6 shadow-panel sm:p-8">
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(34,211,238,0.18),transparent)]"
+              className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgb(var(--brand-600) / 0.22), transparent)",
+              }}
             />
-            <div className="relative" key={feature.key}>
+            <div className="animate-fade-in relative" key={feature.key}>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3.5">
-                  <span className="flex size-12 items-center justify-center rounded-xl border border-brand-600/25 bg-brand-950/50 text-brand-400">
+                  <span className="flex size-12 items-center justify-center rounded-xl border border-brand-500/35 bg-brand-950/60 text-brand-400 shadow-[0_0_28px_-8px_rgb(var(--brand-500)/0.7)]">
                     <ActiveIcon className="size-6" />
                   </span>
                   <div>
-                    <h3 className="font-display text-[22px] font-semibold tracking-tight text-white">
+                    <h3 className="font-display text-[23px] font-semibold tracking-tight text-white">
                       {feature.headline}
                     </h3>
                     <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-500">
-                      always-on · zero config
+                      always-on · sub-500ms protection
                     </p>
                   </div>
                 </div>
-                <span className="hidden shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-emerald-400/90 sm:inline">
-                  enabled
+                <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/[0.08] px-3 py-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-emerald-300 sm:inline-flex">
+                  <span className="size-1.5 rounded-full bg-emerald-400" />
+                  active
                 </span>
               </div>
 
-              <p className="mt-6 max-w-2xl text-[14.5px] leading-relaxed text-zinc-400">
+              <p className="mt-6 max-w-2xl text-[15px] leading-relaxed text-zinc-300">
                 {feature.copy}
               </p>
 
@@ -121,26 +147,41 @@ export function Features() {
                 {feature.points.map((p) => (
                   <li
                     key={p}
-                    className="flex items-start gap-2.5 rounded-lg border border-white/[0.05] bg-white/[0.015] px-3 py-2.5"
+                    className="flex items-start gap-2.5 rounded-xl border border-white/[0.065] bg-black/40 px-3.5 py-3 transition-colors duration-200 hover:border-brand-500/30"
                   >
                     <CheckIcon className="mt-0.5 size-3.5 shrink-0 text-brand-400" />
-                    <span className="text-[12.5px] leading-snug text-zinc-300">
+                    <span className="text-[13px] leading-snug text-zinc-200">
                       {p}
                     </span>
                   </li>
                 ))}
               </ul>
 
-              {feature.command && (
-                <div className="mt-7 flex items-center gap-3 overflow-x-auto rounded-lg border border-white/[0.07] bg-ink-950/80 px-4 py-3">
-                  <span className="font-mono text-[11px] text-zinc-600">$</span>
-                  <code className="whitespace-nowrap font-mono text-[12.5px] text-brand-300">
-                    {feature.command}
+              {liveCommand && (
+                <button
+                  type="button"
+                  onClick={() => void handleCopyCommand()}
+                  title="Click to copy command"
+                  className="group mt-7 flex w-full items-center gap-3 overflow-x-auto rounded-xl border border-white/[0.08] bg-black/70 px-4 py-3 text-left transition-all duration-200 hover:border-brand-500/45 hover:bg-black/85"
+                >
+                  <span className="font-mono text-[11px] text-brand-500">$</span>
+                  <code className="whitespace-nowrap font-mono text-[12.5px] font-medium text-brand-200">
+                    {liveCommand}
                   </code>
-                  <span className="ml-auto hidden shrink-0 rounded bg-white/[0.05] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-zinc-500 sm:inline">
-                    discord
+                  <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-wider text-zinc-400 transition-colors group-hover:border-brand-500/35 group-hover:text-brand-200">
+                    {copiedCmd ? (
+                      <>
+                        <CheckIcon className="size-3 text-emerald-400" />
+                        copied
+                      </>
+                    ) : (
+                      <>
+                        <CopyIcon className="size-3" />
+                        copy
+                      </>
+                    )}
                   </span>
-                </div>
+                </button>
               )}
             </div>
           </div>

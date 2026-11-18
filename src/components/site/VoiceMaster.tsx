@@ -160,7 +160,13 @@ export function VoiceMaster() {
           </div>
 
           <Reveal delay={120} className="relative">
-            <div className="absolute -inset-8 rounded-full bg-[radial-gradient(closest-side,rgba(6,182,212,0.16),transparent)] blur-2xl" />
+            <div
+              className="absolute -inset-8 rounded-full blur-2xl"
+              style={{
+                background:
+                  "radial-gradient(closest-side, rgb(var(--brand-600) / 0.2), transparent)",
+              }}
+            />
             <div className="relative space-y-3">
               <VoicePanelMock />
               <MemberCard />

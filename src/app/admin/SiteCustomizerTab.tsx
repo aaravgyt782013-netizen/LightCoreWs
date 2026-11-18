@@ -184,7 +184,7 @@ export function SiteCustomizerTab({
         setDirty(false);
         setNotice({
           ok: true,
-          text: "Restored default Aqua Pulse theme, LightCore logo, and settings.",
+          text: "Restored default Crimson Core & Obsidian Black theme, LightCore logo, and settings.",
         });
       }
     } finally {

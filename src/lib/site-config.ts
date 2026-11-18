@@ -48,9 +48,28 @@ export const THEME_PRESETS: {
   palette: BrandPaletteHex;
 }[] = [
   {
+    id: "crimson",
+    name: "Crimson Core",
+    subtitle: "Signature LightCore red & black (Default)",
+    swatch: "#ef4444",
+    palette: {
+      50: "#fef2f2",
+      100: "#fee2e2",
+      200: "#fecaca",
+      300: "#fca5a5",
+      400: "#f87171",
+      500: "#ef4444",
+      600: "#dc2626",
+      700: "#b91c1c",
+      800: "#991b1b",
+      900: "#7f1d1d",
+      950: "#3b0709",
+    },
+  },
+  {
     id: "aqua",
     name: "Aqua Pulse",
-    subtitle: "Luminous oceanic cyan (Default)",
+    subtitle: "Luminous oceanic cyan",
     swatch: "#06b6d4",
     palette: {
       50: "#ecfeff",
@@ -143,25 +162,6 @@ export const THEME_PRESETS: {
     },
   },
   {
-    id: "crimson",
-    name: "Crimson Guard",
-    subtitle: "Tactical ruby anti-nuke",
-    swatch: "#ef4444",
-    palette: {
-      50: "#fef2f2",
-      100: "#fee2e2",
-      200: "#fecaca",
-      300: "#fca5a5",
-      400: "#f87171",
-      500: "#ef4444",
-      600: "#dc2626",
-      700: "#b91c1c",
-      800: "#991b1b",
-      900: "#7f1d1d",
-      950: "#3b0a0a",
-    },
-  },
-  {
     id: "gold",
     name: "Cyber Gold",
     subtitle: "Luxury prestige amber",
@@ -208,9 +208,37 @@ export const SURFACE_PRESETS: {
   palette: SurfacePaletteHex;
 }[] = [
   {
+    id: "void",
+    name: "Obsidian Black",
+    subtitle: "Pure pitch carbon-black OLED (Default)",
+    palette: {
+      950: "#040406",
+      900: "#0a0a0e",
+      850: "#101016",
+      800: "#17171f",
+      700: "#23232e",
+      600: "#333342",
+      500: "#49495c",
+    },
+  },
+  {
+    id: "obsidian",
+    name: "Crimson Nocturne",
+    subtitle: "Deep onyx with warm ruby undertone",
+    palette: {
+      950: "#070406",
+      900: "#0e080b",
+      850: "#160d11",
+      800: "#1f1318",
+      700: "#2e1c23",
+      600: "#422932",
+      500: "#5c3b47",
+    },
+  },
+  {
     id: "ocean",
     name: "Deep Ocean",
-    subtitle: "Rich abyssal navy-slate (Default)",
+    subtitle: "Rich abyssal navy-slate",
     palette: {
       950: "#03070c",
       900: "#060d16",
@@ -222,45 +250,17 @@ export const SURFACE_PRESETS: {
     },
   },
   {
-    id: "obsidian",
-    name: "Obsidian Midnight",
-    subtitle: "Cool indigo-charcoal glass",
-    palette: {
-      950: "#05060b",
-      900: "#0a0c15",
-      850: "#0f1220",
-      800: "#15192c",
-      700: "#1e243d",
-      600: "#2a3152",
-      500: "#3b446e",
-    },
-  },
-  {
-    id: "void",
-    name: "True Void OLED",
-    subtitle: "Pure pitch-black high contrast",
-    palette: {
-      950: "#020203",
-      900: "#07080a",
-      850: "#0c0e12",
-      800: "#12151b",
-      700: "#1b1f27",
-      600: "#262c37",
-      500: "#373f4e",
-    },
-  },
-  {
     id: "slate",
     name: "Titanium Slate",
     subtitle: "Modern neutral gunmetal",
     palette: {
-      950: "#06090e",
-      900: "#0b1018",
-      850: "#101722",
-      800: "#16202e",
-      700: "#1f2d40",
-      600: "#2c3e57",
-      500: "#3d5473",
+      950: "#06080c",
+      900: "#0c0f16",
+      850: "#121620",
+      800: "#181e2b",
+      700: "#232b3c",
+      600: "#313c52",
+      500: "#445370",
     },
   },
 ];
@@ -341,9 +341,9 @@ export function createDefaultSiteConfig(): SiteConfig {
     logoShape: "squircle",
     logoGlow: true,
 
-    themePreset: "aqua",
-    customAccentHex: "#06b6d4",
-    surfacePreset: "ocean",
+    themePreset: "crimson",
+    customAccentHex: "#ef4444",
+    surfacePreset: "void",
     glowIntensity: "balanced",
     showGrid: true,
     enableRouteLoader: true,
@@ -385,7 +385,7 @@ export function createDefaultSiteConfig(): SiteConfig {
 
 function hexToRgbTuple(hex: string): [number, number, number] {
   const clean = hex.replace("#", "").trim();
-  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [6, 182, 212];
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [239, 68, 68];
   return [
     parseInt(clean.slice(0, 2), 16),
     parseInt(clean.slice(2, 4), 16),

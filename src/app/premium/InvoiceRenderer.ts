@@ -169,24 +169,24 @@ export async function downloadInvoicePng(
   const dt = formatInvoiceDateTime(inv.createdAt);
   const brand = inv.brandName || siteCfg.brandName || "LightCore";
 
-  // Background base
+  // Background base — sleek Obsidian Black
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, "#050d17");
-  bgGrad.addColorStop(0.5, "#040911");
-  bgGrad.addColorStop(1, "#03060c");
+  bgGrad.addColorStop(0, "#0a080a");
+  bgGrad.addColorStop(0.5, "#060608");
+  bgGrad.addColorStop(1, "#030305");
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
   // Subtle top radial glow
   const glow = ctx.createRadialGradient(W / 2, 0, 20, W / 2, 40, 520);
-  glow.addColorStop(0, `${accent}30`);
+  glow.addColorStop(0, `${accent}36`);
   glow.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, 460);
 
   // Outer card frame
   roundRectPath(ctx, 28, 28, W - 56, H - 56, 26);
-  ctx.fillStyle = "rgba(8, 17, 29, 0.92)";
+  ctx.fillStyle = "rgba(12, 12, 16, 0.95)";
   ctx.fill();
   ctx.lineWidth = 1.5;
   ctx.strokeStyle = `${accent}48`;
@@ -269,7 +269,7 @@ export async function downloadInvoicePng(
   // Invoice Metadata Strip (4 columns)
   const metaY = 174;
   roundRectPath(ctx, 64, metaY, W - 128, 86, 16);
-  ctx.fillStyle = "rgba(3, 8, 15, 0.85)";
+  ctx.fillStyle = "rgba(6, 6, 9, 0.92)";
   ctx.fill();
   ctx.strokeStyle = "rgba(148, 163, 184, 0.14)";
   ctx.stroke();
@@ -297,7 +297,7 @@ export async function downloadInvoicePng(
 
   // Buyer Box
   roundRectPath(ctx, 64, boxY, halfW, 162, 16);
-  ctx.fillStyle = "rgba(3, 8, 15, 0.72)";
+  ctx.fillStyle = "rgba(7, 7, 10, 0.88)";
   ctx.fill();
   ctx.strokeStyle = "rgba(148, 163, 184, 0.14)";
   ctx.stroke();
@@ -325,7 +325,7 @@ export async function downloadInvoicePng(
   // Server & Delivery Box
   const rightX = 64 + halfW + 20;
   roundRectPath(ctx, rightX, boxY, halfW, 162, 16);
-  ctx.fillStyle = "rgba(3, 8, 15, 0.72)";
+  ctx.fillStyle = "rgba(7, 7, 10, 0.88)";
   ctx.fill();
   ctx.strokeStyle = "rgba(148, 163, 184, 0.14)";
   ctx.stroke();
@@ -358,7 +358,7 @@ export async function downloadInvoicePng(
   const planY = 468;
   const planH = 330;
   roundRectPath(ctx, 64, planY, W - 128, planH, 18);
-  ctx.fillStyle = "rgba(3, 8, 15, 0.85)";
+  ctx.fillStyle = "rgba(6, 6, 9, 0.92)";
   ctx.fill();
   ctx.strokeStyle = `${accent}44`;
   ctx.stroke();
@@ -442,7 +442,7 @@ export async function downloadInvoicePng(
   // Optional Buyer Note
   if (inv.buyerNote) {
     roundRectPath(ctx, 64, cursorY, W - 128, 52, 12);
-    ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+    ctx.fillStyle = "rgba(18, 18, 24, 0.85)";
     ctx.fill();
     ctx.strokeStyle = "rgba(148, 163, 184, 0.16)";
     ctx.stroke();

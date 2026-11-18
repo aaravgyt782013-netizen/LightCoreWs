@@ -2,6 +2,8 @@ import crypto from "node:crypto";
 import { site } from "@/lib/site";
 import { kvGet, kvListValues, kvSet } from "@/lib/kv-store";
 import type { SessionPayload } from "@/lib/session";
+import { getVaultCipherKey } from "@/lib/session";
+import { cleanEnvString, resolveDiscordClientId } from "@/lib/discord-oauth";
 import {
   canManageGuild,
   type DiscordGuild,
@@ -48,9 +50,7 @@ function userKey(userId: string): string {
 }
 
 function getCipherKey(): Buffer | null {
-  const secret = process.env.SESSION_SECRET;
-  if (!secret || secret.length < 16) return null;
-  return crypto.scryptSync(secret, "lightcore-oauth-vault-v1", 32);
+  return getVaultCipherKey();
 }
 
 function encryptSecret(plain: string): string | null {
@@ -260,17 +260,19 @@ async function getValidAccessToken(
   }
 
   const refresh = decryptSecret(stored.encryptedRefreshToken);
-  const clientSecret = process.env.DISCORD_CLIENT_SECRET
-    ?.trim()
-    .replace(/^["']|["']$/g, "");
+  const clientSecret = cleanEnvString(process.env.DISCORD_CLIENT_SECRET);
   if (!refresh || !clientSecret) return current;
 
   try {
     const res = await fetch("https://discord.com/api/v10/oauth2/token", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+        "User-Agent": "LightCore (https://lightcorews.netlify.app, 2.0)",
+      },
       body: new URLSearchParams({
-        client_id: site.clientId,
+        client_id: resolveDiscordClientId(),
         client_secret: clientSecret,
         grant_type: "refresh_token",
         refresh_token: refresh,

@@ -21,14 +21,14 @@ export async function GET(req: NextRequest) {
   }
 
   const [rawGuilds, botGuilds, premium, siteCfg] = await Promise.all([
-    fetchAllUserGuilds(session.accessToken),
-    fetchBotGuilds(),
-    getUserSubscription(session.user.id),
-    getSiteConfig(),
+    fetchAllUserGuilds(session.accessToken).catch(() => null),
+    fetchBotGuilds().catch(() => null),
+    getUserSubscription(session.user.id).catch(() => null),
+    getSiteConfig().catch(() => null),
   ]);
 
   // Persist/refresh this signed-in user so the Owner Panel always lists every active login.
-  await ensureSessionUserRecorded(session, rawGuilds);
+  await ensureSessionUserRecorded(session, rawGuilds).catch(() => {});
 
   const allGuilds = (rawGuilds ?? [])
     .map((g) => {
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
         owner: g.owner,
         canManage,
         botPresent: botGuilds ? botGuilds.ids.has(g.id) : null,
-        inviteUrl: buildGuildInviteUrl(g.id, siteCfg.inviteUrl),
+        inviteUrl: buildGuildInviteUrl(g.id, siteCfg?.inviteUrl),
       };
     })
     .sort(

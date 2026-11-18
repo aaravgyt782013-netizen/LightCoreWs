@@ -302,7 +302,7 @@ export function CustomSelect({
         onClick={() => !disabled && setOpen((v) => !v)}
         className={`group flex w-full items-center justify-between gap-2 rounded-xl border bg-ink-950/90 text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/40 disabled:cursor-not-allowed disabled:opacity-50 ${heightCls} ${
           open
-            ? "border-brand-400/65 shadow-[0_0_0_3px_rgba(6,182,212,0.16)]"
+            ? "border-brand-400/65 shadow-[0_0_0_3px_rgb(var(--brand-500)/0.18)]"
             : "border-brand-200/[0.12] hover:border-brand-400/40 hover:bg-ink-900/90"
         }`}
       >
@@ -409,7 +409,7 @@ export function CustomSelect({
                     ? { bottom: `${window.innerHeight - coords.top}px` }
                     : { top: `${coords.top}px` }),
                 }}
-                className="z-[130] animate-pop-in overflow-hidden rounded-2xl border border-brand-400/30 bg-ink-900/98 shadow-[0_24px_65px_-12px_rgba(0,0,0,0.92),0_0_35px_-12px_rgba(6,182,212,0.4)] backdrop-blur-2xl"
+                className="z-[130] animate-pop-in overflow-hidden rounded-2xl border border-brand-500/30 bg-ink-900/98 shadow-[0_24px_65px_-12px_rgba(0,0,0,0.96),0_0_38px_-12px_rgb(var(--brand-500)/0.42)] backdrop-blur-2xl"
               >
                 {enableSearch && (
                   <div className="border-b border-brand-200/[0.08] p-2">
@@ -480,8 +480,10 @@ export function TimeSelect({
 }
 
 const COLOR_SWATCHES = [
-  { hex: "#06b6d4", name: "LightCore Aqua" },
-  { hex: "#22d3ee", name: "Electric Cyan" },
+  { hex: "#ef4444", name: "LightCore Crimson" },
+  { hex: "#dc2626", name: "Blood Scarlet" },
+  { hex: "#f43f5e", name: "Neon Rose" },
+  { hex: "#06b6d4", name: "Aqua Pulse" },
   { hex: "#14b8a6", name: "Ocean Teal" },
   { hex: "#38bdf8", name: "Sky Pulse" },
   { hex: "#5865f2", name: "Discord Blurple" },
@@ -535,7 +537,7 @@ export function ColorSwatchSelect({
         onClick={() => setOpen((v) => !v)}
         className={`flex h-10 w-full items-center justify-between gap-2.5 rounded-xl border bg-ink-950/90 px-3.5 text-left transition-all ${
           open
-            ? "border-brand-400/65 shadow-[0_0_0_3px_rgba(6,182,212,0.16)]"
+            ? "border-brand-400/65 shadow-[0_0_0_3px_rgb(var(--brand-500)/0.18)]"
             : "border-brand-200/[0.12] hover:border-brand-400/40"
         }`}
       >
@@ -603,7 +605,7 @@ export function ColorSwatchSelect({
                 const v = e.target.value;
                 onChange(v.startsWith("#") ? v : `#${v}`);
               }}
-              placeholder="#06b6d4"
+              placeholder="#ef4444"
               className="h-8 flex-1 rounded-lg border border-brand-200/12 bg-ink-950 px-2.5 font-mono text-[12px] text-white focus:border-brand-400/60 focus:outline-none"
             />
             <button

@@ -32,7 +32,7 @@ export function Logo({
       {showGlow && (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-brand-400/35 blur-xl"
+          className="absolute inset-0 rounded-full bg-brand-500/40 blur-xl transition-opacity duration-300 group-hover:opacity-100"
         />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,15 +41,15 @@ export function Logo({
         alt={`${config.brandName || site.name} logo`}
         width={size}
         height={size}
-        className={`relative size-full ${radiusClass} object-cover ring-1 ring-brand-200/15 drop-shadow-[0_0_14px_rgb(var(--brand-400)/0.5)]`}
+        className={`relative size-full ${radiusClass} object-cover ring-1 ring-brand-500/30 drop-shadow-[0_0_16px_rgb(var(--brand-500)/0.55)] transition-transform duration-300 ease-smooth group-hover:scale-[1.03]`}
       />
     </span>
   );
 }
 
 export function Wordmark({
-  leadClassName = "",
-  accentClassName = "text-brand-400",
+  leadClassName = "text-white",
+  accentClassName = "text-brand-500",
 }: {
   leadClassName?: string;
   accentClassName?: string;

@@ -29,7 +29,7 @@ const SiteConfigContext = createContext<SiteConfigContextValue>({
   refreshConfig: async () => {},
 });
 
-const LOCAL_CACHE_KEY = "lightcore_site_config_v1";
+const LOCAL_CACHE_KEY = "lightcore_site_config_v2";
 
 export function applySiteThemeToDom(cfg: SiteConfig) {
   if (typeof document === "undefined") return;
@@ -37,6 +37,14 @@ export function applySiteThemeToDom(cfg: SiteConfig) {
   const vars = buildThemeCssVariables(cfg);
   for (const [k, v] of Object.entries(vars)) {
     root.style.setProperty(k, v);
+  }
+
+  // Sync browser chrome / mobile status bar color
+  if (vars["--background"]) {
+    const meta = document.querySelector<HTMLMetaElement>(
+      "meta[name='theme-color']",
+    );
+    if (meta) meta.content = vars["--background"];
   }
 
   // Update dynamic favicon if customized
@@ -89,6 +97,7 @@ export function SiteConfigProvider({
   useEffect(() => {
     // Hydrate cached theme instantaneously before network resolves
     try {
+      window.localStorage.removeItem("lightcore_site_config_v1");
       const raw = window.localStorage.getItem(LOCAL_CACHE_KEY);
       if (raw) {
         const cached = JSON.parse(raw) as SiteConfig;

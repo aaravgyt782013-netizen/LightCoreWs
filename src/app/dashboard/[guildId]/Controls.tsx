@@ -24,7 +24,7 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
         checked
-          ? "border-brand-400/80 bg-gradient-to-r from-brand-600 to-brand-500 shadow-[0_0_18px_-2px_rgba(34,211,238,0.75)]"
+          ? "border-brand-400/80 bg-gradient-to-r from-brand-600 to-brand-500 shadow-[0_0_18px_-2px_rgb(var(--brand-500)/0.75)]"
           : "border-brand-200/15 bg-ink-800"
       }`}
     >
@@ -177,7 +177,7 @@ export function RoleField({
               ...roles.map((r) => ({
                 value: r.id,
                 label: `@${r.name}`,
-                colorDot: r.color || "#22d3ee",
+                colorDot: r.color || "#ef4444",
                 description: `ID ${r.id}`,
               })),
             ]}

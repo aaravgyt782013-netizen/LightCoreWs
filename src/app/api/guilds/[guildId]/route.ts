@@ -179,7 +179,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   await sendDiscordLogEmbed({
     title: `${site.name} · Server Config Updated`,
     description: `**${auth.session.user.globalName || auth.session.user.username}** (\`${actor}\`) updated **${sectionLabel}** in **${auth.guild.name}**.`,
-    color: 0x06b6d4,
+    color: 0xef4444,
     timestamp: new Date().toISOString(),
     fields: [
       { name: "Server ID", value: `\`${auth.guild.id}\``, inline: true },

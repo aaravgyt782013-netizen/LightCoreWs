@@ -5,14 +5,31 @@ import {
   type SiteConfig,
 } from "@/lib/site-config";
 
-const SITE_CONFIG_KEY = "site/config-v1";
+const SITE_CONFIG_KEY = "site/config-v2";
+const LEGACY_SITE_CONFIG_KEY = "site/config-v1";
 
 export async function getSiteConfig(): Promise<SiteConfig> {
   const base = createDefaultSiteConfig();
   const envRole = process.env.DISCORD_PREMIUM_ROLE_ID?.trim() || "";
   if (envRole) base.premiumRoleId = envRole;
 
-  const stored = await kvGet<Partial<SiteConfig>>(SITE_CONFIG_KEY);
+  let stored = await kvGet<Partial<SiteConfig>>(SITE_CONFIG_KEY);
+  if (!stored) {
+    const legacy = await kvGet<Partial<SiteConfig>>(LEGACY_SITE_CONFIG_KEY);
+    if (legacy) {
+      // Carry forward custom branding/pricing/logos while upgrading default theme to Crimson & Obsidian Black.
+      const {
+        themePreset: _legacyTheme,
+        surfacePreset: _legacySurface,
+        customAccentHex: _legacyHex,
+        ...kept
+      } = legacy;
+      void _legacyTheme;
+      void _legacySurface;
+      void _legacyHex;
+      stored = kept;
+    }
+  }
   if (!stored) return base;
 
   const merged = mergeSiteConfig(base, stored);
@@ -36,6 +53,7 @@ export async function saveSiteConfig(
 
 export async function resetSiteConfig(updatedBy: string): Promise<SiteConfig> {
   await kvDelete(SITE_CONFIG_KEY);
+  await kvDelete(LEGACY_SITE_CONFIG_KEY);
   const fresh = createDefaultSiteConfig();
   fresh.updatedAt = new Date().toISOString();
   fresh.updatedBy = updatedBy;

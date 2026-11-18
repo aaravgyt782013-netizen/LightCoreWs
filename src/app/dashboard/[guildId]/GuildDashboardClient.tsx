@@ -734,7 +734,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           {/* Sidebar Premium Card */}
           <Link
             href={premiumHref}
-            className="block rounded-2xl border border-brand-400/35 bg-gradient-to-br from-brand-950/85 via-ink-950 to-sky-950/50 p-3.5 transition-all hover:border-brand-400/65 hover:shadow-glow"
+            className="block rounded-2xl border border-brand-400/35 bg-gradient-to-br from-brand-950/85 via-ink-950 to-ink-950 p-3.5 transition-all hover:border-brand-400/65 hover:shadow-glow"
           >
             <div className="flex items-center gap-2 text-brand-300">
               <CrownIcon className="size-4" />
@@ -847,7 +847,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           <div className="flex shrink-0 items-center gap-2">
             <Link
               href={premiumHref}
-              className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgba(6,182,212,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-110"
+              className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-500)/0.82)] transition-all hover:-translate-y-0.5 hover:brightness-110"
             >
               <CrownIcon className="size-3.5" />
               <span className="hidden sm:inline">
@@ -1155,7 +1155,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                           options={guild.roles.map((r) => ({
                             value: r.id,
                             label: `@${r.name}`,
-                            colorDot: r.color || "#22d3ee",
+                            colorDot: r.color || "#ef4444",
                           }))}
                         />
                       ) : (
@@ -1383,9 +1383,9 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         {/* Floating Unsaved Changes Save Bar (Discord / Xieron / Zynrax style) */}
         {isDirty && (
           <div className="pb-safe fixed inset-x-0 bottom-3 z-40 px-3 sm:bottom-4 sm:px-4 lg:left-[274px]">
-            <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/45 bg-ink-900/95 px-4 py-3 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.92),0_0_34px_-8px_rgba(6,182,212,0.5)] backdrop-blur-2xl sm:px-5 sm:py-3.5">
+            <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/45 bg-ink-900/95 px-4 py-3 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.92),0_0_34px_-8px_rgb(var(--brand-500)/0.45)] backdrop-blur-2xl sm:px-5 sm:py-3.5">
               <div className="flex items-center gap-2.5">
-                <span className="size-2 animate-ticker rounded-full bg-brand-400 shadow-[0_0_8px_#22d3ee]" />
+                <span className="size-2 animate-ticker rounded-full bg-brand-400 shadow-[0_0_8px_rgb(var(--brand-400))]" />
                 <p className="text-[12.5px] font-medium text-white sm:text-[13px]">
                   Unsaved changes ready
                 </p>
@@ -1403,7 +1403,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                   type="button"
                   disabled={saving}
                   onClick={() => void handleSave()}
-                  className="h-9 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_6px_20px_-6px_rgba(34,211,238,0.8)] transition-all hover:brightness-110 disabled:opacity-60"
+                  className="h-9 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_6px_20px_-6px_rgb(var(--brand-500)/0.8)] transition-all hover:brightness-110 disabled:opacity-60"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>

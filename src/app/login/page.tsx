@@ -41,10 +41,18 @@ export default function LoginPage() {
           </Link>
 
           <div className="panel panel-inner relative overflow-hidden rounded-2xl p-7 shadow-panel">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -top-24 left-1/2 size-60 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(6,182,212,0.22),transparent)]"
-            />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-x-0 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500/80 to-transparent"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(closest-side, rgb(var(--brand-600) / 0.28), transparent)",
+                }}
+              />
             <div className="relative">
               <h1 className="font-display text-[24px] font-semibold tracking-tight text-white">
                 Open Dashboard

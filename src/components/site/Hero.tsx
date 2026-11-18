@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { Wordmark } from "@/components/ui/Logo";
-import { featureIcons, ArrowRight } from "@/components/ui/Icons";
+import { featureIcons, ArrowRight, CrownIcon } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { defaultLogs, features, site, stats, type LogEntry } from "@/lib/site";
 import { useCountUp } from "@/components/ui/useCountUp";
@@ -12,26 +12,26 @@ import { useCountUp } from "@/components/ui/useCountUp";
 export function Hero() {
   const { config } = useSiteConfig();
   return (
-    <section className="relative overflow-hidden pb-10 pt-[112px] sm:pt-[128px]">
+    <section className="relative overflow-hidden pb-12 pt-[110px] sm:pt-[132px]">
       <div className="container-x">
-        <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-10">
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,486px)] lg:gap-12">
           {/* copy */}
           <div className="relative">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-brand-200/15 bg-white/[0.03] py-1.5 pl-1.5 pr-4 backdrop-blur">
-              <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-600/15">
-                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-500/60" />
-                <span className="size-1.5 rounded-full bg-brand-500" />
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-brand-500/25 bg-brand-950/35 py-1.5 pl-1.5 pr-4 shadow-[0_0_30px_-10px_rgb(var(--brand-600)/0.55)] backdrop-blur-md">
+              <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-600/20">
+                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-500/70" />
+                <span className="size-1.5 rounded-full bg-brand-500 shadow-[0_0_8px_rgb(var(--brand-400))]" />
               </span>
-              <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-zinc-300 sm:text-[10.5px] sm:tracking-[0.22em]">
+              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.14em] text-zinc-200 sm:text-[10.5px] sm:tracking-[0.22em]">
                 {config.tagline}
               </span>
             </div>
 
-            <h1 className="mt-7 font-display text-[38px] font-bold leading-[0.95] tracking-[0.08em] text-white sm:text-[54px] lg:text-[64px]">
-              <Wordmark leadClassName="text-zinc-400" />
+            <h1 className="mt-7 font-display text-[40px] font-bold leading-[0.94] tracking-[0.07em] text-white drop-shadow-[0_12px_40px_rgb(var(--brand-600)/0.22)] sm:text-[56px] lg:text-[68px]">
+              <Wordmark leadClassName="text-zinc-100" />
             </h1>
 
-            <p className="mt-6 max-w-[34rem] text-balance text-[15.5px] leading-relaxed text-zinc-300 sm:text-[17px]">
+            <p className="mt-6 max-w-[35rem] text-balance text-[15.5px] leading-relaxed text-zinc-200 sm:text-[17px]">
               {config.description}.{" "}
               {config.heroSubtext && (
                 <span className="text-zinc-400">{config.heroSubtext}</span>
@@ -42,25 +42,32 @@ export function Hero() {
               <InviteButton size="lg" />
               <Link
                 href={site.dashboard}
-                className="group inline-flex h-[52px] items-center gap-3 rounded-full border border-white/12 bg-white/[0.03] px-6 text-[15px] font-medium text-zinc-200 transition-colors duration-300 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+                className="group inline-flex h-[52px] items-center gap-3 rounded-full border border-white/[0.13] bg-white/[0.035] px-6 text-[15px] font-medium text-zinc-100 backdrop-blur-md transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-500/[0.09] hover:text-white hover:shadow-[0_14px_38px_-16px_rgb(var(--brand-600)/0.55)] active:translate-y-0"
               >
                 Open Dashboard
                 <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
               </Link>
+              <Link
+                href="/premium"
+                className="group inline-flex h-[52px] items-center gap-2 rounded-full border border-brand-500/25 bg-brand-950/30 px-5 text-[14px] font-medium text-brand-200 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/55 hover:bg-brand-900/35 hover:text-white"
+              >
+                <CrownIcon className="size-4 text-brand-400 transition-transform duration-300 group-hover:scale-110" />
+                Premium
+              </Link>
             </div>
 
             {/* feature chips */}
-            <div className="mt-11 flex flex-wrap items-center gap-2">
+            <div className="mt-10 flex flex-wrap items-center gap-2">
               {features.map((f, i) => {
                 const Icon = featureIcons[f.icon];
                 return (
                   <a
                     key={f.key}
                     href="#features"
-                    className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-850/70 px-3.5 py-2 text-[12.5px] font-medium text-zinc-300 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-brand-500/40 hover:text-white"
-                    style={{ animationDelay: `${i * 120}ms` }}
+                    className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/85 px-3.5 py-2 text-[12.5px] font-medium text-zinc-300 backdrop-blur transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-950/40 hover:text-white hover:shadow-[0_10px_28px_-14px_rgb(var(--brand-500)/0.65)]"
+                    style={{ animationDelay: `${i * 100}ms` }}
                   >
-                    <Icon className="size-[15px] text-brand-400/90 transition-colors group-hover:text-brand-400" />
+                    <Icon className="size-[15px] text-brand-400 transition-transform duration-300 group-hover:scale-110" />
                     {f.key}
                   </a>
                 );
@@ -68,7 +75,7 @@ export function Hero() {
             </div>
           </div>
 
-          {/* console */}
+          {/* live guard engine terminal */}
           <ConsolePanel />
         </div>
 
@@ -83,6 +90,7 @@ function ConsolePanel() {
   const [isLive, setIsLive] = useState(false);
   const [step, setStep] = useState(4);
   const scroller = useRef<HTMLDivElement | null>(null);
+  const { config } = useSiteConfig();
 
   useEffect(() => {
     let active = true;
@@ -95,12 +103,17 @@ function ConsolePanel() {
           live?: boolean;
           logs?: LogEntry[];
         };
-        if (active && data.live && Array.isArray(data.logs) && data.logs.length > 0) {
+        if (
+          active &&
+          data.live &&
+          Array.isArray(data.logs) &&
+          data.logs.length > 0
+        ) {
           setEntries(data.logs);
           setIsLive(true);
         }
       } catch {
-        // Keep default animated stream when offline or statically hosted.
+        // Keep default animated stream when offline.
       }
     };
 
@@ -115,87 +128,105 @@ function ConsolePanel() {
   useEffect(() => {
     if (isLive) return;
     const id = window.setInterval(() => {
-      setStep((s) => (s + 1 > entries.length ? Math.min(4, entries.length) : s + 1));
-    }, 1650);
+      setStep((s) =>
+        s + 1 > entries.length ? Math.min(4, entries.length) : s + 1,
+      );
+    }, 1750);
     return () => window.clearInterval(id);
   }, [isLive, entries.length]);
 
   const visible = isLive
     ? entries.slice(-6)
     : entries.slice(Math.max(0, step - 6), step);
-  const { config } = useSiteConfig();
 
   return (
     <div className="relative">
+      {/* intense crimson halo behind console */}
       <div
-        className="absolute -inset-6 rounded-[2rem] blur-2xl"
+        aria-hidden
+        className="pointer-events-none absolute -inset-7 rounded-[2.2rem] blur-2xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgb(var(--brand-500) / 0.2), transparent 75%)",
+            "radial-gradient(closest-side, rgb(var(--brand-600) / 0.26), rgb(var(--brand-500) / 0.08) 55%, transparent 78%)",
         }}
       />
-      <div className="panel panel-inner relative overflow-hidden rounded-[22px] shadow-panel">
-        {/* header */}
-        <div className="flex items-center justify-between border-b border-brand-200/[0.08] px-4 py-3">
+
+      <div className="panel panel-inner relative overflow-hidden rounded-[22px] border-brand-500/20 shadow-[0_32px_90px_-34px_rgba(0,0,0,0.98),0_0_60px_-28px_rgb(var(--brand-600)/0.5),inset_0_1px_0_rgba(255,255,255,0.08)]">
+        {/* top glowing crimson accent filament */}
+        <div
+          aria-hidden
+          className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500/80 to-transparent"
+        />
+
+        {/* terminal chrome header */}
+        <div className="flex items-center justify-between border-b border-white/[0.07] bg-black/35 px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <span className="size-2 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgb(var(--brand-400)/0.65)]" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-zinc-400">
+            <span className="flex items-center gap-1.5">
+              <span className="size-2.5 rounded-full bg-brand-500 shadow-[0_0_10px_rgb(var(--brand-500)/0.85)]" />
+              <span className="size-2.5 rounded-full bg-white/10" />
+              <span className="size-2.5 rounded-full bg-white/10" />
+            </span>
+            <span className="ml-1 font-mono text-[10px] uppercase tracking-[0.26em] text-zinc-400">
               {(config.brandName || site.name).toLowerCase()} · guard engine
             </span>
           </div>
-          <span className="font-mono text-[10px] text-emerald-400/80">
-            ● {isLive ? "live stream" : "live"}
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/25 bg-brand-500/10 px-2.5 py-0.5 font-mono text-[9.5px] font-medium text-brand-300">
+            <span className="size-1.5 animate-ticker rounded-full bg-brand-400" />
+            {isLive ? "live stream" : "armed"}
           </span>
         </div>
 
         {/* body */}
         <div className="relative p-4">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/50 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/65 to-transparent" />
           <div
             ref={scroller}
             className="flex h-[286px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto"
           >
             {visible.map((l, i) => (
               <div
-                key={l.id ?? `${l.t}-${i}`}
-                className="flex items-start gap-2.5 rounded-lg border border-white/[0.05] bg-white/[0.015] px-2.5 py-2"
+                key={l.id ?? `${l.t}-${l.msg}-${i}`}
+                className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.055] bg-black/45 px-3 py-2 transition-colors hover:border-brand-500/25"
               >
                 <span
-                  className={`mt-px shrink-0 rounded px-1.5 py-0.5 text-[9px] font-medium tracking-wider ${
+                  className={`mt-px shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
                     l.ok
-                      ? "bg-emerald-500/10 text-emerald-300/90"
-                      : "bg-brand-600/15 text-brand-300"
+                      ? "border border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                      : "border border-brand-500/35 bg-brand-600/20 text-brand-300"
                   }`}
                 >
                   {l.t}
                 </span>
-                <span className="text-zinc-400">{l.msg}</span>
+                <span className="text-zinc-300">{l.msg}</span>
               </div>
             ))}
           </div>
           <div className="mt-3 flex items-center justify-between border-t border-white/[0.06] pt-3 font-mono text-[10px] text-zinc-500">
-            <span>uptime 99.99%</span>
+            <span>
+              prefix <span className="text-brand-400">{config.prefix}</span> ·
+              uptime 99.99%
+            </span>
             <span className="flex items-center gap-1.5">
-              threat level
-              <span className="text-emerald-400">nominal</span>
+              shield
+              <span className="font-medium text-emerald-400">nominal</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* floating badge */}
-      <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-white/10 bg-ink-900/90 px-3.5 py-2.5 shadow-panel backdrop-blur sm:flex">
+      {/* floating shield badge */}
+      <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-brand-500/25 bg-ink-900/95 px-3.5 py-2.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.95),0_0_30px_-12px_rgb(var(--brand-500)/0.55)] backdrop-blur-xl sm:flex">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={config.logoUrl || site.logo}
           alt=""
-          width={22}
-          height={22}
-          className="size-[22px] rounded-md object-cover ring-1 ring-white/10"
+          width={24}
+          height={24}
+          className="size-6 rounded-md object-cover ring-1 ring-brand-500/40"
         />
         <div className="leading-tight">
-          <p className="text-[11px] font-medium text-white">Nuke blocked</p>
-          <p className="font-mono text-[9.5px] text-zinc-500">
+          <p className="text-[11.5px] font-semibold text-white">Nuke blocked</p>
+          <p className="font-mono text-[9.5px] text-brand-300/90">
             rollback complete · 41ms
           </p>
         </div>
@@ -204,7 +235,13 @@ function ConsolePanel() {
   );
 }
 
-function Stat({ value, suffix, label, decimals, hint }: {
+function Stat({
+  value,
+  suffix,
+  label,
+  decimals,
+  hint,
+}: {
   value: number;
   suffix: string;
   label: string;
@@ -213,15 +250,18 @@ function Stat({ value, suffix, label, decimals, hint }: {
 }) {
   const { ref, display } = useCountUp(value, { decimals });
   return (
-    <div ref={ref} className="group relative px-5 py-6 text-center sm:px-6">
-      <p className="font-display text-[30px] font-semibold tracking-tight text-white sm:text-[36px]">
+    <div
+      ref={ref}
+      className="group relative px-5 py-6 text-center transition-colors duration-300 hover:bg-brand-500/[0.03] sm:px-6"
+    >
+      <p className="font-display text-[30px] font-bold tabular-nums tracking-tight text-white sm:text-[38px]">
         {display}
         <span className="text-brand-500">{suffix}</span>
       </p>
-      <p className="mt-1.5 text-[12px] font-medium uppercase tracking-[0.16em] text-zinc-400">
+      <p className="mt-1.5 text-[11.5px] font-medium uppercase tracking-[0.16em] text-zinc-300">
         {label}
       </p>
-      <p className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-600">
+      <p className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-500">
         {hint}
       </p>
     </div>
@@ -232,7 +272,7 @@ function StatsBar() {
   return (
     <div className="relative mt-16">
       <div className="hairline" />
-      <div className="grid grid-cols-2 divide-x divide-white/[0.06] rounded-2xl border border-white/[0.06] bg-white/[0.015] backdrop-blur-sm sm:grid-cols-4 sm:[&>*:nth-child(n+3)]:border-t sm:[&>*:nth-child(n+3)]:border-white/[0.06] sm:[&>*:nth-child(2n)]:border-l-0 md:[&>*]:border-l md:[&>*]:border-t-0 md:[&>*:first-child]:border-l-0">
+      <div className="grid grid-cols-2 overflow-hidden rounded-2xl border border-white/[0.075] bg-ink-900/65 shadow-panel backdrop-blur-xl md:grid-cols-4 [&>*:nth-child(2n)]:border-l [&>*:nth-child(2n)]:border-white/[0.06] [&>*:nth-child(n+3)]:border-t [&>*:nth-child(n+3)]:border-white/[0.06] md:[&>*]:border-l md:[&>*]:border-t-0 md:[&>*:first-child]:border-l-0">
         {stats.map((s) => (
           <Stat
             key={s.label}

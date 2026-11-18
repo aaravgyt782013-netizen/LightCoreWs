@@ -189,7 +189,7 @@ export function createDefaultGuildConfig(): GuildConfig {
   return {
     general: {
       prefix: site.prefix,
-      embedColor: "#06b6d4",
+      embedColor: "#ef4444",
       deleteCommands: false,
       dmOnPunish: true,
       ignoredChannels: [],
