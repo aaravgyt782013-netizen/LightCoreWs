@@ -45,7 +45,7 @@ export default function LoginPage() {
           <div className="panel panel-inner relative overflow-hidden rounded-2xl p-7 shadow-panel">
             <div
               aria-hidden
-              className="pointer-events-none absolute -top-24 left-1/2 size-56 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(239,16,16,0.18),transparent)]"
+              className="pointer-events-none absolute -top-24 left-1/2 size-60 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(6,182,212,0.22),transparent)]"
             />
             <div className="relative">
               <h1 className="font-display text-[24px] font-semibold tracking-tight text-white">
@@ -105,9 +105,9 @@ export default function LoginPage() {
                 </a>
                 <Link
                   href="/premium"
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 text-[13px] font-medium text-amber-200 transition-colors hover:border-amber-400/55 hover:bg-amber-500/15 hover:text-white"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-400/35 bg-brand-500/10 text-[13px] font-medium text-brand-200 transition-all hover:border-brand-400/60 hover:bg-brand-500/20 hover:text-white"
                 >
-                  <CrownIcon className="size-4 text-amber-300" />
+                  <CrownIcon className="size-4 text-brand-300" />
                   View Premium Plans
                 </Link>
                 <a

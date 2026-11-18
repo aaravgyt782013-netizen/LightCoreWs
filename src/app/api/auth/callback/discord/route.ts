@@ -208,13 +208,19 @@ export async function GET(req: NextRequest) {
     await sendDiscordLogEmbed({
       title: `${site.name} · OAuth2 Sign-In`,
       description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) signed in to the dashboard.`,
-      color: ownerLogin ? 0xef1010 : 0x5865f2,
+      color: ownerLogin ? 0x06b6d4 : 0x5865f2,
       timestamp: new Date().toISOString(),
       fields: embedFields,
     });
 
     const destination: `/${string}` =
-      storedNext === "/admin" ? "/admin" : "/dashboard";
+      storedNext &&
+      (storedNext === "/admin" ||
+        storedNext === "/premium" ||
+        storedNext === "/dashboard" ||
+        /^\/dashboard\/\d{15,22}$/.test(storedNext))
+        ? (storedNext as `/${string}`)
+        : "/dashboard";
 
     const res = relativeRedirect(destination);
     res.cookies.delete(OAUTH_STATE_COOKIE);

@@ -39,8 +39,8 @@ export function Features() {
                   aria-pressed={isActive}
                   className={`group relative flex min-w-[168px] items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-300 ${
                     isActive
-                      ? "border-brand-600/40 bg-brand-950/40 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_18px_45px_-30px_rgba(239,16,16,0.9)]"
-                      : "border-white/[0.07] bg-white/[0.015] text-zinc-400 hover:border-white/[0.14] hover:bg-white/[0.035] hover:text-zinc-200"
+                      ? "border-brand-400/45 bg-brand-950/55 text-white shadow-[inset_0_1px_0_rgba(165,243,252,0.1),0_18px_45px_-28px_rgba(6,182,212,0.85)]"
+                      : "border-brand-200/[0.08] bg-white/[0.015] text-zinc-400 hover:border-brand-400/25 hover:bg-brand-300/[0.04] hover:text-zinc-100"
                   }`}
                 >
                   <span
@@ -61,7 +61,7 @@ export function Features() {
                     </span>
                   </span>
                   {isActive && (
-                    <span className="size-1.5 rounded-full bg-brand-500 shadow-[0_0_10px_2px_rgba(255,43,43,0.55)]" />
+                    <span className="size-1.5 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgba(34,211,238,0.65)]" />
                   )}
                 </button>
               );
@@ -91,7 +91,7 @@ export function Features() {
           <div className="panel panel-inner relative overflow-hidden rounded-2xl p-6 shadow-panel sm:p-8">
             <div
               aria-hidden
-              className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(239,16,16,0.16),transparent)]"
+              className="pointer-events-none absolute -right-24 -top-24 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(34,211,238,0.18),transparent)]"
             />
             <div className="relative" key={feature.key}>
               <div className="flex items-start justify-between gap-4">

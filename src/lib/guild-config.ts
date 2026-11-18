@@ -189,7 +189,7 @@ export function createDefaultGuildConfig(): GuildConfig {
   return {
     general: {
       prefix: site.prefix,
-      embedColor: "#ef1010",
+      embedColor: "#06b6d4",
       deleteCommands: false,
       dmOnPunish: true,
       ignoredChannels: [],
@@ -331,18 +331,6 @@ export function createDefaultGuildConfig(): GuildConfig {
     updatedAt: null,
     updatedBy: null,
   };
-}
-
-type GlobalConfigStore = typeof globalThis & {
-  __lightcoreGuildConfigs?: Map<string, GuildConfig>;
-};
-
-function getStore(): Map<string, GuildConfig> {
-  const g = globalThis as GlobalConfigStore;
-  if (!g.__lightcoreGuildConfigs) {
-    g.__lightcoreGuildConfigs = new Map();
-  }
-  return g.__lightcoreGuildConfigs;
 }
 
 function clampInt(val: unknown, fallback: number, min: number, max: number): number {
@@ -644,81 +632,4 @@ export function mergeGuildConfig(
   next.updatedAt = new Date().toISOString();
   next.updatedBy = updatedBy;
   return next;
-}
-
-export async function loadGuildConfig(guildId: string): Promise<{
-  config: GuildConfig;
-  syncedWithBot: boolean;
-}> {
-  const botApiUrl = process.env.BOT_API_URL?.replace(/\/+$/, "");
-  if (botApiUrl) {
-    try {
-      const headers: Record<string, string> = { Accept: "application/json" };
-      if (process.env.BOT_API_KEY) {
-        headers.Authorization = `Bearer ${process.env.BOT_API_KEY}`;
-      }
-      const res = await fetch(
-        `${botApiUrl}/guilds/${encodeURIComponent(guildId)}/config`,
-        {
-          headers,
-          cache: "no-store",
-          signal: AbortSignal.timeout(4000),
-        },
-      );
-      if (res.ok) {
-        const remote = (await res.json()) as unknown;
-        const base = createDefaultGuildConfig();
-        const merged = mergeGuildConfig(base, remote, "bot");
-        getStore().set(guildId, merged);
-        return { config: merged, syncedWithBot: true };
-      }
-    } catch {
-      // Fall back to server store below.
-    }
-  }
-
-  const existing = getStore().get(guildId);
-  if (existing) {
-    return { config: existing, syncedWithBot: false };
-  }
-  const fresh = createDefaultGuildConfig();
-  getStore().set(guildId, fresh);
-  return { config: fresh, syncedWithBot: false };
-}
-
-export async function saveGuildConfig(
-  guildId: string,
-  patch: unknown,
-  updatedBy: string,
-): Promise<{ config: GuildConfig; syncedWithBot: boolean }> {
-  const { config: current } = await loadGuildConfig(guildId);
-  const next = mergeGuildConfig(current, patch, updatedBy);
-  getStore().set(guildId, next);
-
-  let syncedWithBot = false;
-  const botApiUrl = process.env.BOT_API_URL?.replace(/\/+$/, "");
-  if (botApiUrl) {
-    try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (process.env.BOT_API_KEY) {
-        headers.Authorization = `Bearer ${process.env.BOT_API_KEY}`;
-      }
-      const res = await fetch(
-        `${botApiUrl}/guilds/${encodeURIComponent(guildId)}/config`,
-        {
-          method: "PUT",
-          headers,
-          body: JSON.stringify(next),
-          signal: AbortSignal.timeout(5000),
-        },
-      );
-      syncedWithBot = res.ok;
-    } catch {
-      syncedWithBot = false;
-    }
-  }
-
-  return { config: next, syncedWithBot };
 }

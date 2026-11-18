@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  appendLogs([entry]);
+  await appendLogs([entry]);
   const webhookSent = await forwardLogToWebhook(entry);
 
   return NextResponse.json(
@@ -37,6 +37,6 @@ export async function DELETE(req: NextRequest) {
   const auth = requireOwner(req);
   if (!auth.ok) return auth.response;
 
-  clearLogs();
+  await clearLogs();
   return NextResponse.json({ ok: true });
 }

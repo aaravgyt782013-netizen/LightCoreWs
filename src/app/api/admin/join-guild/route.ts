@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   await sendDiscordLogEmbed({
     title: `${site.name} · Admin Guild Pull`,
     description: `Owner \`@${auth.session.user.username}\` ran server add for guild \`${guildId}\`.`,
-    color: 0xef1010,
+    color: 0x06b6d4,
     timestamp: new Date().toISOString(),
     fields: [
       { name: "Added", value: String(summary.added), inline: true },

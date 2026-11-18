@@ -8,6 +8,8 @@ import {
   guildIconUrl,
 } from "@/lib/discord-guilds";
 import { isOwnerId } from "@/lib/admin";
+import { ensureSessionUserRecorded } from "@/lib/auth-store";
+import { getUserSubscription } from "@/lib/premium-store";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +19,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }
 
-  const [rawGuilds, botGuilds] = await Promise.all([
+  const [rawGuilds, botGuilds, premium] = await Promise.all([
     fetchAllUserGuilds(session.accessToken),
     fetchBotGuilds(),
+    getUserSubscription(session.user.id),
   ]);
+
+  // Persist/refresh this signed-in user so the Owner Panel always lists every active login.
+  await ensureSessionUserRecorded(session, rawGuilds);
 
   const allGuilds = (rawGuilds ?? [])
     .map((g) => {
@@ -55,6 +61,7 @@ export async function GET(req: NextRequest) {
         avatarUrl,
         isOwner: isOwnerId(session.user.id),
       },
+      premium,
       guilds,
       allGuilds,
     },

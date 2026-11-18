@@ -65,7 +65,7 @@ export async function forwardLogToWebhook(entry: LogEntry): Promise<boolean> {
   return sendDiscordLogEmbed({
     title: `${site.name} · ${entry.t}`,
     description: entry.msg,
-    color: entry.ok ? 0x10b981 : 0xef1010,
+    color: entry.ok ? 0x10b981 : 0x06b6d4,
     timestamp: entry.ts ?? new Date().toISOString(),
     fields,
   });

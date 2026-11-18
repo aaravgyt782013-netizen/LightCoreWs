@@ -9,14 +9,14 @@ export function CtaSection() {
     <section className="relative py-20 sm:py-28">
       <div className="container-x">
         <Reveal>
-          <div className="relative overflow-hidden rounded-[26px] border border-white/[0.08] bg-ink-900 px-6 py-14 text-center shadow-panel sm:px-12 sm:py-20">
+          <div className="relative overflow-hidden rounded-[26px] border border-brand-200/12 bg-ink-900 px-6 py-14 text-center shadow-panel sm:px-12 sm:py-20">
             <div
               aria-hidden
-              className="absolute inset-0 bg-[radial-gradient(60%_80%_at_50%_0%,rgba(239,16,16,0.22),transparent_70%)]"
+              className="absolute inset-0 bg-[radial-gradient(62%_82%_at_50%_0%,rgba(6,182,212,0.24),transparent_72%)]"
             />
             <div
               aria-hidden
-              className="absolute inset-0 bg-grid-fade bg-grid opacity-[0.35] [mask-image:radial-gradient(ellipse_at_50%_40%,#000,transparent_70%)]"
+              className="absolute inset-0 bg-grid-fade bg-grid opacity-[0.4] [mask-image:radial-gradient(ellipse_at_50%_40%,#000,transparent_70%)]"
             />
             <div className="relative mx-auto max-w-2xl">
               <Image
@@ -25,7 +25,7 @@ export function CtaSection() {
                 width={64}
                 height={64}
                 unoptimized
-                className="mx-auto size-16 rounded-2xl object-cover ring-1 ring-white/10 drop-shadow-[0_0_28px_rgba(239,16,16,0.6)]"
+                className="mx-auto size-16 rounded-2xl object-cover ring-1 ring-brand-400/30 drop-shadow-[0_0_28px_rgba(34,211,238,0.55)]"
               />
               <h2 className="mt-7 font-display text-[30px] font-semibold leading-[1.05] tracking-tight text-white sm:text-[46px]">
                 Lock your server down

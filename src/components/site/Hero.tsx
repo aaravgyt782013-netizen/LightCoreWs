@@ -1,28 +1,29 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { Wordmark } from "@/components/ui/Logo";
 import { featureIcons, ArrowRight } from "@/components/ui/Icons";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { defaultLogs, features, site, stats, type LogEntry } from "@/lib/site";
 import { useCountUp } from "@/components/ui/useCountUp";
 
 export function Hero() {
+  const { config } = useSiteConfig();
   return (
     <section className="relative overflow-hidden pb-10 pt-[112px] sm:pt-[128px]">
       <div className="container-x">
         <div className="grid items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,480px)] lg:gap-10">
           {/* copy */}
           <div className="relative">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.03] py-1.5 pl-1.5 pr-4 backdrop-blur">
+            <div className="inline-flex items-center gap-2.5 rounded-full border border-brand-200/15 bg-white/[0.03] py-1.5 pl-1.5 pr-4 backdrop-blur">
               <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-600/15">
                 <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-500/60" />
                 <span className="size-1.5 rounded-full bg-brand-500" />
               </span>
               <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-zinc-300 sm:text-[10.5px] sm:tracking-[0.22em]">
-                {site.tagline}
+                {config.tagline}
               </span>
             </div>
 
@@ -31,11 +32,10 @@ export function Hero() {
             </h1>
 
             <p className="mt-6 max-w-[34rem] text-balance text-[15.5px] leading-relaxed text-zinc-300 sm:text-[17px]">
-              {site.description}.{" "}
-              <span className="text-zinc-400">
-                Real-time raid prevention, auto-moderation, tickets,
-                VoiceMaster, and nuke blocking around the clock.
-              </span>
+              {config.description}.{" "}
+              {config.heroSubtext && (
+                <span className="text-zinc-400">{config.heroSubtext}</span>
+              )}
             </p>
 
             <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -123,17 +123,24 @@ function ConsolePanel() {
   const visible = isLive
     ? entries.slice(-6)
     : entries.slice(Math.max(0, step - 6), step);
+  const { config } = useSiteConfig();
 
   return (
     <div className="relative">
-      <div className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(closest-side,rgba(239,16,16,0.18),transparent_75%)] blur-2xl" />
+      <div
+        className="absolute -inset-6 rounded-[2rem] blur-2xl"
+        style={{
+          background:
+            "radial-gradient(closest-side, rgb(var(--brand-500) / 0.2), transparent 75%)",
+        }}
+      />
       <div className="panel panel-inner relative overflow-hidden rounded-[22px] shadow-panel">
         {/* header */}
-        <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-brand-200/[0.08] px-4 py-3">
           <div className="flex items-center gap-2.5">
-            <span className="size-2 rounded-full bg-brand-500 shadow-[0_0_10px_2px_rgba(255,43,43,0.6)]" />
+            <span className="size-2 rounded-full bg-brand-400 shadow-[0_0_10px_2px_rgb(var(--brand-400)/0.65)]" />
             <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-zinc-400">
-              {site.name.toLowerCase()} · guard engine
+              {(config.brandName || site.name).toLowerCase()} · guard engine
             </span>
           </div>
           <span className="font-mono text-[10px] text-emerald-400/80">
@@ -178,12 +185,12 @@ function ConsolePanel() {
 
       {/* floating badge */}
       <div className="absolute -bottom-5 -left-4 hidden animate-floaty items-center gap-2.5 rounded-xl border border-white/10 bg-ink-900/90 px-3.5 py-2.5 shadow-panel backdrop-blur sm:flex">
-        <Image
-          src={site.logo}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={config.logoUrl || site.logo}
           alt=""
           width={22}
           height={22}
-          unoptimized
           className="size-[22px] rounded-md object-cover ring-1 ring-white/10"
         />
         <div className="leading-tight">

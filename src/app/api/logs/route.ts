@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  appendLogs(entries);
+  await appendLogs(entries);
 
   const shouldForward =
     !(

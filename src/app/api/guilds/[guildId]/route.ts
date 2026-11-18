@@ -7,11 +7,16 @@ import {
   fetchLiveGuildDetails,
   guildIconUrl,
 } from "@/lib/discord-guilds";
-import { loadGuildConfig, saveGuildConfig } from "@/lib/guild-config";
+import { loadGuildConfig, saveGuildConfig } from "@/lib/guild-config-server";
 import { isOwnerId } from "@/lib/admin";
 import { buildGuildInviteUrl, site } from "@/lib/site";
 import { appendLogs, getLogs } from "@/lib/log-store";
 import { sendDiscordLogEmbed } from "@/lib/discord-webhook";
+import { ensureSessionUserRecorded } from "@/lib/auth-store";
+import {
+  getGuildSubscription,
+  getUserSubscription,
+} from "@/lib/premium-store";
 
 export const dynamic = "force-dynamic";
 
@@ -71,11 +76,15 @@ export async function GET(req: NextRequest, context: RouteContext) {
   if (!auth.ok) return auth.response;
 
   const { session, guild, allUserGuilds } = auth;
-  const [liveDetails, configData, guildLogs] = await Promise.all([
-    fetchLiveGuildDetails(guildId),
-    loadGuildConfig(guildId),
-    getLogs({ guildId, includePrivate: true, limit: 30 }),
-  ]);
+  const [liveDetails, configData, guildLogs, userSub, guildSub] =
+    await Promise.all([
+      fetchLiveGuildDetails(guildId),
+      loadGuildConfig(guildId),
+      getLogs({ guildId, includePrivate: true, limit: 30 }),
+      getUserSubscription(session.user.id),
+      getGuildSubscription(guildId),
+      ensureSessionUserRecorded(session, allUserGuilds),
+    ]);
 
   const avatarUrl = session.user.avatar
     ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
@@ -115,6 +124,11 @@ export async function GET(req: NextRequest, context: RouteContext) {
         roles: liveDetails?.roles ?? [],
       },
       switcherGuilds,
+      premium: {
+        userSubscription: userSub,
+        guildSubscription: guildSub,
+        activeTier: guildSub?.tier ?? userSub?.tier ?? null,
+      },
       config: configData.config,
       syncedWithBot: configData.syncedWithBot,
       logs: guildLogs.logs,
@@ -145,7 +159,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   const actor = `@${auth.session.user.username}`;
   const saved = await saveGuildConfig(guildId, patch, actor);
 
-  appendLogs([
+  await appendLogs([
     {
       id: crypto.randomUUID(),
       t: "CONFIG",
@@ -161,7 +175,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
   await sendDiscordLogEmbed({
     title: `${site.name} · Server Config Updated`,
     description: `**${auth.session.user.globalName || auth.session.user.username}** (\`${actor}\`) updated **${sectionLabel}** in **${auth.guild.name}**.`,
-    color: 0x10b981,
+    color: 0x06b6d4,
     timestamp: new Date().toISOString(),
     fields: [
       { name: "Server ID", value: `\`${auth.guild.id}\``, inline: true },

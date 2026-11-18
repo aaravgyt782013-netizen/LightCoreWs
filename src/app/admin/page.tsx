@@ -14,7 +14,7 @@ export default function AdminPage() {
     <PageShell
       eyebrow="admin"
       title="Owner Panel"
-      intro={`Owner-only control center for ${site.name} — manage OAuth2 users, server joins, connected guilds, and live audit logs.`}
+      intro={`Owner-only control center for ${site.name} — manage Premium users & guilds with live countdown timers, review ticket invoices, customize website themes & logos, view logged-in users, and monitor logs.`}
     >
       <AdminClient />
     </PageShell>

@@ -35,12 +35,22 @@ type DashboardGuild = {
   inviteUrl: string;
 };
 
+type UserPremium = {
+  tier: "plus" | "pro" | "ultra";
+  tierName: string;
+  guildId: string | null;
+  guildName: string | null;
+  expiresAt: string | null;
+  isLifetime?: boolean;
+};
+
 export function DashboardClient() {
   const router = useRouter();
   const [state, setState] = useState<"loading" | "guest" | "authed">("loading");
   const [openingGuild, setOpeningGuild] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<DashboardUser | null>(null);
+  const [premium, setPremium] = useState<UserPremium | null>(null);
   const [guilds, setGuilds] = useState<DashboardGuild[]>([]);
   const [allGuilds, setAllGuilds] = useState<DashboardGuild[]>([]);
   const [filter, setFilter] = useState<"manageable" | "active" | "all">(
@@ -59,11 +69,13 @@ export function DashboardClient() {
       const data = (await res.json()) as {
         authenticated?: boolean;
         user?: DashboardUser;
+        premium?: UserPremium | null;
         guilds?: DashboardGuild[];
         allGuilds?: DashboardGuild[];
       };
       if (data.authenticated && data.user) {
         setUser(data.user);
+        setPremium(data.premium ?? null);
         setGuilds(data.guilds ?? []);
         setAllGuilds(data.allGuilds ?? data.guilds ?? []);
         setState("authed");
@@ -136,7 +148,7 @@ export function DashboardClient() {
         <div className="panel panel-inner relative overflow-hidden rounded-3xl p-8 text-center shadow-panel sm:p-12">
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-28 left-1/2 size-72 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(239,16,16,0.22),transparent)]"
+            className="pointer-events-none absolute -top-28 left-1/2 size-80 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(6,182,212,0.24),transparent)]"
           />
           <div className="relative mx-auto max-w-lg">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-950/40 px-3.5 py-1 font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
@@ -161,9 +173,9 @@ export function DashboardClient() {
               </a>
               <Link
                 href="/premium"
-                className="inline-flex h-12 items-center gap-2 rounded-full border border-amber-400/35 bg-gradient-to-r from-brand-600/25 via-amber-500/15 to-brand-600/25 px-6 text-[14px] font-semibold text-amber-200 transition-all hover:border-amber-400/60 hover:text-white"
+                className="btn-glow relative inline-flex h-12 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-6 text-[14px] font-semibold text-white shadow-[0_10px_34px_-10px_rgba(6,182,212,0.85)] transition-all hover:-translate-y-0.5 hover:brightness-110"
               >
-                <CrownIcon className="size-4 text-amber-400" />
+                <CrownIcon className="size-4 text-cyan-100" />
                 Buy Premium
               </Link>
             </div>
@@ -198,8 +210,14 @@ export function DashboardClient() {
                 {user.globalName || user.username}
               </p>
               {user.isOwner && (
-                <span className="rounded-md border border-brand-500/40 bg-brand-600/20 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brand-300">
+                <span className="rounded-md border border-brand-400/40 bg-brand-500/20 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brand-200">
                   owner
+                </span>
+              )}
+              {premium && (
+                <span className="inline-flex items-center gap-1 rounded-md border border-brand-300/45 bg-gradient-to-r from-brand-600/30 to-sky-500/25 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-cyan-100">
+                  <CrownIcon className="size-2.5 text-brand-300" />
+                  {premium.tierName}
                 </span>
               )}
               <span className="rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-emerald-400">
@@ -216,10 +234,10 @@ export function DashboardClient() {
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
             href="/premium"
-            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-amber-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgba(239,16,16,0.85)] transition-transform duration-200 hover:-translate-y-0.5"
+            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-sky-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgba(6,182,212,0.85)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
           >
             <CrownIcon className="size-4" />
-            Buy Premium
+            {premium ? "Manage Premium" : "Buy Premium"}
           </Link>
 
           {user.isOwner && (
@@ -254,32 +272,35 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* Premium Upgrade Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-brand-500/30 bg-gradient-to-r from-brand-950/60 via-ink-900 to-amber-950/30 px-5 py-4 sm:px-6">
+      {/* Premium Status / Upgrade Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-brand-400/30 bg-gradient-to-r from-brand-950/80 via-ink-900 to-sky-950/50 px-5 py-4 shadow-panel sm:px-6">
         <div
           aria-hidden
-          className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-[radial-gradient(closest-side,rgba(255,43,43,0.22),transparent)] blur-xl"
+          className="pointer-events-none absolute -right-12 -top-12 size-48 rounded-full bg-[radial-gradient(closest-side,rgba(34,211,238,0.22),transparent)] blur-xl"
         />
         <div className="relative flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3.5 sm:items-center">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-amber-400/30 bg-amber-500/10 text-amber-300">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-brand-400/35 bg-brand-500/15 text-brand-300">
               <CrownIcon className="size-5" />
             </span>
             <div>
               <p className="font-display text-[15px] font-semibold text-white">
-                Upgrade to {site.name} Premium
+                {premium
+                  ? `${premium.tierName} Active on @${user.username}`
+                  : `Upgrade to ${site.name} Premium`}
               </p>
               <p className="mt-0.5 text-[12.5px] text-zinc-400">
-                Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity
-                Protection, No-Prefix &amp; Custom Branded Bot — from ₹299/mo.
+                {premium
+                  ? `${premium.expiresAt ? `Valid until ${new Date(premium.expiresAt).toLocaleDateString()}` : "Lifetime access"}${premium.guildName ? ` · Bound to ${premium.guildName}` : " · Assign a server slot anytime"}`
+                  : "Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Protection, No-Prefix & Custom Branded Bot — generate your invoice & activate via Support Ticket from ₹299/mo."}
               </p>
             </div>
           </div>
           <Link
             href="/premium"
-            className="group inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/15 px-4 text-[12.5px] font-semibold text-amber-200 transition-all hover:bg-amber-500/25 hover:text-white"
+            className="group inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-brand-400/45 bg-brand-500/15 px-4 text-[12.5px] font-semibold text-brand-100 transition-all hover:bg-brand-500/25 hover:text-white"
           >
-            View Plans
+            {premium ? "Manage Slot" : "View Plans"}
             <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
@@ -382,9 +403,9 @@ export function DashboardClient() {
                   handleOpenGuild(g);
                 }
               }}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-ink-900/85 shadow-panel transition-all duration-300 ${
+              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-brand-200/[0.09] bg-ink-900/85 shadow-panel transition-all duration-300 ease-smooth ${
                 g.canManage
-                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-500/45 hover:shadow-[0_20px_50px_-22px_rgba(239,16,16,0.55)]"
+                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/50 hover:shadow-[0_22px_55px_-22px_rgba(6,182,212,0.55)]"
                   : "opacity-70"
               }`}
             >

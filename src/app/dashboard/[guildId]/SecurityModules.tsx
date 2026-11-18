@@ -12,6 +12,7 @@ import type {
   DiscordRoleOption,
 } from "@/lib/discord-guilds";
 import { CrownIcon, PlusIcon, TrashIcon } from "@/components/ui/Icons";
+import { CustomSelect, TimeSelect } from "@/components/ui/CustomSelect";
 import {
   ChannelField,
   ModuleHeader,
@@ -124,30 +125,49 @@ export function AntiNukeModule({
         </div>
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="block">
+          <div className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               Default Punishment
             </span>
-            <select
-              value={antinuke.punishment}
-              onChange={(e) =>
-                update((p) => ({
-                  ...p,
-                  antinuke: {
-                    ...p.antinuke,
-                    punishment: e.target
-                      .value as GuildConfig["antinuke"]["punishment"],
+            <div className="mt-1.5">
+              <CustomSelect
+                title="Default Anti-Nuke Punishment"
+                value={antinuke.punishment}
+                onChange={(val) =>
+                  update((p) => ({
+                    ...p,
+                    antinuke: {
+                      ...p.antinuke,
+                      punishment: val as GuildConfig["antinuke"]["punishment"],
+                    },
+                  }))
+                }
+                options={[
+                  {
+                    value: "ban",
+                    label: "Ban Offender",
+                    badge: "Recommended",
+                    description: "Instant permanent ban + rollback",
                   },
-                }))
-              }
-              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-            >
-              <option value="ban">Ban Offender (Recommended)</option>
-              <option value="kick">Kick Offender</option>
-              <option value="strip_roles">Strip Dangerous Roles</option>
-              <option value="quarantine">Quarantine &amp; Isolate</option>
-            </select>
-          </label>
+                  {
+                    value: "kick",
+                    label: "Kick Offender",
+                    description: "Remove actor from server immediately",
+                  },
+                  {
+                    value: "strip_roles",
+                    label: "Strip Dangerous Roles",
+                    description: "Remove all administrative & mod permissions",
+                  },
+                  {
+                    value: "quarantine",
+                    label: "Quarantine & Isolate",
+                    description: "Lock actor into isolated quarantine role",
+                  },
+                ]}
+              />
+            </div>
+          </div>
 
           <ChannelField
             label="Security Alert Channel"
@@ -647,18 +667,18 @@ export function WhitelistModule({
 
           <div className="mt-4 flex gap-2">
             {roles.length > 0 ? (
-              <select
+              <CustomSelect
+                className="flex-1"
+                title="Select Trusted Bypass Role"
+                placeholder="Select role…"
                 value={roleInput}
-                onChange={(e) => setRoleInput(e.target.value)}
-                className="h-10 flex-1 rounded-xl border border-white/10 bg-ink-950/90 px-3 text-[12.5px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-              >
-                <option value="">Select role…</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    @ {r.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setRoleInput}
+                options={roles.map((r) => ({
+                  value: r.id,
+                  label: `@${r.name}`,
+                  colorDot: r.color || "#22d3ee",
+                }))}
+              />
             ) : (
               <input
                 type="text"
@@ -790,31 +810,37 @@ export function AutoModModule({
       />
 
       <div className="panel panel-inner grid gap-4 rounded-2xl p-5 sm:grid-cols-2 sm:p-6">
-        <label className="block">
+        <div className="block">
           <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
             Default Sanction
           </span>
-          <select
-            value={automod.punishment}
-            onChange={(e) =>
-              update((p) => ({
-                ...p,
-                automod: {
-                  ...p.automod,
-                  punishment: e.target
-                    .value as GuildConfig["automod"]["punishment"],
+          <div className="mt-1.5">
+            <CustomSelect
+              title="Default AutoMod Sanction"
+              value={automod.punishment}
+              onChange={(val) =>
+                update((p) => ({
+                  ...p,
+                  automod: {
+                    ...p.automod,
+                    punishment: val as GuildConfig["automod"]["punishment"],
+                  },
+                }))
+              }
+              options={[
+                {
+                  value: "timeout_5m",
+                  label: "Delete & Mute (5 minutes)",
+                  badge: "Default",
                 },
-              }))
-            }
-            className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-          >
-            <option value="timeout_5m">Delete &amp; Mute (5 minutes)</option>
-            <option value="timeout_1h">Delete &amp; Mute (1 hour)</option>
-            <option value="warn">Delete &amp; Warn</option>
-            <option value="kick">Delete &amp; Kick</option>
-            <option value="ban">Delete &amp; Ban</option>
-          </select>
-        </label>
+                { value: "timeout_1h", label: "Delete & Mute (1 hour)" },
+                { value: "warn", label: "Delete & Warn" },
+                { value: "kick", label: "Delete & Kick" },
+                { value: "ban", label: "Delete & Ban" },
+              ]}
+            />
+          </div>
+        </div>
 
         <ChannelField
           label="AutoMod Log Channel"
@@ -1339,8 +1365,8 @@ export function NightModeModule({
       <div
         className={`flex flex-wrap items-center justify-between gap-4 rounded-2xl border p-5 transition-colors ${
           nightmode.lockdownActive
-            ? "border-brand-500/60 bg-brand-950/50 shadow-[0_0_40px_-14px_rgba(239,16,16,0.7)]"
-            : "border-white/[0.08] bg-white/[0.02]"
+            ? "border-brand-400/60 bg-brand-950/60 shadow-[0_0_42px_-12px_rgba(34,211,238,0.65)]"
+            : "border-brand-200/10 bg-ink-900/55"
         }`}
       >
         <div>
@@ -1384,59 +1410,63 @@ export function NightModeModule({
           Lockdown Window
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="block">
+          <div className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               Start Time
             </span>
-            <input
-              type="time"
-              value={nightmode.startTime}
-              onChange={(e) =>
-                update((p) => ({
-                  ...p,
-                  nightmode: { ...p.nightmode, startTime: e.target.value },
-                }))
-              }
-              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 font-mono text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-            />
-          </label>
-          <label className="block">
+            <div className="mt-1.5">
+              <TimeSelect
+                title="Night Mode Start Time"
+                value={nightmode.startTime}
+                onChange={(startTime) =>
+                  update((p) => ({
+                    ...p,
+                    nightmode: { ...p.nightmode, startTime },
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <div className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               Morning Restore
             </span>
-            <input
-              type="time"
-              value={nightmode.endTime}
-              onChange={(e) =>
-                update((p) => ({
-                  ...p,
-                  nightmode: { ...p.nightmode, endTime: e.target.value },
-                }))
-              }
-              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 font-mono text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-            />
-          </label>
-          <label className="block">
+            <div className="mt-1.5">
+              <TimeSelect
+                title="Morning Restore Time"
+                value={nightmode.endTime}
+                onChange={(endTime) =>
+                  update((p) => ({
+                    ...p,
+                    nightmode: { ...p.nightmode, endTime },
+                  }))
+                }
+              />
+            </div>
+          </div>
+          <div className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               Timezone
             </span>
-            <select
-              value={nightmode.timezone}
-              onChange={(e) =>
-                update((p) => ({
-                  ...p,
-                  nightmode: { ...p.nightmode, timezone: e.target.value },
-                }))
-              }
-              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 text-[12.5px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
-            >
-              {TIMEZONES.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-          </label>
+            <div className="mt-1.5">
+              <CustomSelect
+                title="Night Mode Timezone"
+                searchable
+                value={nightmode.timezone}
+                onChange={(timezone) =>
+                  update((p) => ({
+                    ...p,
+                    nightmode: { ...p.nightmode, timezone },
+                  }))
+                }
+                options={TIMEZONES.map((tz) => ({
+                  value: tz,
+                  label: tz.replace("_", " "),
+                  prefix: "🌐",
+                }))}
+              />
+            </div>
+          </div>
           <RoleField
             label="Night Bypass Role"
             value={nightmode.bypassRole}

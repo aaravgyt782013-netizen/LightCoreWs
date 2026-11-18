@@ -8,18 +8,18 @@
 export function FancyName({
   height = 13,
   className = "",
-  title = "Revenant </>",
+  title = "LightCore </>",
 }: {
   height?: number;
   className?: string;
   title?: string;
 }) {
-  const width = height * 5.6;
+  const width = height * 5.8;
   return (
     <svg
       role="img"
       aria-label={title}
-      viewBox="0 0 140 26"
+      viewBox="0 0 146 26"
       height={height * 2}
       width={width}
       className={`inline-block shrink-0 ${className}`}
@@ -33,13 +33,13 @@ export function FancyName({
         fontStyle="italic"
         fontWeight="700"
         letterSpacing="0.2"
-        textLength="112"
+        textLength="116"
         lengthAdjust="spacingAndGlyphs"
       >
-        Revenant
+        LightCore
       </text>
       <text
-        x="119"
+        x="123"
         y="18"
         fontFamily="ui-monospace, 'JetBrains Mono', monospace"
         fontSize="11"

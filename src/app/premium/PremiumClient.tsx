@@ -5,96 +5,37 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { site } from "@/lib/site";
 import {
+  BILLING_CYCLES,
+  PREMIUM_PLANS,
+  computeLiveCountdown,
+  type BillingCycle,
+  type PremiumInvoice,
+  type PremiumPlanSpec,
+  type PremiumSubscription,
+} from "@/lib/premium-plans";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
+import { Logo } from "@/components/ui/Logo";
+import { CustomSelect } from "@/components/ui/CustomSelect";
+import {
   ArrowRight,
   BoltIcon,
   CheckIcon,
   ChevronLeftIcon,
+  ClockIcon,
+  CopyIcon,
   CrownIcon,
   DiscordIcon,
+  DownloadIcon,
+  InvoiceIcon,
+  LockIcon,
   ShieldIcon,
 } from "@/components/ui/Icons";
-
-type BillingCycle = "1m" | "3m" | "1y";
-
-type Plan = {
-  id: "plus" | "pro" | "ultra";
-  name: string;
-  badge: string;
-  tagline: string;
-  featured?: boolean;
-  accent: "crimson" | "gold" | "royal";
-  prices: Record<BillingCycle, number>;
-  features: string[];
-};
-
-const BILLING_OPTIONS: {
-  id: BillingCycle;
-  label: string;
-  period: string;
-  save?: string;
-}[] = [
-  { id: "1m", label: "1 Month", period: "1 Month" },
-  { id: "3m", label: "3 Months", period: "3 Months", save: "Save 10%" },
-  { id: "1y", label: "1 Year", period: "1 Year", save: "Save 25%" },
-];
-
-const PLANS: Plan[] = [
-  {
-    id: "plus",
-    name: "Plus Plan",
-    badge: "Popular",
-    tagline: "Essential high-speed protection upgrades for growing servers.",
-    accent: "crimson",
-    prices: { "1m": 299, "3m": 799, "1y": 2699 },
-    features: [
-      "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
-      "Secure Channel Protection",
-      "Anti Betray System",
-      "AntiBetray Mode",
-      "24/7 Support",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro Plan",
-    badge: "Best Value",
-    tagline:
-      "Full anti-nuke & vanity protection with no-prefix access and pro giveaways.",
-    featured: true,
-    accent: "gold",
-    prices: { "1m": 499, "3m": 1349, "1y": 4499 },
-    features: [
-      "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
-      "Secure Channel Protection",
-      "Anti Betray System",
-      "AntiBetray Mode",
-      "Vanity Protection",
-      "No-Prefix Access",
-      "Advanced Giveaway System",
-    ],
-  },
-  {
-    id: "ultra",
-    name: "Ultra Pro",
-    badge: "Premium",
-    tagline:
-      "Your own custom branded LightCore instance on dedicated 24/7 infrastructure.",
-    accent: "royal",
-    prices: { "1m": 749, "3m": 1999, "1y": 6749 },
-    features: [
-      "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
-      "Secure Channel Protection",
-      "Anti Betray System",
-      "Auto Emergency Mode",
-      "Vanity Protection",
-      "Custom Branded Bot",
-      "Dedicated 24/7 Hosting",
-    ],
-  },
-];
+import {
+  buildInvoicePlainText,
+  downloadInvoicePng,
+  downloadInvoiceText,
+  formatInvoiceDateTime,
+} from "./InvoiceRenderer";
 
 const COMPARISON_ROWS: {
   feature: string;
@@ -115,30 +56,14 @@ const COMPARISON_ROWS: {
   { feature: "Dedicated 24/7 Isolated Hosting", plus: false, pro: false, ultra: true },
 ];
 
-const PREMIUM_FAQS = [
-  {
-    q: "How fast is Premium activated on my server?",
-    a: `Instant once verified! Click Buy Now on your plan, copy your order summary, and open a billing ticket in the ${site.name} Support Server. Staff activates your server ID and perks within minutes.`,
-  },
-  {
-    q: "Can I transfer Premium to a different Discord server later?",
-    a: "Yes. Pro and Ultra Pro subscribers can transfer their active server slot by contacting 24/7 Support with their registered Discord account.",
-  },
-  {
-    q: "What is included in Ultra Pro's Custom Branded Bot?",
-    a: `You get a private, dedicated 24/7 bot instance running the entire ${site.name} engine under your own community's custom bot name, avatar, banner, and status.`,
-  },
-  {
-    q: "Which payment methods are supported?",
-    a: "UPI (GPay, PhonePe, Paytm, FamPay), NetBanking, Cards, and international methods are supported directly through our official Discord billing desk.",
-  },
-];
-
-type SimpleGuild = { id: string; name: string };
-type SimpleUser = { id: string; username: string; globalName: string | null };
-
-const checkoutBase =
-  process.env.NEXT_PUBLIC_PREMIUM_CHECKOUT_URL?.trim() || site.discord;
+type SimpleGuild = { id: string; name: string; iconUrl?: string | null };
+type SimpleUser = {
+  id: string;
+  username: string;
+  globalName: string | null;
+  email?: string | null;
+  isOwner?: boolean;
+};
 
 function PremiumQuerySync({
   onParams,
@@ -157,15 +82,38 @@ function PremiumQuerySync({
 }
 
 export function PremiumClient() {
+  const { config: siteCfg } = useSiteConfig();
+
   const [initialGuildId, setInitialGuildId] = useState("");
   const [initialGuildName, setInitialGuildName] = useState("");
 
   const [cycle, setCycle] = useState<BillingCycle>("1m");
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PremiumPlanSpec | null>(
+    null,
+  );
   const [user, setUser] = useState<SimpleUser | null>(null);
   const [guilds, setGuilds] = useState<SimpleGuild[]>([]);
   const [targetGuildId, setTargetGuildId] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [buyerNote, setBuyerNote] = useState("");
+
+  // Active subscription + live ticking timer
+  const [subscription, setSubscription] = useState<PremiumSubscription | null>(
+    null,
+  );
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [slotSaving, setSlotSaving] = useState(false);
+  const [slotNotice, setSlotNotice] = useState<string | null>(null);
+
+  // Invoice generation + preview + download state (NO website payment gateway)
+  const [recentInvoices, setRecentInvoices] = useState<PremiumInvoice[]>([]);
+  const [activeInvoice, setActiveInvoice] = useState<PremiumInvoice | null>(
+    null,
+  );
+  const [generating, setGenerating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadedOnce, setDownloadedOnce] = useState(false);
+  const [invoiceError, setInvoiceError] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleQueryParams = useCallback((g: string, n: string) => {
     setInitialGuildId(g);
@@ -175,35 +123,106 @@ export function PremiumClient() {
     }
   }, []);
 
+  // Live 1s countdown ticker when user holds an active timed subscription
+  useEffect(() => {
+    if (!subscription || subscription.isLifetime) return;
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [subscription]);
+
   useEffect(() => {
     let active = true;
-    const loadMe = async () => {
+    const load = async () => {
       try {
-        const res = await fetch("/api/auth/me", { cache: "no-store" });
-        if (!res.ok || !active) return;
-        const json = (await res.json()) as {
-          authenticated?: boolean;
-          user?: SimpleUser;
-          guilds?: SimpleGuild[];
-        };
-        if (!active || !json.authenticated) return;
-        if (json.user) setUser(json.user);
-        if (Array.isArray(json.guilds)) {
-          setGuilds(json.guilds);
-          setTargetGuildId((cur) => cur || json.guilds?.[0]?.id || "");
+        const [meRes, premRes] = await Promise.all([
+          fetch("/api/auth/me", { cache: "no-store" }),
+          fetch("/api/premium/me", { cache: "no-store" }),
+        ]);
+        if (!active) return;
+
+        if (meRes.ok) {
+          const meJson = (await meRes.json()) as {
+            authenticated?: boolean;
+            user?: SimpleUser;
+            guilds?: SimpleGuild[];
+          };
+          if (meJson.authenticated && meJson.user) {
+            setUser(meJson.user);
+            if (Array.isArray(meJson.guilds)) {
+              setGuilds(meJson.guilds);
+              setTargetGuildId((cur) => cur || meJson.guilds?.[0]?.id || "");
+            }
+          }
+        }
+
+        if (premRes.ok) {
+          const premJson = (await premRes.json()) as {
+            subscription?: PremiumSubscription | null;
+            invoices?: PremiumInvoice[];
+          };
+          if (premJson.subscription) {
+            setSubscription(premJson.subscription);
+          }
+          if (Array.isArray(premJson.invoices)) {
+            setRecentInvoices(premJson.invoices);
+          }
         }
       } catch {
-        // Optional personalization for logged-in users.
+        // Optional personalization.
       }
     };
-    void loadMe();
+    void load();
     return () => {
       active = false;
     };
   }, []);
 
+  const isModalOpen = Boolean(selectedPlan || activeInvoice);
+
+  const closeModal = useCallback(() => {
+    setSelectedPlan(null);
+    setActiveInvoice(null);
+    setInvoiceError(null);
+    setDownloadedOnce(false);
+    setBuyerNote("");
+  }, []);
+
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeModal();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isModalOpen, closeModal]);
+
   const activeCycleMeta =
-    BILLING_OPTIONS.find((b) => b.id === cycle) ?? BILLING_OPTIONS[0];
+    BILLING_CYCLES.find((b) => b.id === cycle) ?? BILLING_CYCLES[0];
+
+  // Resolve live customizable plan names, badges & prices from Owner Panel
+  const livePlans = useMemo(() => {
+    return PREMIUM_PLANS.map((p) => {
+      const override = siteCfg.pricing[p.id];
+      return {
+        ...p,
+        name: override?.name || p.name,
+        badge: override?.badge || p.badge,
+        prices: {
+          "1m": override ? override["1m"] : p.prices["1m"],
+          "3m": override ? override["3m"] : p.prices["3m"],
+          "1y": override ? override["1y"] : p.prices["1y"],
+        },
+      };
+    });
+  }, [siteCfg.pricing]);
+
+  const curSym = siteCfg.currencySymbol || "₹";
+  const supportUrl = siteCfg.supportUrl || site.discord;
 
   const selectedGuildName = useMemo(() => {
     const found = guilds.find((g) => g.id === targetGuildId);
@@ -214,50 +233,134 @@ export function PremiumClient() {
     return "";
   }, [guilds, targetGuildId, initialGuildId, initialGuildName]);
 
-  const orderSummary = useMemo(() => {
-    if (!selectedPlan) return "";
-    const price = selectedPlan.prices[cycle];
-    const lines = [
-      `${site.name} Premium Order`,
-      `Plan: ${selectedPlan.name} (${selectedPlan.badge})`,
-      `Duration: ${activeCycleMeta.period}`,
-      `Amount: ₹${price.toLocaleString("en-IN")}`,
-      user
-        ? `User: @${user.username} (${user.id})`
-        : "User: (your Discord tag)",
-      targetGuildId
-        ? `Server: ${selectedGuildName ? `${selectedGuildName} ` : ""}(${targetGuildId})`
-        : "Server ID: (paste server ID)",
-    ];
-    return lines.join("\n");
-  }, [selectedPlan, cycle, activeCycleMeta, user, targetGuildId, selectedGuildName]);
-
-  const handleCopyOrder = async () => {
-    if (!orderSummary) return;
+  const copyText = async (key: string, text: string) => {
     try {
-      await navigator.clipboard.writeText(orderSummary);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      window.setTimeout(() => {
+        setCopiedKey((c) => (c === key ? null : c));
+      }, 2200);
     } catch {
-      setCopied(false);
+      // Ignore clipboard restriction.
     }
   };
 
-  const buildCheckoutHref = (plan: Plan) => {
-    if (checkoutBase === site.discord) return site.discord;
+  const handleGenerateInvoice = async () => {
+    if (!selectedPlan || generating) return;
+    setGenerating(true);
+    setInvoiceError(null);
+    setDownloadedOnce(false);
     try {
-      const u = new URL(checkoutBase);
-      u.searchParams.set("plan", plan.id);
-      u.searchParams.set("cycle", cycle);
-      if (targetGuildId) u.searchParams.set("guild", targetGuildId);
-      return u.toString();
+      const res = await fetch("/api/premium/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tier: selectedPlan.id,
+          cycle,
+          guildId: targetGuildId || undefined,
+          guildName: selectedGuildName || undefined,
+          buyerNote: buyerNote.trim() || undefined,
+        }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        invoice?: PremiumInvoice;
+        error?: string;
+      };
+      if (!res.ok || !json.ok || !json.invoice) {
+        setInvoiceError(
+          json.error || "Could not generate your invoice. Please try again.",
+        );
+        return;
+      }
+      setActiveInvoice(json.invoice);
+      setRecentInvoices((prev) => [json.invoice!, ...prev.slice(0, 11)]);
     } catch {
-      return checkoutBase;
+      setInvoiceError("Network error while generating invoice.");
+    } finally {
+      setGenerating(false);
     }
   };
+
+  const handleDownloadPng = async (inv: PremiumInvoice) => {
+    if (downloading) return;
+    setDownloading(true);
+    try {
+      await downloadInvoicePng(inv, siteCfg);
+      setDownloadedOnce(true);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const handleUpdateBoundGuild = async (nextGuildId: string) => {
+    setSlotSaving(true);
+    setSlotNotice(null);
+    try {
+      const res = await fetch("/api/premium/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId: nextGuildId || null }),
+      });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        subscription?: PremiumSubscription;
+        error?: string;
+      };
+      if (res.ok && json.subscription) {
+        setSubscription(json.subscription);
+        setSlotNotice(
+          json.subscription.guildName
+            ? `Active server switched to ${json.subscription.guildName}.`
+            : "Cleared bound server slot.",
+        );
+      } else {
+        setSlotNotice(json.error || "Could not update server slot.");
+      }
+    } finally {
+      setSlotSaving(false);
+    }
+  };
+
+  const activeSubCountdown = useMemo(() => {
+    if (!subscription) return null;
+    return computeLiveCountdown(
+      {
+        status: "active",
+        isLifetime: subscription.isLifetime,
+        startedAt: subscription.activatedAt,
+        expiresAt: subscription.expiresAt,
+        durationMs: null,
+      },
+      nowMs,
+    );
+  }, [subscription, nowMs]);
+
+  const premiumFaqs = [
+    {
+      q: "How do I buy and activate Premium?",
+      a: `Click Buy Now on any plan to generate your official ${siteCfg.brandName} invoice, preview & download it, then open a ticket in our Support Server and send the invoice. The owner will provide the payment QR code directly in your ticket.`,
+    },
+    {
+      q: "How fast will I receive Premium after paying?",
+      a: "As soon as your QR payment is confirmed in the support ticket, the owner activates your Premium immediately — guaranteed within 24 hours (typically within minutes).",
+    },
+    {
+      q: "Do I enter any card, bank, or payment details on this website?",
+      a: "No! Zero payments are collected on the website. The website only generates your verified official invoice — payment is handled safely via the owner's QR code inside your private Support Server ticket.",
+    },
+    {
+      q: "Can I switch which Discord server uses my Premium slot?",
+      a: "Yes! Once activated, your active Premium card appears right at the top of this page with a live countdown timer and a 1-click server selector.",
+    },
+  ];
+
+  const invoiceDt = activeInvoice
+    ? formatInvoiceDateTime(activeInvoice.createdAt)
+    : null;
 
   return (
-    <div className="space-y-16">
+    <div className="space-y-14 sm:space-y-16">
       <Suspense fallback={null}>
         <PremiumQuerySync onParams={handleQueryParams} />
       </Suspense>
@@ -269,50 +372,79 @@ export function PremiumClient() {
             href={
               initialGuildId ? `/dashboard/${initialGuildId}` : "/dashboard"
             }
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400 transition-colors hover:border-white/25 hover:text-white"
+            className="inline-flex items-center gap-1.5 rounded-full border border-brand-200/15 bg-ink-900/70 px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-300 transition-all hover:border-brand-400/45 hover:text-white"
           >
-            <ChevronLeftIcon className="size-3" />
+            <ChevronLeftIcon className="size-3 text-brand-400" />
             {initialGuildName
               ? `Back to ${initialGuildName}`
               : "Back to Dashboard"}
           </Link>
         </div>
 
-        <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-500/10 px-4 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.28em] text-amber-300">
-          <CrownIcon className="size-3.5" />
-          {site.name} Premium
+        <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/35 bg-brand-500/12 px-4 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.28em] text-brand-200">
+          <CrownIcon className="size-3.5 text-brand-300" />
+          {siteCfg.brandName} Premium
         </div>
 
-        <h1 className="mt-5 font-display text-[36px] font-bold leading-[1.06] tracking-tight text-white sm:text-[52px]">
+        <h1 className="mt-5 font-display text-[34px] font-bold leading-[1.06] tracking-tight text-white sm:text-[52px]">
           Unleash Maximum{" "}
           <span className="text-gradient-brand">Server Protection</span>
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-relaxed text-zinc-400">
-          Supercharge your community with {site.name}&apos;s advanced Limit
-          System, Anti-Token Spam, Anti-Betray Mode, Vanity Guard, No-Prefix
-          access, and your own Custom Branded Bot.
+        <p className="mx-auto mt-4 max-w-2xl text-[14.5px] leading-relaxed text-zinc-400 sm:text-[15.5px]">
+          Choose your plan to generate an instant downloadable invoice, send it
+          in a Support Server ticket to receive the owner&apos;s QR code, and get{" "}
+          <span className="text-zinc-200">
+            Premium activated instantly within 24 hours
+          </span>
+          .
         </p>
 
+        {/* 3-Step How Purchase Works Strip */}
+        <div className="mx-auto mt-6 grid max-w-2xl gap-2 text-left sm:grid-cols-3">
+          {[
+            { step: "01", title: "Generate Invoice", sub: "Preview & download PNG" },
+            { step: "02", title: "Send in Ticket", sub: "Owner shares payment QR" },
+            { step: "03", title: "Instant Premium", sub: "Activated within 24 hours" },
+          ].map((s) => (
+            <div
+              key={s.step}
+              className="flex items-center gap-3 rounded-xl border border-brand-200/10 bg-ink-900/65 px-3.5 py-2.5"
+            >
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-brand-500/15 font-mono text-[10.5px] font-semibold text-brand-300">
+                {s.step}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[12px] font-semibold text-white">
+                  {s.title}
+                </p>
+                <p className="truncate font-mono text-[9.5px] text-zinc-400">
+                  {s.sub}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {initialGuildName && (
-          <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-brand-500/30 bg-brand-950/35 px-4 py-2 font-mono text-[11px] text-brand-200">
+          <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-brand-400/30 bg-brand-950/50 px-4 py-2 font-mono text-[11px] text-brand-200">
             <ShieldIcon className="size-3.5 text-brand-400" />
-            Upgrading server:{" "}
+            Selected server:{" "}
             <strong className="text-white">{initialGuildName}</strong>
           </p>
         )}
 
         {/* Billing Duration Switcher */}
-        <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-white/10 bg-ink-900/90 p-1.5 shadow-panel">
-          {BILLING_OPTIONS.map((opt) => {
+        <div className="mt-8 inline-flex max-w-full flex-wrap items-center justify-center gap-1.5 rounded-2xl border border-brand-200/12 bg-ink-900/90 p-1.5 shadow-panel">
+          {BILLING_CYCLES.map((opt) => {
             const active = cycle === opt.id;
             return (
               <button
                 key={opt.id}
                 type="button"
                 onClick={() => setCycle(opt.id)}
-                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-semibold transition-all ${
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[12.5px] font-semibold transition-all duration-200 sm:text-[13px] ${
                   active
-                    ? "bg-brand-600 text-white shadow-[0_6px_22px_-6px_rgba(239,16,16,0.85)]"
+                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-400)/0.85)]"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -322,7 +454,7 @@ export function PremiumClient() {
                     className={`rounded-md px-1.5 py-0.5 font-mono text-[9px] uppercase ${
                       active
                         ? "bg-white/20 text-white"
-                        : "bg-amber-500/15 text-amber-300"
+                        : "bg-brand-500/15 text-brand-300"
                     }`}
                   >
                     {opt.save}
@@ -334,45 +466,99 @@ export function PremiumClient() {
         </div>
       </div>
 
-      {/* 3 Pricing Cards (Zynrax-inspired) */}
-      <div className="grid items-stretch gap-6 lg:grid-cols-3">
-        {PLANS.map((plan) => {
+      {/* Active Subscription Banner with Live Countdown */}
+      {subscription && user && activeSubCountdown && (
+        <div className="panel panel-inner mx-auto max-w-4xl rounded-3xl border-brand-400/45 p-5 shadow-glow sm:p-7">
+          <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-0.5 font-mono text-[9.5px] uppercase tracking-wider text-emerald-300">
+                  <CheckIcon className="size-3" />
+                  Active Premium
+                </span>
+                <span className="font-mono text-[10px] text-zinc-400">
+                  @{user.username} · Granted by {subscription.grantedBy}
+                </span>
+              </div>
+              <h2 className="font-display text-[22px] font-bold text-white">
+                {subscription.tierName}
+              </h2>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-brand-400/25 bg-ink-950/75 px-3 py-1.5 font-mono text-[12px] text-brand-300">
+                <ClockIcon className="size-3.5 text-brand-400" />
+                <span>{activeSubCountdown.digital}</span>
+              </div>
+              {subscription.expiresAt && (
+                <p className="font-mono text-[10.5px] text-zinc-400">
+                  Expires{" "}
+                  {new Date(subscription.expiresAt).toLocaleString()}
+                </p>
+              )}
+            </div>
+
+            {guilds.length > 0 && (
+              <div className="w-full md:w-72">
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-zinc-400">
+                  Assigned Premium Server
+                </span>
+                <div className="mt-1.5">
+                  <CustomSelect
+                    title="Assign Premium Server Slot"
+                    disabled={slotSaving}
+                    value={subscription.guildId || ""}
+                    onChange={(val) => void handleUpdateBoundGuild(val)}
+                    options={[
+                      { value: "", label: "No server assigned" },
+                      ...guilds.map((g) => ({
+                        value: g.id,
+                        label: g.name,
+                        iconUrl: g.iconUrl,
+                        description: `ID ${g.id}`,
+                      })),
+                    ]}
+                  />
+                </div>
+                {slotNotice && (
+                  <p className="mt-1.5 font-mono text-[10px] text-brand-300">
+                    {slotNotice}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3 Pricing Cards */}
+      <div className="grid items-stretch gap-5 sm:gap-6 lg:grid-cols-3">
+        {livePlans.map((plan) => {
           const price = plan.prices[cycle];
           const isFeatured = Boolean(plan.featured);
+          const isCurrent = subscription?.tier === plan.id;
           return (
             <div
               key={plan.id}
-              className={`relative flex flex-col justify-between overflow-hidden rounded-3xl border p-7 transition-all duration-300 sm:p-8 ${
+              className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border p-6 transition-all duration-300 ease-smooth sm:p-8 ${
                 isFeatured
-                  ? "border-brand-500/60 bg-gradient-to-b from-brand-950/55 via-ink-900 to-ink-950 shadow-[0_0_0_1px_rgba(255,43,43,0.3),0_28px_80px_-20px_rgba(239,16,16,0.5)] lg:-translate-y-2"
+                  ? "border-brand-400/60 bg-gradient-to-b from-brand-950/75 via-ink-900 to-ink-950 shadow-glow-lg lg:-translate-y-2"
                   : plan.id === "ultra"
-                    ? "border-amber-400/30 bg-gradient-to-b from-amber-950/25 via-ink-900/90 to-ink-950 shadow-panel hover:border-amber-400/55"
-                    : "border-white/10 bg-ink-900/80 shadow-panel hover:border-brand-500/40"
+                    ? "border-brand-300/35 bg-gradient-to-b from-brand-950/45 via-ink-900/90 to-ink-950 shadow-panel hover:-translate-y-1 hover:border-brand-300/60"
+                    : "border-brand-200/12 bg-ink-900/80 shadow-panel hover:-translate-y-1 hover:border-brand-400/45"
               }`}
             >
-              {/* Top glow */}
               <div
                 aria-hidden
-                className={`pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full blur-2xl ${
-                  isFeatured
-                    ? "bg-[radial-gradient(closest-side,rgba(239,16,16,0.28),transparent)]"
-                    : plan.id === "ultra"
-                      ? "bg-[radial-gradient(closest-side,rgba(245,158,11,0.2),transparent)]"
-                      : "bg-[radial-gradient(closest-side,rgba(239,16,16,0.14),transparent)]"
-                }`}
+                className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full blur-2xl"
+                style={{
+                  background: isFeatured
+                    ? "radial-gradient(closest-side, rgb(var(--brand-400) / 0.28), transparent)"
+                    : "radial-gradient(closest-side, rgb(var(--brand-500) / 0.18), transparent)",
+                }}
               />
 
               <div className="relative">
-                {/* Plan Title + Badge */}
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span
-                      className={`flex size-9 items-center justify-center rounded-xl border ${
-                        plan.id === "ultra"
-                          ? "border-amber-400/35 bg-amber-500/15 text-amber-300"
-                          : "border-brand-500/35 bg-brand-600/15 text-brand-400"
-                      }`}
-                    >
+                    <span className="flex size-9 items-center justify-center rounded-xl border border-brand-400/35 bg-brand-500/15 text-brand-300">
                       {plan.id === "plus" ? (
                         <ShieldIcon className="size-4" />
                       ) : plan.id === "pro" ? (
@@ -387,15 +573,15 @@ export function PremiumClient() {
                   </div>
 
                   <span
-                    className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-medium uppercase tracking-[0.18em] ${
+                    className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] ${
                       isFeatured
-                        ? "border-brand-400/50 bg-brand-600 text-white shadow-[0_0_20px_-4px_#ff2b2b]"
+                        ? "border-brand-300/50 bg-brand-500 text-ink-950 shadow-[0_0_20px_-4px_rgb(var(--brand-400))]"
                         : plan.id === "ultra"
-                          ? "border-amber-400/40 bg-amber-500/15 text-amber-300"
-                          : "border-white/15 bg-white/[0.06] text-zinc-200"
+                          ? "border-brand-300/40 bg-brand-400/15 text-brand-200"
+                          : "border-brand-200/15 bg-brand-200/[0.06] text-zinc-200"
                     }`}
                   >
-                    {plan.badge}
+                    {isCurrent ? "Active" : plan.badge}
                   </span>
                 </div>
 
@@ -403,30 +589,23 @@ export function PremiumClient() {
                   {plan.tagline}
                 </p>
 
-                {/* Price */}
-                <div className="mt-6 flex items-baseline gap-2 border-y border-white/[0.08] py-5">
-                  <span className="font-display text-[44px] font-bold leading-none tracking-tight text-white">
-                    ₹{price.toLocaleString("en-IN")}
+                <div className="mt-6 flex items-baseline gap-2 border-y border-brand-200/[0.09] py-5">
+                  <span className="font-display text-[42px] font-bold leading-none tracking-tight text-white sm:text-[46px]">
+                    {curSym}
+                    {price.toLocaleString("en-IN")}
                   </span>
                   <span className="font-mono text-[12px] uppercase tracking-[0.18em] text-zinc-400">
                     / {activeCycleMeta.period}
                   </span>
                 </div>
 
-                {/* Feature Checklist */}
                 <ul className="mt-6 space-y-3">
                   {plan.features.map((feat) => (
                     <li
                       key={feat}
                       className="flex items-start gap-3 text-[13.5px] text-zinc-200"
                     >
-                      <span
-                        className={`mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full ${
-                          plan.id === "ultra"
-                            ? "bg-amber-500/15 text-amber-300"
-                            : "bg-brand-600/20 text-brand-400"
-                        }`}
-                      >
+                      <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-500/20 text-brand-300">
                         <CheckIcon className="size-3" />
                       </span>
                       <span>{feat}</span>
@@ -435,67 +614,156 @@ export function PremiumClient() {
                 </ul>
               </div>
 
-              {/* Buy Now Button */}
               <button
                 type="button"
                 onClick={() => {
-                  setCopied(false);
+                  setInvoiceError(null);
+                  setActiveInvoice(null);
+                  setDownloadedOnce(false);
                   setSelectedPlan(plan);
                 }}
-                className={`group relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-semibold transition-all ${
+                className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-semibold transition-all duration-200 ${
                   isFeatured
-                    ? "btn-glow bg-brand-600 text-white shadow-[0_12px_34px_-10px_rgba(239,16,16,0.9)] hover:bg-brand-500"
+                    ? "btn-glow bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.85)] hover:brightness-110"
                     : plan.id === "ultra"
-                      ? "btn-glow bg-gradient-to-r from-amber-500 to-brand-600 text-white shadow-[0_12px_34px_-10px_rgba(245,158,11,0.55)] hover:brightness-110"
-                      : "border border-brand-500/40 bg-brand-950/45 text-white hover:border-brand-500 hover:bg-brand-600"
+                      ? "btn-glow bg-gradient-to-r from-brand-700 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.65)] hover:brightness-110"
+                      : "border border-brand-400/40 bg-brand-950/55 text-white hover:border-brand-400 hover:bg-brand-600"
                 }`}
               >
-                Buy Now
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                <InvoiceIcon className="size-4" />
+                {isCurrent ? "Renew · Get Invoice" : "Buy Now · Get Invoice"}
+                <ArrowRight className="size-4 transition-transform group-hover/btn:translate-x-0.5" />
               </button>
             </div>
           );
         })}
       </div>
 
+      {/* User's Recent Invoices (click any to preview & re-download) */}
+      {recentInvoices.length > 0 && (
+        <div className="panel panel-inner mx-auto max-w-4xl rounded-3xl p-5 sm:p-7">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
+                Your Invoices
+              </p>
+              <h2 className="mt-0.5 font-display text-[19px] font-semibold text-white">
+                Preview &amp; Re-Download Invoices
+              </h2>
+            </div>
+            <a
+              href={supportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-400/35 bg-brand-500/15 px-3.5 py-1.5 text-[12px] font-medium text-brand-200 hover:text-white"
+            >
+              <DiscordIcon className="size-3.5" />
+              Open Support Ticket
+            </a>
+          </div>
+
+          <div className="mt-4 divide-y divide-brand-200/[0.07]">
+            {recentInvoices.slice(0, 5).map((inv) => {
+              const dt = formatInvoiceDateTime(inv.createdAt);
+              return (
+                <div
+                  key={inv.invoiceId}
+                  className="flex flex-wrap items-center justify-between gap-3 py-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[12px] font-semibold text-white">
+                        {inv.invoiceId}
+                      </span>
+                      <span className="text-[12.5px] text-brand-200">
+                        {inv.tierName} · {inv.durationLabel} ·{" "}
+                        {inv.currencySymbol}
+                        {inv.amount.toLocaleString("en-IN")}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 font-mono text-[9px] uppercase ${
+                          inv.status === "fulfilled"
+                            ? "bg-emerald-500/15 text-emerald-300"
+                            : inv.status === "cancelled"
+                              ? "bg-zinc-500/20 text-zinc-400"
+                              : "bg-brand-500/20 text-brand-200"
+                        }`}
+                      >
+                        {inv.status === "fulfilled"
+                          ? "Activated"
+                          : inv.status === "cancelled"
+                            ? "Cancelled"
+                            : "Send in Ticket"}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 font-mono text-[10.5px] text-zinc-400">
+                      {dt.dateStr} at {dt.timeStr}
+                      {inv.guildName ? ` · Server: ${inv.guildName}` : ""}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlan(null);
+                      setDownloadedOnce(false);
+                      setActiveInvoice(inv);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/35 bg-ink-950/80 px-3.5 py-2 text-[12px] font-medium text-brand-200 transition-colors hover:border-brand-400 hover:text-white"
+                  >
+                    <InvoiceIcon className="size-3.5" />
+                    Preview &amp; Download
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Feature Comparison Table */}
       <div className="panel panel-inner overflow-hidden rounded-3xl shadow-panel">
-        <div className="border-b border-white/[0.07] px-6 py-5 sm:px-8">
+        <div className="border-b border-brand-200/[0.08] px-5 py-5 sm:px-8">
           <p className="font-mono text-[10px] uppercase tracking-[0.26em] text-brand-400">
             Compare Tiers
           </p>
-          <h2 className="mt-1 font-display text-[22px] font-semibold text-white">
+          <h2 className="mt-1 font-display text-[21px] font-semibold text-white sm:text-[23px]">
             Full Feature Breakdown
           </h2>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[580px] text-left text-[13px]">
+          <table className="w-full min-w-[540px] text-left text-[13px]">
             <thead>
-              <tr className="border-b border-white/[0.07] font-mono text-[10.5px] uppercase tracking-[0.18em] text-zinc-400">
-                <th className="px-6 py-4 sm:px-8">Capability</th>
-                <th className="px-4 py-4 text-center">Plus (₹299)</th>
-                <th className="px-4 py-4 text-center text-brand-300">
-                  Pro (₹499)
+              <tr className="border-b border-brand-200/[0.08] font-mono text-[10.5px] uppercase tracking-[0.18em] text-zinc-400">
+                <th className="px-5 py-4 sm:px-8">Capability</th>
+                <th className="px-4 py-4 text-center">
+                  {livePlans[0].name} ({curSym}
+                  {livePlans[0].prices[cycle]})
                 </th>
-                <th className="px-4 py-4 text-center text-amber-300">
-                  Ultra Pro (₹749)
+                <th className="px-4 py-4 text-center text-brand-300">
+                  {livePlans[1].name} ({curSym}
+                  {livePlans[1].prices[cycle]})
+                </th>
+                <th className="px-4 py-4 text-center text-brand-200">
+                  {livePlans[2].name} ({curSym}
+                  {livePlans[2].prices[cycle]})
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/[0.05]">
+            <tbody className="divide-y divide-brand-200/[0.06]">
               {COMPARISON_ROWS.map((row) => (
                 <tr
                   key={row.feature}
-                  className="transition-colors hover:bg-white/[0.015]"
+                  className="transition-colors hover:bg-brand-300/[0.025]"
                 >
-                  <td className="px-6 py-3.5 text-zinc-200 sm:px-8">
+                  <td className="px-5 py-3.5 text-zinc-200 sm:px-8">
                     {row.feature}
                   </td>
                   {(["plus", "pro", "ultra"] as const).map((tier) => (
                     <td key={tier} className="px-4 py-3.5 text-center">
                       {row[tier] ? (
-                        <span className="inline-flex size-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+                        <span className="inline-flex size-5 items-center justify-center rounded-full bg-brand-500/20 text-brand-300">
                           <CheckIcon className="size-3" />
                         </span>
                       ) : (
@@ -513,13 +781,13 @@ export function PremiumClient() {
       {/* Premium FAQ */}
       <div className="mx-auto max-w-4xl">
         <div className="text-center">
-          <p className="eyebrow">Billing &amp; Perks</p>
-          <h2 className="mt-2 font-display text-[26px] font-semibold text-white">
+          <p className="eyebrow">Invoice &amp; Ticket Activation</p>
+          <h2 className="mt-2 font-display text-[25px] font-semibold text-white sm:text-[28px]">
             Premium FAQ
           </h2>
         </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          {PREMIUM_FAQS.map((item) => (
+          {premiumFaqs.map((item) => (
             <div
               key={item.q}
               className="panel panel-inner rounded-2xl p-5 sm:p-6"
@@ -535,129 +803,443 @@ export function PremiumClient() {
         </div>
       </div>
 
-      {/* Interactive Buy Now Checkout Modal */}
-      {selectedPlan && (
+      {/* In-Website Invoice Generator & Live Preview Modal (Mobile Sheet + PC Modal) */}
+      {isModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Purchase ${selectedPlan.name}`}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
-          onClick={() => setSelectedPlan(null)}
+          aria-label="Premium Invoice"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/82 backdrop-blur-md sm:items-center sm:p-4"
+          onClick={closeModal}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="panel panel-inner relative w-full max-w-lg rounded-3xl border border-brand-500/40 bg-ink-900 p-6 shadow-panel sm:p-7"
+            className="pb-safe relative max-h-[92vh] w-full max-w-xl animate-sheet-up overflow-y-auto rounded-t-3xl border-t border-brand-400/45 bg-ink-900 p-5 shadow-glow-lg sm:animate-pop-in sm:rounded-3xl sm:border sm:p-7"
           >
+            {/* Mobile drag bar */}
+            <div className="mb-3 flex justify-center sm:hidden">
+              <span className="h-1 w-11 rounded-full bg-brand-200/20" />
+            </div>
+
+            {/* Header */}
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-amber-300">
-                  {selectedPlan.badge} · Instant Activation
+                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
+                  {activeInvoice
+                    ? "Official Invoice Preview"
+                    : `${selectedPlan?.badge} · Generate Invoice`}
                 </span>
-                <h3 className="mt-1 font-display text-[24px] font-bold text-white">
-                  {selectedPlan.name}
+                <h3 className="mt-1 font-display text-[21px] font-bold text-white sm:text-[24px]">
+                  {activeInvoice
+                    ? activeInvoice.invoiceId
+                    : selectedPlan?.name}
                 </h3>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedPlan(null)}
+                onClick={closeModal}
                 aria-label="Close modal"
-                className="flex size-8 items-center justify-center rounded-full border border-white/10 text-zinc-400 hover:border-white/25 hover:text-white"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-brand-200/15 bg-ink-950/70 text-lg text-zinc-400 hover:border-brand-400/40 hover:text-white"
               >
                 ×
               </button>
             </div>
 
-            {/* Duration selector inside modal */}
-            <div className="mt-5">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                Billing Duration
-              </span>
-              <div className="mt-2 grid grid-cols-3 gap-2">
-                {BILLING_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setCycle(opt.id)}
-                    className={`rounded-xl border px-3 py-2.5 text-center transition-colors ${
-                      cycle === opt.id
-                        ? "border-brand-500 bg-brand-600/20 text-white"
-                        : "border-white/10 bg-ink-950/70 text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <p className="text-[12px] font-semibold">{opt.label}</p>
-                    <p className="mt-0.5 font-mono text-[11px] text-brand-300">
-                      ₹{selectedPlan.prices[opt.id].toLocaleString("en-IN")}
+            {/* VIEW A: Generated Official Invoice Preview + Download + Open Support Ticket */}
+            {activeInvoice && invoiceDt ? (
+              <div className="mt-5 space-y-4">
+                {/* Visual Official Invoice Preview Card */}
+                <div className="relative overflow-hidden rounded-2xl border border-brand-400/35 bg-ink-950/95 shadow-panel">
+                  <div className="h-1.5 w-full bg-gradient-to-r from-brand-600 via-brand-400 to-brand-300" />
+
+                  <div className="space-y-4 p-4 sm:p-5">
+                    {/* Brand + Status row */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-brand-200/10 pb-3.5">
+                      <div className="flex items-center gap-2.5">
+                        <Logo size={34} />
+                        <div>
+                          <p className="font-display text-[14.5px] font-bold tracking-wider text-white">
+                            {activeInvoice.brandName.toUpperCase()}
+                          </p>
+                          <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-brand-400">
+                            Official Premium Invoice
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 font-mono text-[9px] font-semibold uppercase tracking-wider ${
+                          activeInvoice.status === "fulfilled"
+                            ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-300"
+                            : "border-brand-400/40 bg-brand-500/15 text-brand-200"
+                        }`}
+                      >
+                        {activeInvoice.status === "fulfilled"
+                          ? "Paid & Activated"
+                          : "Send in Ticket"}
+                      </span>
+                    </div>
+
+                    {/* Date, Time, Invoice ID, Verify Code grid */}
+                    <div className="grid grid-cols-2 gap-2.5 rounded-xl border border-brand-200/[0.08] bg-ink-900/70 p-3 font-mono text-[11px] sm:grid-cols-4">
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Date
+                        </p>
+                        <p className="mt-0.5 font-semibold text-white">
+                          {invoiceDt.dateStr}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Time
+                        </p>
+                        <p className="mt-0.5 font-semibold text-white">
+                          {invoiceDt.timeStr}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Invoice ID
+                        </p>
+                        <p className="mt-0.5 truncate font-semibold text-brand-300">
+                          {activeInvoice.invoiceId}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] uppercase text-zinc-500">
+                          Verify Code
+                        </p>
+                        <p className="mt-0.5 font-semibold text-brand-300">
+                          {activeInvoice.verificationCode}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* User & Server Details */}
+                    <div className="grid gap-2.5 sm:grid-cols-2">
+                      <div className="rounded-xl border border-brand-200/[0.08] bg-ink-900/50 p-3">
+                        <p className="font-mono text-[9px] uppercase tracking-wider text-brand-400">
+                          Customer (Discord User)
+                        </p>
+                        <p className="mt-1 text-[13.5px] font-semibold text-white">
+                          {activeInvoice.globalName || activeInvoice.username}
+                        </p>
+                        <p className="font-mono text-[11px] text-zinc-300">
+                          @{activeInvoice.username}
+                        </p>
+                        <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
+                          ID: {activeInvoice.userId}
+                        </p>
+                        {activeInvoice.email && (
+                          <p className="truncate font-mono text-[10px] text-zinc-500">
+                            {activeInvoice.email}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="rounded-xl border border-brand-200/[0.08] bg-ink-900/50 p-3">
+                        <p className="font-mono text-[9px] uppercase tracking-wider text-brand-400">
+                          Server &amp; Activation
+                        </p>
+                        <p className="mt-1 truncate text-[13.5px] font-semibold text-white">
+                          {activeInvoice.guildName ||
+                            "Assign in Support Ticket"}
+                        </p>
+                        <p className="font-mono text-[10.5px] text-zinc-400">
+                          {activeInvoice.guildId
+                            ? `Guild ID: ${activeInvoice.guildId}`
+                            : "Share server ID in ticket"}
+                        </p>
+                        <p className="mt-1 font-mono text-[10px] text-emerald-300">
+                          ✓ {activeInvoice.activationSla}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Plan & Total Breakdown */}
+                    <div className="rounded-xl border border-brand-400/25 bg-brand-950/30 p-3.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[14.5px] font-bold text-white">
+                            {activeInvoice.tierName}{" "}
+                            <span className="font-mono text-[10px] font-normal text-brand-300">
+                              ({activeInvoice.tierBadge})
+                            </span>
+                          </p>
+                          <p className="font-mono text-[11px] text-zinc-300">
+                            Duration: {activeInvoice.durationLabel}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-mono text-[9px] uppercase text-zinc-400">
+                            Total Payable
+                          </p>
+                          <p className="font-display text-[24px] font-bold text-brand-300">
+                            {activeInvoice.currencySymbol}
+                            {activeInvoice.amount.toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-brand-200/10 pt-2.5">
+                        {activeInvoice.features.map((f) => (
+                          <span
+                            key={f}
+                            className="rounded-md border border-brand-200/10 bg-ink-950/75 px-2 py-0.5 text-[10.5px] text-zinc-300"
+                          >
+                            ✓ {f}
+                          </span>
+                        ))}
+                      </div>
+
+                      {activeInvoice.buyerNote && (
+                        <p className="mt-2.5 border-t border-brand-200/10 pt-2 font-mono text-[10.5px] text-zinc-300">
+                          Note: {activeInvoice.buyerNote}
+                        </p>
+                      )}
+                    </div>
+
+                    <p className="font-mono text-[9.5px] text-zinc-500">
+                      UTC Timestamp: {invoiceDt.utcStr} · Payment: Owner QR via
+                      Support Ticket (No website payment)
                     </p>
+                  </div>
+                </div>
+
+                {/* Clear Ticket & Owner QR Instructions */}
+                <div className="rounded-2xl border border-brand-400/35 bg-brand-950/45 p-4">
+                  <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-300">
+                    Next Steps · How to Get Your Premium
+                  </p>
+                  <ol className="mt-2 space-y-1.5 text-[12.5px] leading-relaxed text-zinc-200">
+                    <li>
+                      <strong className="text-white">1.</strong> Tap{" "}
+                      <strong className="text-brand-300">
+                        Download Invoice (PNG)
+                      </strong>{" "}
+                      below to save your official invoice.
+                    </li>
+                    <li>
+                      <strong className="text-white">2.</strong>{" "}
+                      <strong className="text-white">Open a ticket</strong> in
+                      our Support Server and{" "}
+                      <strong className="text-white">send the invoice</strong>.
+                    </li>
+                    <li>
+                      <strong className="text-white">3.</strong> The{" "}
+                      <strong className="text-brand-200">
+                        Owner will provide the payment QR code
+                      </strong>{" "}
+                      inside your ticket.
+                    </li>
+                    <li>
+                      <strong className="text-white">4.</strong> Once payment is
+                      done, you will receive{" "}
+                      <strong className="text-emerald-300">
+                        Premium instantly within 24 hours
+                      </strong>
+                      !
+                    </li>
+                  </ol>
+                </div>
+
+                {/* Download + Copy Buttons */}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    disabled={downloading}
+                    onClick={() => void handleDownloadPng(activeInvoice)}
+                    className="btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-4 text-[13.5px] font-semibold text-white shadow-[0_10px_30px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                  >
+                    <DownloadIcon className="size-4" />
+                    {downloading
+                      ? "Preparing Invoice…"
+                      : downloadedOnce
+                        ? "Downloaded! Save Again"
+                        : "Download Invoice (PNG)"}
                   </button>
-                ))}
+
+                  <a
+                    href={activeInvoice.supportUrl || supportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#5865F2] px-4 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#4752C4]"
+                  >
+                    <DiscordIcon className="size-4" />
+                    Open Ticket in Support Server
+                  </a>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => downloadInvoiceText(activeInvoice, siteCfg)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/15 bg-ink-950/70 px-3 py-1.5 font-mono text-[10.5px] text-zinc-300 hover:border-brand-400/40 hover:text-white"
+                  >
+                    <DownloadIcon className="size-3.5 text-brand-400" />
+                    Download as .TXT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void copyText(
+                        "invtxt",
+                        buildInvoicePlainText(activeInvoice, siteCfg),
+                      )
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200/15 bg-ink-950/70 px-3 py-1.5 font-mono text-[10.5px] text-brand-300 hover:border-brand-400/40 hover:text-white"
+                  >
+                    <CopyIcon className="size-3.5" />
+                    {copiedKey === "invtxt"
+                      ? "✓ Invoice Copied!"
+                      : "Copy Invoice Text"}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : selectedPlan ? (
+              /* VIEW B: Configure Plan, Duration, Server & Note -> Generate Invoice */
+              <div className="mt-5 space-y-4">
+                {user ? (
+                  <div className="flex items-center justify-between gap-2 rounded-xl border border-brand-400/25 bg-brand-950/40 px-3.5 py-2.5">
+                    <span className="flex items-center gap-2 text-[12.5px] text-zinc-200">
+                      <LockIcon className="size-3.5 text-brand-400" />
+                      Invoice for{" "}
+                      <strong className="text-white">@{user.username}</strong>
+                    </span>
+                    <span className="font-mono text-[10px] text-brand-300">
+                      ID {user.id}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-brand-400/30 bg-brand-950/40 p-4">
+                    <p className="text-[13.5px] font-semibold text-white">
+                      Sign in with Discord to Generate Your Invoice
+                    </p>
+                    <p className="mt-1 text-[12px] leading-relaxed text-zinc-400">
+                      We attach your verified Discord username, User ID,
+                      selected server, and exact timestamp directly onto your
+                      downloadable invoice for fast ticket activation.
+                    </p>
+                    <a
+                      href="/api/auth/discord?next=/premium"
+                      className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#5865F2] text-[13.5px] font-semibold text-white hover:bg-[#4752C4]"
+                    >
+                      <DiscordIcon className="size-4" />
+                      Continue with Discord
+                    </a>
+                  </div>
+                )}
 
-            {/* Target server selector */}
-            <div className="mt-4">
-              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                Select Server to Upgrade
-              </span>
-              {guilds.length > 0 ? (
-                <select
-                  value={targetGuildId}
-                  onChange={(e) => setTargetGuildId(e.target.value)}
-                  className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950 px-3 text-[13px] text-white focus:border-brand-500/50 focus:outline-none"
-                >
-                  <option value="">Choose one of your servers…</option>
-                  {guilds.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name} ({g.id})
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type="text"
-                  value={targetGuildId}
-                  onChange={(e) => setTargetGuildId(e.target.value)}
-                  placeholder="Paste your Discord Server ID (optional)"
-                  className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950 px-3.5 font-mono text-[12px] text-white placeholder:text-zinc-600 focus:border-brand-500/50 focus:outline-none"
-                />
-              )}
-            </div>
+                {/* Billing Duration */}
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                    Select Duration
+                  </span>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {BILLING_CYCLES.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setCycle(opt.id)}
+                        className={`rounded-xl border px-2.5 py-2.5 text-center transition-all ${
+                          cycle === opt.id
+                            ? "border-brand-400 bg-brand-500/20 text-white shadow-[0_0_20px_-8px_rgb(var(--brand-400))]"
+                            : "border-brand-200/10 bg-ink-950/70 text-zinc-400 hover:text-white"
+                        }`}
+                      >
+                        <p className="text-[12px] font-semibold">{opt.label}</p>
+                        <p className="mt-0.5 font-mono text-[11px] text-brand-300">
+                          {curSym}
+                          {selectedPlan.prices[opt.id].toLocaleString("en-IN")}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Order summary preview + Copy */}
-            <div className="mt-4 rounded-xl border border-white/[0.08] bg-ink-950/85 p-3.5">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
-                  Order Summary
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void handleCopyOrder()}
-                  className="rounded-md border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[10px] text-brand-300 hover:border-brand-500/40 hover:text-white"
-                >
-                  {copied ? "✓ Copied!" : "Copy Summary"}
-                </button>
+                {/* Custom In-Website Server Selector */}
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                    Target Discord Server (Optional)
+                  </span>
+                  <div className="mt-1.5">
+                    {guilds.length > 0 ? (
+                      <CustomSelect
+                        title="Select Server for Invoice"
+                        placeholder="Choose one of your servers…"
+                        value={targetGuildId}
+                        onChange={setTargetGuildId}
+                        options={[
+                          {
+                            value: "",
+                            label: "Decide in Support Ticket",
+                          },
+                          ...guilds.map((g) => ({
+                            value: g.id,
+                            label: g.name,
+                            iconUrl: g.iconUrl,
+                            description: `ID ${g.id}`,
+                          })),
+                        ]}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        value={targetGuildId}
+                        onChange={(e) => setTargetGuildId(e.target.value)}
+                        placeholder="Discord Server ID (optional)"
+                        className="input-aqua font-mono text-[12px]"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Optional Note on Invoice */}
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                    Additional Note for Owner (Optional)
+                  </span>
+                  <input
+                    type="text"
+                    maxLength={200}
+                    value={buyerNote}
+                    onChange={(e) => setBuyerNote(e.target.value)}
+                    placeholder="e.g. Custom bot name, referral, or extra info…"
+                    className="input-aqua mt-1.5"
+                  />
+                </div>
+
+                {/* How It Works Notice */}
+                <div className="rounded-xl border border-brand-200/10 bg-ink-950/75 px-3.5 py-3 text-[12px] leading-relaxed text-zinc-300">
+                  {siteCfg.ticketInstructions}
+                </div>
+
+                {invoiceError && (
+                  <p className="rounded-xl border border-amber-400/30 bg-amber-500/10 px-3.5 py-2.5 font-mono text-[11px] text-amber-200">
+                    {invoiceError}
+                  </p>
+                )}
+
+                {user && (
+                  <button
+                    type="button"
+                    disabled={generating}
+                    onClick={() => void handleGenerateInvoice()}
+                    className="btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-5 text-[14px] font-semibold text-white shadow-[0_12px_34px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                  >
+                    <InvoiceIcon className="size-4" />
+                    {generating
+                      ? "Generating Invoice…"
+                      : `Generate & Preview Invoice — ${curSym}${selectedPlan.prices[cycle].toLocaleString("en-IN")}`}
+                  </button>
+                )}
+
+                <p className="text-center font-mono text-[10px] text-zinc-500">
+                  No payment collected on website · Owner QR in Support Ticket ·
+                  Instant within 24h
+                </p>
               </div>
-              <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-zinc-300">
-                {orderSummary}
-              </pre>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-              <a
-                href={buildCheckoutHref(selectedPlan)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => void handleCopyOrder()}
-                className="btn-glow relative inline-flex h-12 flex-1 items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-brand-600 px-5 text-[14px] font-semibold text-white hover:bg-brand-500"
-              >
-                <DiscordIcon className="size-4" />
-                Complete Purchase — ₹
-                {selectedPlan.prices[cycle].toLocaleString("en-IN")}
-              </a>
-            </div>
-            <p className="mt-3 text-center font-mono text-[10px] text-zinc-500">
-              Copies your order &amp; opens {site.name} Billing Desk · UPI,
-              Cards &amp; Instant Activation
-            </p>
+            ) : null}
           </div>
         </div>
       )}

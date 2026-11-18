@@ -9,6 +9,7 @@ import type {
   DiscordRoleOption,
 } from "@/lib/discord-guilds";
 import { PlusIcon, TrashIcon } from "@/components/ui/Icons";
+import { CustomSelect } from "@/components/ui/CustomSelect";
 import {
   ChannelField,
   ModuleHeader,
@@ -579,30 +580,33 @@ export function VoiceMasterModule({
               className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3.5 font-mono text-[13px] text-white focus:outline-none"
             />
           </label>
-          <label className="block">
+          <div className="block">
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
               Default Bitrate
             </span>
-            <select
-              value={voicemaster.bitrateKbps}
-              onChange={(e) =>
-                update((p) => ({
-                  ...p,
-                  voicemaster: {
-                    ...p.voicemaster,
-                    bitrateKbps: Number(e.target.value),
-                  },
-                }))
-              }
-              className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3 font-mono text-[12.5px] text-white focus:outline-none"
-            >
-              <option value={64}>64 kbps (Standard)</option>
-              <option value={96}>96 kbps (High Quality)</option>
-              <option value={128}>128 kbps (Boost Tier 1)</option>
-              <option value={256}>256 kbps (Boost Tier 2)</option>
-              <option value={384}>384 kbps (Boost Tier 3)</option>
-            </select>
-          </label>
+            <div className="mt-1.5">
+              <CustomSelect
+                title="VoiceMaster Audio Bitrate"
+                value={String(voicemaster.bitrateKbps)}
+                onChange={(val) =>
+                  update((p) => ({
+                    ...p,
+                    voicemaster: {
+                      ...p.voicemaster,
+                      bitrateKbps: Number(val),
+                    },
+                  }))
+                }
+                options={[
+                  { value: "64", label: "64 kbps", description: "Standard voice quality" },
+                  { value: "96", label: "96 kbps", badge: "Default", description: "Crisp stereo voice" },
+                  { value: "128", label: "128 kbps", description: "Boost Tier 1 quality" },
+                  { value: "256", label: "256 kbps", description: "Boost Tier 2 studio" },
+                  { value: "384", label: "384 kbps", description: "Boost Tier 3 lossless" },
+                ]}
+              />
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -1078,24 +1082,31 @@ export function UtilityModule({
           </code>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_140px_1.4fr_auto]">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_165px_1.4fr_auto]">
           <input
             type="text"
             value={trigger}
             onChange={(e) => setTrigger(e.target.value)}
             placeholder="Trigger (e.g. ip, rules)"
-            className="h-10 rounded-xl border border-white/10 bg-ink-950/90 px-3.5 text-[13px] text-white placeholder:text-zinc-600 focus:outline-none"
+            className="input-aqua"
           />
-          <select
+          <CustomSelect
+            title="Trigger Match Mode"
             value={match}
-            onChange={(e) =>
-              setMatch(e.target.value as "exact" | "contains")
-            }
-            className="h-10 rounded-xl border border-white/10 bg-ink-950/90 px-3 text-[12.5px] text-zinc-200 focus:outline-none"
-          >
-            <option value="exact">Exact Match</option>
-            <option value="contains">Contains</option>
-          </select>
+            onChange={(val) => setMatch(val as "exact" | "contains")}
+            options={[
+              {
+                value: "exact",
+                label: "Exact Match",
+                description: "Whole message matches trigger",
+              },
+              {
+                value: "contains",
+                label: "Contains",
+                description: "Matches anywhere in message",
+              },
+            ]}
+          />
           <input
             type="text"
             value={response}
@@ -1107,7 +1118,7 @@ export function UtilityModule({
               }
             }}
             placeholder="Bot reply message…"
-            className="h-10 rounded-xl border border-white/10 bg-ink-950/90 px-3.5 text-[13px] text-white placeholder:text-zinc-600 focus:outline-none"
+            className="input-aqua"
           />
           <button
             type="button"

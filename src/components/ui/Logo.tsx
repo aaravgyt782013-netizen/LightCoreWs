@@ -1,36 +1,47 @@
 "use client";
 
-import Image from "next/image";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { site } from "@/lib/site";
 
 export function Logo({
   size = 36,
   className = "",
   glow = true,
+  srcOverride,
 }: {
   size?: number;
   className?: string;
   glow?: boolean;
+  srcOverride?: string;
 }) {
+  const { config } = useSiteConfig();
+  const src = srcOverride || config.logoUrl || site.logo;
+  const showGlow = glow && config.logoGlow;
+  const radiusClass =
+    config.logoShape === "circle"
+      ? "rounded-full"
+      : config.logoShape === "rounded"
+        ? "rounded-lg"
+        : "rounded-[24%]";
+
   return (
     <span
-      className={`relative inline-flex items-center justify-center ${className}`}
+      className={`relative inline-flex shrink-0 items-center justify-center ${className}`}
       style={{ width: size, height: size }}
     >
-      {glow && (
+      {showGlow && (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-brand-600/40 blur-xl"
+          className="absolute inset-0 rounded-full bg-brand-400/35 blur-xl"
         />
       )}
-      <Image
-        src={site.logo}
-        alt={`${site.name} logo`}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={`${config.brandName || site.name} logo`}
         width={size}
         height={size}
-        priority
-        unoptimized
-        className="relative size-full rounded-[24%] object-cover ring-1 ring-white/10 drop-shadow-[0_0_12px_rgba(239,16,16,0.55)]"
+        className={`relative size-full ${radiusClass} object-cover ring-1 ring-brand-200/15 drop-shadow-[0_0_14px_rgb(var(--brand-400)/0.5)]`}
       />
     </span>
   );
@@ -38,15 +49,16 @@ export function Logo({
 
 export function Wordmark({
   leadClassName = "",
-  accentClassName = "text-brand-500",
+  accentClassName = "text-brand-400",
 }: {
   leadClassName?: string;
   accentClassName?: string;
 }) {
+  const { config } = useSiteConfig();
   return (
     <>
-      <span className={leadClassName}>{site.wordmark.lead}</span>
-      <span className={accentClassName}>{site.wordmark.accent}</span>
+      <span className={leadClassName}>{config.wordmarkLead}</span>
+      <span className={accentClassName}>{config.wordmarkAccent}</span>
     </>
   );
 }

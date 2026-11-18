@@ -3,8 +3,10 @@
 /.pnp
 .pnp.*
 
-# next.js
+# next.js & local caches
 /.next/
+/.cache/
+/.netlify/
 /out/
 /build
 next-env.d.ts

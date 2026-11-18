@@ -11,26 +11,26 @@ export default {
     extend: {
       colors: {
         ink: {
-          950: "#050507",
-          900: "#08080c",
-          850: "#0b0b11",
-          800: "#0f0f16",
-          700: "#16161f",
-          600: "#1d1d28",
-          500: "#2a2a38",
+          950: "rgb(var(--ink-950) / <alpha-value>)",
+          900: "rgb(var(--ink-900) / <alpha-value>)",
+          850: "rgb(var(--ink-850) / <alpha-value>)",
+          800: "rgb(var(--ink-800) / <alpha-value>)",
+          700: "rgb(var(--ink-700) / <alpha-value>)",
+          600: "rgb(var(--ink-600) / <alpha-value>)",
+          500: "rgb(var(--ink-500) / <alpha-value>)",
         },
         brand: {
-          50: "#fff1f1",
-          100: "#ffdede",
-          200: "#ffc2c2",
-          300: "#ff9797",
-          400: "#ff5c5c",
-          500: "#ff2b2b",
-          600: "#ef1010",
-          700: "#c90a0a",
-          800: "#a50d0d",
-          900: "#881212",
-          950: "#4b0404",
+          50: "rgb(var(--brand-50) / <alpha-value>)",
+          100: "rgb(var(--brand-100) / <alpha-value>)",
+          200: "rgb(var(--brand-200) / <alpha-value>)",
+          300: "rgb(var(--brand-300) / <alpha-value>)",
+          400: "rgb(var(--brand-400) / <alpha-value>)",
+          500: "rgb(var(--brand-500) / <alpha-value>)",
+          600: "rgb(var(--brand-600) / <alpha-value>)",
+          700: "rgb(var(--brand-700) / <alpha-value>)",
+          800: "rgb(var(--brand-800) / <alpha-value>)",
+          900: "rgb(var(--brand-900) / <alpha-value>)",
+          950: "rgb(var(--brand-950) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -40,12 +40,15 @@ export default {
       },
       backgroundImage: {
         "grid-fade":
-          "linear-gradient(to right, rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.045) 1px, transparent 1px)",
+          "linear-gradient(to right, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px), linear-gradient(to bottom, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px)",
         "brand-fade":
-          "radial-gradient(60% 60% at 50% 0%, rgba(239,16,16,0.22) 0%, rgba(239,16,16,0) 70%)",
+          "radial-gradient(60% 60% at 50% 0%, rgb(var(--brand-500) / 0.22) 0%, rgb(var(--brand-500) / 0) 72%)",
       },
       backgroundSize: {
         grid: "64px 64px",
+      },
+      transitionTimingFunction: {
+        smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       keyframes: {
         marquee: {
@@ -86,6 +89,18 @@ export default {
           "0%": { transform: "translateX(-110%)" },
           "100%": { transform: "translateX(260%)" },
         },
+        popIn: {
+          "0%": { opacity: "0", transform: "translateY(-6px) scale(0.98)" },
+          "100%": { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        sheetUp: {
+          "0%": { opacity: "0", transform: "translateY(28px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
       },
       animation: {
         marquee: "marquee var(--marquee-duration, 45s) linear infinite",
@@ -97,14 +112,19 @@ export default {
         shimmer: "shimmer 4s linear infinite",
         ticker: "ticker 2.2s ease-in-out infinite",
         "spin-orbit": "spin 1.8s linear infinite",
-        "spin-slow": "spin 4.2s linear infinite",
-        "spin-reverse": "spinReverse 2.6s linear infinite",
+        "spin-slow": "spin 4.4s linear infinite",
+        "spin-reverse": "spinReverse 2.7s linear infinite",
         "loader-slide": "loaderSlide 1.5s cubic-bezier(0.4,0,0.2,1) infinite",
+        "pop-in": "popIn 0.2s cubic-bezier(0.22,1,0.36,1) both",
+        "sheet-up": "sheetUp 0.28s cubic-bezier(0.22,1,0.36,1) both",
+        "fade-in": "fadeIn 0.2s ease-out both",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(255,43,43,0.25), 0 18px 60px -20px rgba(239,16,16,0.55)",
+        glow: "0 0 0 1px rgb(var(--brand-400) / 0.28), 0 18px 60px -18px rgb(var(--brand-500) / 0.5)",
+        "glow-lg":
+          "0 0 0 1px rgb(var(--brand-400) / 0.38), 0 26px 80px -20px rgb(var(--brand-500) / 0.55)",
         panel:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 30px 80px -40px rgba(0,0,0,0.9)",
+          "inset 0 1px 0 0 rgb(var(--brand-200) / 0.07), 0 28px 75px -38px rgba(0,0,0,0.92)",
       },
     },
   },
