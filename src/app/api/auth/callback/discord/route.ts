@@ -5,7 +5,6 @@ import {
   cleanEnvString,
   isDiscordSnowflake,
   resolveDiscordClientId,
-  resolveOAuthScopes,
 } from "@/lib/discord-oauth";
 import {
   getRedirectUri,
