@@ -35,8 +35,10 @@ export const site = {
     "As your choice for an all in one bot",
   url:
     sanitizeOriginUrl(process.env.NEXT_PUBLIC_SITE_URL) ||
+    sanitizeOriginUrl(process.env.RENDER_EXTERNAL_URL) ||
     sanitizeOriginUrl(process.env.URL) ||
-    "https://lightcorews.netlify.app",
+    sanitizeOriginUrl(process.env.VERCEL_PROJECT_PRODUCTION_URL) ||
+    "https://lightcorews.onrender.com",
   clientId,
   ownerId:
     cleanEnvString(process.env.NEXT_PUBLIC_OWNER_ID) || "1538907226671022111",

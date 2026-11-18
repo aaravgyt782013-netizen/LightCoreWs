@@ -57,7 +57,7 @@ export async function fetchAllUserGuilds(
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Accept: "application/json",
-        "User-Agent": "LightCore (https://lightcorews.netlify.app, 2.0)",
+        "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
       },
       cache: "no-store",
       signal: AbortSignal.timeout(5500),

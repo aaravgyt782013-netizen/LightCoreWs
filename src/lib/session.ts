@@ -144,11 +144,27 @@ export function unsealSession(token: string | undefined): SessionPayload | null 
 }
 
 /**
- * Creates a cryptographically signed (HMAC-SHA256), time-limited OAuth2 `state`
- * parameter that embeds `next` and the exact `redirect_uri`. This prevents CSRF
- * while surviving mobile Discord-app <-> browser handoffs where transient cookies
- * are dropped by Android Custom Tabs or in-app browsers.
+ * Creates a compact, URL-free, HMAC-SHA256 signed OAuth2 `state` token:
+ * `<expBase36>-<destCode>-<nonce>-<sig>`
+ * Avoids embedding base64 URLs in query strings (which trigger browser phishing
+ * heuristics on shared hosting domains) while staying CSRF-safe and surviving
+ * mobile Discord-app <-> browser handoffs.
  */
+function encodeNextCode(next: string): string {
+  if (next === "/admin") return "a";
+  if (next === "/premium") return "p";
+  const guildMatch = /^\/dashboard\/(\d{15,22})$/.exec(next);
+  if (guildMatch) return `g${guildMatch[1]}`;
+  return "d";
+}
+
+function decodeNextCode(code: string): string {
+  if (code === "a") return "/admin";
+  if (code === "p") return "/premium";
+  if (/^g\d{15,22}$/.test(code)) return `/dashboard/${code.slice(1)}`;
+  return "/dashboard";
+}
+
 export function createSignedOAuthState(input: {
   next: string;
   redirectUri: string;
@@ -156,39 +172,38 @@ export function createSignedOAuthState(input: {
   const secret = getSessionSecret();
   if (!secret) return null;
 
-  const payload: SignedOAuthStatePayload = {
-    n: crypto.randomBytes(12).toString("base64url"),
-    exp: Math.floor(Date.now() / 1000) + OAUTH_STATE_TTL_SECONDS,
-    next: input.next,
-    ru: input.redirectUri,
-  };
-  const body = Buffer.from(JSON.stringify(payload), "utf8").toString(
-    "base64url",
-  );
+  const expStr = (
+    Math.floor(Date.now() / 1000) + OAUTH_STATE_TTL_SECONDS
+  ).toString(36);
+  const dest = encodeNextCode(input.next);
+  const nonce = crypto.randomBytes(9).toString("base64url");
+  const core = `${expStr}.${dest}.${nonce}`;
   const sig = crypto
-    .createHmac("sha256", `lc-oauth-state-v2:${secret}`)
-    .update(body)
-    .digest("base64url");
-  return `${body}.${sig}`;
+    .createHmac("sha256", `lc-oauth-state-v3:${secret}`)
+    .update(core)
+    .digest("base64url")
+    .slice(0, 22);
+  void input.redirectUri;
+  return `${core}.${sig}`;
 }
 
 export function verifySignedOAuthState(
   state: string | null | undefined,
 ): SignedOAuthStatePayload | null {
   const secret = getSessionSecret();
-  if (!secret || !state) return null;
+  if (!secret || !state || state.length > 120) return null;
 
-  const dot = state.indexOf(".");
-  if (dot <= 0 || dot !== state.lastIndexOf(".")) return null;
+  const parts = state.split(".");
+  if (parts.length !== 4) return null;
+  const [expStr, dest, nonce, providedSig] = parts;
+  if (!expStr || !dest || !nonce || !providedSig) return null;
 
-  const body = state.slice(0, dot);
-  const providedSig = state.slice(dot + 1);
-  if (!body || !providedSig) return null;
-
+  const core = `${expStr}.${dest}.${nonce}`;
   const expectedSig = crypto
-    .createHmac("sha256", `lc-oauth-state-v2:${secret}`)
-    .update(body)
-    .digest("base64url");
+    .createHmac("sha256", `lc-oauth-state-v3:${secret}`)
+    .update(core)
+    .digest("base64url")
+    .slice(0, 22);
 
   const a = Buffer.from(providedSig, "utf8");
   const b = Buffer.from(expectedSig, "utf8");
@@ -196,24 +211,17 @@ export function verifySignedOAuthState(
     return null;
   }
 
-  try {
-    const parsed = JSON.parse(
-      Buffer.from(body, "base64url").toString("utf8"),
-    ) as SignedOAuthStatePayload;
-    if (
-      !parsed ||
-      typeof parsed.n !== "string" ||
-      typeof parsed.exp !== "number" ||
-      parsed.exp < Math.floor(Date.now() / 1000) ||
-      typeof parsed.next !== "string" ||
-      typeof parsed.ru !== "string"
-    ) {
-      return null;
-    }
-    return parsed;
-  } catch {
+  const exp = parseInt(expStr, 36);
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) {
     return null;
   }
+
+  return {
+    n: nonce,
+    exp,
+    next: decodeNextCode(dest),
+    ru: "",
+  };
 }
 
 export function relativeRedirect(

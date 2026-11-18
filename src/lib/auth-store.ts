@@ -269,7 +269,7 @@ async function getValidAccessToken(
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         Accept: "application/json",
-        "User-Agent": "LightCore (https://lightcorews.netlify.app, 2.0)",
+        "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
       },
       body: new URLSearchParams({
         client_id: resolveDiscordClientId(),

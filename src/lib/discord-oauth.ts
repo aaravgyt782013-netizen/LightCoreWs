@@ -305,12 +305,14 @@ export function resolvePublicOrigin(
 
   // Fallback to platform-provided public URL environment variables.
   const envOrigins = [
+    process.env.RENDER_EXTERNAL_URL, // Render web service URL (e.g. https://lightcorews.onrender.com)
+    process.env.RENDER_EXTERNAL_HOSTNAME, // Render hostname
     process.env.URL, // Netlify primary site URL
     process.env.DEPLOY_PRIME_URL, // Netlify branch/deploy URL
     process.env.VERCEL_PROJECT_PRODUCTION_URL, // Vercel production domain
     process.env.VERCEL_URL, // Vercel deployment domain
     process.env.NEXT_PUBLIC_SITE_URL,
-    "https://lightcorews.netlify.app",
+    "https://lightcorews.onrender.com",
   ];
 
   for (const raw of envOrigins) {
@@ -322,8 +324,8 @@ export function resolvePublicOrigin(
   }
 
   return {
-    origin: "https://lightcorews.netlify.app",
-    host: "lightcorews.netlify.app",
+    origin: "https://lightcorews.onrender.com",
+    host: "lightcorews.onrender.com",
     fromLiveRequest: false,
   };
 }

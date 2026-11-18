@@ -3,7 +3,10 @@ import path from "node:path";
 import { getStore } from "@netlify/blobs";
 
 const STORE_NAME = "lightcore-data-v1";
-const LOCAL_FILE = path.join(process.cwd(), ".cache", "lightcore-kv.json");
+const DATA_DIR =
+  process.env.LIGHTCORE_DATA_DIR?.trim() ||
+  path.join(process.cwd(), ".cache");
+const LOCAL_FILE = path.join(DATA_DIR, "lightcore-kv.json");
 
 type MemoryGlobal = typeof globalThis & {
   __lightcoreKvMem?: Map<string, string>;

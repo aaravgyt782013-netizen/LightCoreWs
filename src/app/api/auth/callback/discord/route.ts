@@ -31,7 +31,7 @@ import { isOwnerId } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
-const DISCORD_USER_AGENT = "LightCore (https://lightcorews.netlify.app, 2.0)";
+const DISCORD_USER_AGENT = "LightCore (https://lightcorews.onrender.com, 2.0)";
 
 const SAFE_TOKEN_REASONS = new Set([
   "invalid_client",
@@ -203,11 +203,25 @@ export async function handleDiscordOAuthCallback(req: NextRequest) {
     return relativeRedirect("/login?error=invalid_state", reqCtx);
   }
 
-  const redirectUri = getRedirectUri(
-    req.url,
-    req.headers,
-    verifiedState?.ru ?? null,
-  );
+  // Determine exact callback URI (matches `/api/auth/callback/discord`, `/api/auth/callback`, etc.)
+  const reqPathname = new URL(req.url).pathname.replace(/\/+$/, "");
+  const baseRedirect = getRedirectUri(req.url, req.headers, verifiedState?.ru || null);
+  const redirectUri = (() => {
+    if (process.env.DISCORD_REDIRECT_URI) return baseRedirect;
+    try {
+      const u = new URL(baseRedirect);
+      if (
+        reqPathname === "/api/auth/callback/discord" ||
+        reqPathname === "/api/auth/callback" ||
+        reqPathname === "/api/auth/discord/callback"
+      ) {
+        u.pathname = reqPathname;
+      }
+      return u.toString();
+    } catch {
+      return baseRedirect;
+    }
+  })();
   const destination = resolveDestination(verifiedState?.next, guildId);
 
   try {
