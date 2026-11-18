@@ -27,8 +27,8 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * Generates a verified LightCore Invoice (NO payment processed on website).
- * The user downloads the invoice and opens a ticket in the Support Server
+ * Creates a premium order summary. No payment is processed on the website.
+ * The user downloads the order summary and contacts the Support Server
  * where the owner provides the payment QR and activates Premium within 24h.
  */
 export async function POST(req: NextRequest) {
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Please sign in with Discord first so your invoice includes your verified Discord account details.",
+          "Please sign in with Discord first so the order summary can be associated with your account.",
       },
       { status: 401 },
     );
@@ -119,12 +119,12 @@ export async function POST(req: NextRequest) {
   ]);
 
   await sendDiscordLogEmbed({
-    title: `${inv.brandName} · New Premium Invoice`,
-    description: `\`@${inv.username}\` (\`${inv.userId}\`) generated an invoice and was directed to open a Support Server ticket.`,
+    title: `${inv.brandName} · New Premium Order Summary`,
+    description: `\`@${inv.username}\` (\`${inv.userId}\`) created an order summary and was directed to contact the Support Server.`,
     color: 0xef4444,
     timestamp: inv.createdAt,
     fields: [
-      { name: "Invoice ID", value: `\`${inv.invoiceId}\``, inline: true },
+      { name: "Order Reference", value: `\`${inv.invoiceId}\``, inline: true },
       { name: "Verify Code", value: `\`${inv.verificationCode}\``, inline: true },
       {
         name: "Amount",
