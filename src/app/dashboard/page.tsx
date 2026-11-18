@@ -6,6 +6,7 @@ import { DashboardClient } from "./DashboardClient";
 export const metadata: Metadata = {
   title: "Select a Server",
   description: `Choose a Discord server to configure ${site.name}'s Anti-Nuke, AutoMod, VoiceMaster, Tickets, Welcomer, and Logging.`,
+  robots: { index: false, follow: false },
 };
 
 export default function DashboardPage() {
