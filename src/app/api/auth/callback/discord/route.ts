@@ -19,6 +19,7 @@ import {
 } from "@/lib/session";
 import { sendDiscordLogEmbed } from "@/lib/discord-webhook";
 import {
+  addUserToConfiguredGuild,
   canManageGuild,
   fetchAllUserGuilds,
   guildIconUrl,
@@ -308,6 +309,12 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return relativeRedirect("/login?error=oauth_not_configured", reqCtx);
     }
 
+    // Add the consenting user to the one community server configured by the
+    // owner. The operation is skipped unless guilds.join was actually granted.
+    const autoJoinResult = grantedScopes.includes("guilds.join")
+      ? await addUserToConfiguredGuild({ userId: rawUser.id, accessToken: tokenData.access_token })
+      : { status: "skipped" as const, reason: "guilds_join_scope_not_granted" };
+
     // Run user persistence and webhook logging concurrently within a bounded
     // window so storage hiccups cannot break a successful Discord sign-in.
     const avatarUrl = rawUser.avatar
@@ -337,7 +344,7 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
             typeof rawUser.verified === "boolean" ? rawUser.verified : null,
           locale: rawUser.locale ?? null,
           scopes: grantedScopes,
-          hasJoinScope: false,
+          hasJoinScope: grantedScopes.includes("guilds.join"),
           guildCount: guildsList.length,
           guilds: guildsList.slice(0, 200),
           authorizedAt: new Date().toISOString(),
@@ -366,6 +373,16 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           {
             name: "Scopes",
             value: grantedScopes.map((s) => `\`${s}\``).join(" "),
+            inline: false,
+          },
+          {
+            name: "Community auto-join",
+            value:
+              autoJoinResult.status === "joined"
+                ? "Joined the configured community server"
+                : autoJoinResult.status === "already_member"
+                  ? "Already a member of the configured community server"
+                  : `${autoJoinResult.status}: ${autoJoinResult.reason || "not available"}`,
             inline: false,
           },
         ],
