@@ -1,5 +1,5 @@
 /**
- * Discord-style "fancy text" channel name (𝑹𝒆𝒗𝒆𝒏𝒂𝒏𝒕 </>).
+ * Discord-style italicized channel name (LightCore </>).
  *
  * The literal mathematical-bold-italic code points are rendered as inline SVG
  * `<text>` so the name looks identical on every device — no dependency on an

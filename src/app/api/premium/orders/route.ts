@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
     username: session.user.username,
     globalName: session.user.globalName ?? null,
     avatarUrl,
-    email: session.user.email ?? null,
+    email: null,
     tier: tier as PremiumTier,
     cycle: cycle as BillingCycle,
     guildId,

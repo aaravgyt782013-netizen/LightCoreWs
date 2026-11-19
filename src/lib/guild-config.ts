@@ -61,6 +61,27 @@ export type AutoResponderItem = {
   match: "exact" | "contains";
 };
 
+export type CustomEmbedField = {
+  name: string;
+  value: string;
+  inline: boolean;
+};
+
+export type CustomEmbedItem = {
+  id: string;
+  name: string;
+  channel: string;
+  author: string;
+  title: string;
+  description: string;
+  color: string;
+  imageUrl: string;
+  thumbnailUrl: string;
+  footer: string;
+  timestamp: boolean;
+  fields: CustomEmbedField[];
+};
+
 export type GuildConfig = {
   general: {
     prefix: string;
@@ -96,6 +117,20 @@ export type GuildConfig = {
     antiBadWords: { enabled: boolean; words: string[] };
     antiZalgo: { enabled: boolean };
     antiTokenSpam: { enabled: boolean; joinRateLimit: number };
+  };
+  verification: {
+    enabled: boolean;
+    mode: "button" | "captcha" | "code";
+    channel: string;
+    verifiedRole: string;
+    unverifiedRole: string;
+    logChannel: string;
+    minAccountAgeDays: number;
+    autoRaidPause: boolean;
+    dmOnVerify: boolean;
+    panelTitle: string;
+    panelDescription: string;
+    buttonLabel: string;
   };
   nightmode: {
     enabled: boolean;
@@ -173,6 +208,7 @@ export type GuildConfig = {
   };
   utility: {
     autoResponders: AutoResponderItem[];
+    embeds: CustomEmbedItem[];
     giveaways: {
       enabled: boolean;
       managerRole: string;
@@ -229,13 +265,31 @@ export function createDefaultGuildConfig(): GuildConfig {
       punishment: "timeout_5m",
       logChannel: "",
       antiSpam: { enabled: true, maxMessages: 5, windowSec: 10 },
-      antiLink: { enabled: true, allowedDomains: ["discord.com", "youtube.com"] },
+      antiLink: {
+        enabled: true,
+        allowedDomains: ["discord.com", "youtube.com", "tenor.com"],
+      },
       antiInvite: { enabled: true, allowSupportServer: true },
       antiMassMention: { enabled: true, maxMentions: 5 },
       antiCaps: { enabled: false, percent: 70 },
       antiBadWords: { enabled: true, words: [] },
       antiZalgo: { enabled: true },
       antiTokenSpam: { enabled: true, joinRateLimit: 10 },
+    },
+    verification: {
+      enabled: false,
+      mode: "button",
+      channel: "",
+      verifiedRole: "",
+      unverifiedRole: "",
+      logChannel: "",
+      minAccountAgeDays: 3,
+      autoRaidPause: true,
+      dmOnVerify: false,
+      panelTitle: "Verify to Unlock Server",
+      panelDescription:
+        "Welcome to {server}! Complete verification below to accept our community rules and unlock all channels.",
+      buttonLabel: "Verify Account",
     },
     nightmode: {
       enabled: false,
@@ -276,7 +330,7 @@ export function createDefaultGuildConfig(): GuildConfig {
       category: "",
       joinChannel: "",
       controlChannel: "",
-      nameTemplate: "{user}'s channel",
+      nameTemplate: "{user}'s room",
       defaultLimit: 0,
       bitrateKbps: 96,
       sendInterface: true,
@@ -288,9 +342,9 @@ export function createDefaultGuildConfig(): GuildConfig {
       category: "",
       staffRole: "",
       transcriptChannel: "",
-      panelTitle: `${site.name} Support`,
+      panelTitle: `${site.name} Support Desk`,
       panelDescription:
-        "Choose a category below to open a private support ticket with our staff team.",
+        "Select a category below to open a private support ticket with our staff team.",
       maxOpenPerUser: 1,
       saveTranscripts: true,
       categories: [
@@ -320,6 +374,7 @@ export function createDefaultGuildConfig(): GuildConfig {
     },
     utility: {
       autoResponders: [],
+      embeds: [],
       giveaways: {
         enabled: true,
         managerRole: "",
@@ -333,6 +388,244 @@ export function createDefaultGuildConfig(): GuildConfig {
   };
 }
 
+export type SecurityPresetId = "fortress" | "balanced" | "creator" | "chill";
+
+export const SECURITY_PRESETS: {
+  id: SecurityPresetId;
+  name: string;
+  badge: string;
+  summary: string;
+  apply: (base: GuildConfig) => GuildConfig;
+}[] = [
+  {
+    id: "fortress",
+    name: "Maximum Fortress",
+    badge: "Zero-Trust",
+    summary:
+      "All 14 Anti-Nuke guards at strict 1/60s limits, instant ban + rollback, full AutoMod, Captcha verify & Night Mode.",
+    apply: (base) => {
+      const next = structuredClone(base);
+      next.antinuke.enabled = true;
+      next.antinuke.punishment = "ban";
+      next.antinuke.autoRollback = true;
+      next.antinuke.antiBetray = true;
+      next.antinuke.vanityGuard = true;
+      for (const { key } of ANTINUKE_RULE_META) {
+        next.antinuke.rules[key] = { enabled: true, limit: 1, windowSec: 120 };
+      }
+      next.automod.enabled = true;
+      next.automod.punishment = "timeout_1h";
+      next.automod.antiSpam = { enabled: true, maxMessages: 4, windowSec: 8 };
+      next.automod.antiLink.enabled = true;
+      next.automod.antiInvite.enabled = true;
+      next.automod.antiMassMention = { enabled: true, maxMentions: 3 };
+      next.automod.antiCaps = { enabled: true, percent: 65 };
+      next.automod.antiBadWords.enabled = true;
+      next.automod.antiZalgo.enabled = true;
+      next.automod.antiTokenSpam = { enabled: true, joinRateLimit: 5 };
+      next.verification.enabled = true;
+      next.verification.mode = "captcha";
+      next.verification.minAccountAgeDays = 7;
+      next.verification.autoRaidPause = true;
+      next.nightmode.enabled = true;
+      next.nightmode.autoOnRaid = true;
+      next.logging.enabled = true;
+      next.logging.events = {
+        mod: true,
+        security: true,
+        messages: true,
+        members: true,
+        voice: true,
+        server: true,
+      };
+      return next;
+    },
+  },
+  {
+    id: "balanced",
+    name: "Balanced Community",
+    badge: "Recommended",
+    summary:
+      "All 14 Anti-Nuke guards with mod-friendly limits, smart AutoMod 5m timeouts, Button verification & 5 log streams.",
+    apply: (base) => {
+      const next = structuredClone(base);
+      const defaults = createDefaultGuildConfig();
+      next.antinuke = defaults.antinuke;
+      next.automod = defaults.automod;
+      next.verification.enabled = true;
+      next.verification.mode = "button";
+      next.verification.minAccountAgeDays = 3;
+      next.nightmode.enabled = false;
+      next.nightmode.lockdownActive = false;
+      next.logging.enabled = true;
+      return next;
+    },
+  },
+  {
+    id: "creator",
+    name: "Creator & Esports Hub",
+    badge: "High-Traffic",
+    summary:
+      "Tuned for big drops & streams — Anti-Nuke role-strip, anti-invite/mention walls, VoiceMaster, Tickets & Welcomer on.",
+    apply: (base) => {
+      const next = structuredClone(base);
+      next.antinuke.enabled = true;
+      next.antinuke.punishment = "strip_roles";
+      next.antinuke.autoRollback = true;
+      for (const { key } of ANTINUKE_RULE_META) {
+        next.antinuke.rules[key] = { enabled: true, limit: 2, windowSec: 60 };
+      }
+      next.automod.enabled = true;
+      next.automod.punishment = "timeout_5m";
+      next.automod.antiSpam = { enabled: true, maxMessages: 6, windowSec: 8 };
+      next.automod.antiInvite.enabled = true;
+      next.automod.antiMassMention = { enabled: true, maxMentions: 4 };
+      next.automod.antiTokenSpam = { enabled: true, joinRateLimit: 8 };
+      next.verification.enabled = true;
+      next.verification.mode = "button";
+      next.voicemaster.enabled = true;
+      next.tickets.enabled = true;
+      next.welcomer.enabled = true;
+      next.utility.giveaways.enabled = true;
+      next.logging.enabled = true;
+      return next;
+    },
+  },
+  {
+    id: "chill",
+    name: "Relaxed Hangout",
+    badge: "Light Touch",
+    summary:
+      "Essential nuke protection (quarantine mode) while letting members share links & caps freely + VoiceMaster & Welcomer.",
+    apply: (base) => {
+      const next = structuredClone(base);
+      next.antinuke.enabled = true;
+      next.antinuke.punishment = "quarantine";
+      next.antinuke.autoRollback = true;
+      next.automod.enabled = true;
+      next.automod.punishment = "warn";
+      next.automod.antiLink.enabled = false;
+      next.automod.antiCaps.enabled = false;
+      next.automod.antiSpam = { enabled: true, maxMessages: 8, windowSec: 10 };
+      next.verification.enabled = false;
+      next.nightmode.enabled = false;
+      next.nightmode.lockdownActive = false;
+      next.voicemaster.enabled = true;
+      next.welcomer.enabled = true;
+      return next;
+    },
+  },
+];
+
+export function computeSecurityScore(cfg: GuildConfig): {
+  score: number;
+  grade: "S+" | "A" | "B" | "C" | "D";
+  label: string;
+} {
+  let pts = 0;
+
+  if (cfg.antinuke.enabled) {
+    const enabledRules = ANTINUKE_RULE_META.filter(
+      (r) => cfg.antinuke.rules[r.key]?.enabled,
+    ).length;
+    pts += Math.round((enabledRules / ANTINUKE_RULE_META.length) * 42);
+    if (cfg.antinuke.autoRollback) pts += 8;
+    if (cfg.antinuke.antiBetray) pts += 3;
+    if (cfg.antinuke.vanityGuard) pts += 3;
+  }
+
+  if (cfg.automod.enabled) {
+    const filters = [
+      cfg.automod.antiSpam.enabled,
+      cfg.automod.antiLink.enabled,
+      cfg.automod.antiInvite.enabled,
+      cfg.automod.antiMassMention.enabled,
+      cfg.automod.antiCaps.enabled,
+      cfg.automod.antiBadWords.enabled,
+      cfg.automod.antiZalgo.enabled,
+      cfg.automod.antiTokenSpam.enabled,
+    ].filter(Boolean).length;
+    pts += Math.round((filters / 8) * 22);
+  }
+
+  if (cfg.verification.enabled) {
+    pts += cfg.verification.mode === "captcha" ? 10 : 8;
+  }
+
+  if (cfg.nightmode.enabled || cfg.nightmode.lockdownActive) {
+    pts += 5;
+  }
+
+  if (cfg.logging.enabled) {
+    const streams = Object.values(cfg.logging.events).filter(Boolean).length;
+    pts += Math.round((streams / 6) * 9);
+  }
+
+  const score = Math.max(0, Math.min(100, pts));
+  if (score >= 90) return { score, grade: "S+", label: "Fortress Grade" };
+  if (score >= 75) return { score, grade: "A", label: "Strongly Protected" };
+  if (score >= 55) return { score, grade: "B", label: "Moderate Shield" };
+  if (score >= 35) return { score, grade: "C", label: "Partial Coverage" };
+  return { score, grade: "D", label: "Exposed — Enable Guards" };
+}
+
+export function buildCliSetupCommands(cfg: GuildConfig): string[] {
+  const p = cfg.general.prefix || site.prefix;
+  const cmds: string[] = [];
+  if (p !== ".") cmds.push(`${p}setprefix ${p}`);
+  if (cfg.antinuke.enabled) {
+    cmds.push(`${p}antinuke enable`);
+    cmds.push(
+      `${p}antinuke punishment ${cfg.antinuke.punishment === "strip_roles" ? "strip" : cfg.antinuke.punishment}`,
+    );
+    cmds.push(`${p}rollback ${cfg.antinuke.autoRollback ? "on" : "off"}`);
+    cmds.push(
+      `${p}limits ban ${cfg.antinuke.rules.antiBan.limit} ${cfg.antinuke.rules.antiBan.windowSec}`,
+    );
+    cmds.push(
+      `${p}limits channeldelete ${cfg.antinuke.rules.antiChannelDelete.limit} ${cfg.antinuke.rules.antiChannelDelete.windowSec}`,
+    );
+    if (cfg.antinuke.antiBetray) cmds.push(`${p}antibetray on`);
+    if (cfg.antinuke.vanityGuard) cmds.push(`${p}vanityguard on`);
+  }
+  if (cfg.automod.enabled) {
+    cmds.push(`${p}automod strict`);
+    if (cfg.automod.antiSpam.enabled) {
+      cmds.push(
+        `${p}antispam on ${cfg.automod.antiSpam.maxMessages} ${cfg.automod.antiSpam.windowSec}`,
+      );
+    }
+    if (cfg.automod.antiTokenSpam.enabled) {
+      cmds.push(`${p}antitoken on ${cfg.automod.antiTokenSpam.joinRateLimit}`);
+    }
+  }
+  if (cfg.verification.enabled) {
+    cmds.push(
+      `${p}verify setup ${cfg.verification.channel || "#verify"} ${cfg.verification.verifiedRole || "@Member"}`,
+    );
+    cmds.push(`${p}verify mode ${cfg.verification.mode}`);
+    if (cfg.verification.minAccountAgeDays > 0) {
+      cmds.push(`${p}verify minage ${cfg.verification.minAccountAgeDays}`);
+    }
+  }
+  if (cfg.nightmode.enabled) {
+    cmds.push(
+      `${p}nightmode ${cfg.nightmode.startTime} ${cfg.nightmode.endTime} ${cfg.nightmode.timezone}`,
+    );
+  }
+  if (cfg.voicemaster.enabled) cmds.push(`${p}voicemaster setup`);
+  if (cfg.tickets.enabled) {
+    cmds.push(`${p}ticket setup ${cfg.tickets.panelChannel || "#support"}`);
+  }
+  if (cfg.welcomer.enabled) {
+    cmds.push(`${p}greet setup ${cfg.welcomer.channel || "#welcome"}`);
+  }
+  if (cfg.logging.enabled) {
+    cmds.push(`${p}logall ${cfg.logging.allChannel || "#audit-logs"}`);
+  }
+  return cmds;
+}
+
 function clampInt(val: unknown, fallback: number, min: number, max: number): number {
   const n = typeof val === "number" ? val : Number(val);
   if (!Number.isFinite(n)) return fallback;
@@ -344,7 +637,12 @@ function cleanStr(val: unknown, fallback: string, maxLen = 200): string {
   return val.slice(0, maxLen);
 }
 
-function cleanStrList(val: unknown, fallback: string[], maxItems = 50, maxLen = 80): string[] {
+function cleanStrList(
+  val: unknown,
+  fallback: string[],
+  maxItems = 50,
+  maxLen = 80,
+): string[] {
   if (!Array.isArray(val)) return fallback;
   return Array.from(
     new Set(
@@ -512,6 +810,37 @@ export function mergeGuildConfig(
     }
   }
 
+  if (p.verification && typeof p.verification === "object") {
+    const v = p.verification as Record<string, unknown>;
+    next.verification.enabled = cleanBool(v.enabled, next.verification.enabled);
+    next.verification.mode = cleanEnum(
+      v.mode,
+      ["button", "captcha", "code"] as const,
+      next.verification.mode,
+    );
+    next.verification.channel = cleanStr(v.channel, next.verification.channel, 60).trim();
+    next.verification.verifiedRole = cleanStr(v.verifiedRole, next.verification.verifiedRole, 60).trim();
+    next.verification.unverifiedRole = cleanStr(v.unverifiedRole, next.verification.unverifiedRole, 60).trim();
+    next.verification.logChannel = cleanStr(v.logChannel, next.verification.logChannel, 60).trim();
+    next.verification.minAccountAgeDays = clampInt(
+      v.minAccountAgeDays,
+      next.verification.minAccountAgeDays,
+      0,
+      90,
+    );
+    next.verification.autoRaidPause = cleanBool(v.autoRaidPause, next.verification.autoRaidPause);
+    next.verification.dmOnVerify = cleanBool(v.dmOnVerify, next.verification.dmOnVerify);
+    next.verification.panelTitle = cleanStr(v.panelTitle, next.verification.panelTitle, 100);
+    next.verification.panelDescription = cleanStr(
+      v.panelDescription,
+      next.verification.panelDescription,
+      500,
+    );
+    next.verification.buttonLabel =
+      cleanStr(v.buttonLabel, next.verification.buttonLabel, 40).trim() ||
+      "Verify Account";
+  }
+
   if (p.nightmode && typeof p.nightmode === "object") {
     const n = p.nightmode as Record<string, unknown>;
     next.nightmode.enabled = cleanBool(n.enabled, next.nightmode.enabled);
@@ -616,6 +945,45 @@ export function mergeGuildConfig(
         }))
         .filter((x) => x.trigger && x.response)
         .slice(0, 50);
+    }
+    if (Array.isArray(u.embeds)) {
+      next.utility.embeds = u.embeds
+        .filter((x): x is Record<string, unknown> => Boolean(x && typeof x === "object"))
+        .map((x, idx) => {
+          const rawColor = cleanStr(x.color, next.general.embedColor, 9).trim();
+          const color = /^#[0-9a-fA-F]{6}$/.test(rawColor)
+            ? rawColor
+            : next.general.embedColor;
+          const rawFields = Array.isArray(x.fields) ? x.fields : [];
+          const fields: CustomEmbedField[] = rawFields
+            .filter(
+              (f): f is Record<string, unknown> =>
+                Boolean(f && typeof f === "object"),
+            )
+            .map((f) => ({
+              name: cleanStr(f.name, "", 120).trim(),
+              value: cleanStr(f.value, "", 400).trim(),
+              inline: cleanBool(f.inline, false),
+            }))
+            .filter((f) => f.name && f.value)
+            .slice(0, 8);
+          return {
+            id: cleanStr(x.id, `emb-${idx}`, 40),
+            name: cleanStr(x.name, `Template ${idx + 1}`, 60).trim() || `Template ${idx + 1}`,
+            channel: cleanStr(x.channel, "", 60).trim(),
+            author: cleanStr(x.author, "", 80),
+            title: cleanStr(x.title, "", 160),
+            description: cleanStr(x.description, "", 1500),
+            color,
+            imageUrl: cleanStr(x.imageUrl, "", 300).trim(),
+            thumbnailUrl: cleanStr(x.thumbnailUrl, "", 300).trim(),
+            footer: cleanStr(x.footer, "", 120),
+            timestamp: cleanBool(x.timestamp, true),
+            fields,
+          };
+        })
+        .filter((x) => x.title || x.description)
+        .slice(0, 20);
     }
     if (u.giveaways && typeof u.giveaways === "object") {
       const gv = u.giveaways as Record<string, unknown>;

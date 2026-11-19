@@ -17,7 +17,37 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const session = unsealSession(req.cookies.get(SESSION_COOKIE)?.value);
   if (!session) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    // Return 200 for lite navbar session checks to avoid noisy 401 console errors for guests
+    const lite = new URL(req.url).searchParams.get("lite") === "1";
+    return NextResponse.json(
+      { authenticated: false },
+      {
+        status: lite ? 200 : 401,
+        headers: { "Cache-Control": "private, no-store, max-age=0" },
+      },
+    );
+  }
+
+  const avatarUrl = session.user.avatar
+    ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
+    : null;
+  const isOwner = isOwnerId(session.user.id);
+
+  // Fast lightweight session check for global Navbar (no external Discord API round-trip)
+  if (new URL(req.url).searchParams.get("lite") === "1") {
+    return NextResponse.json(
+      {
+        authenticated: true,
+        user: {
+          id: session.user.id,
+          username: session.user.username,
+          globalName: session.user.globalName,
+          avatarUrl,
+          isOwner,
+        },
+      },
+      { headers: { "Cache-Control": "private, no-store, max-age=0" } },
+    );
   }
 
   const [rawGuilds, botGuilds, premium, siteCfg] = await Promise.all([
@@ -27,7 +57,6 @@ export async function GET(req: NextRequest) {
     getSiteConfig().catch(() => null),
   ]);
 
-  // Persist/refresh this signed-in user so the Owner Panel always lists every active login.
   await ensureSessionUserRecorded(session, rawGuilds).catch(() => {});
 
   const allGuilds = (rawGuilds ?? [])
@@ -51,22 +80,20 @@ export async function GET(req: NextRequest) {
 
   const guilds = allGuilds.filter((g) => g.canManage);
 
-  const avatarUrl = session.user.avatar
-    ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
-    : null;
-
   return NextResponse.json(
     {
       authenticated: true,
       user: {
-        ...session.user,
+        id: session.user.id,
+        username: session.user.username,
+        globalName: session.user.globalName,
         avatarUrl,
-        isOwner: isOwnerId(session.user.id),
+        isOwner,
       },
       premium,
       guilds,
       allGuilds,
     },
-    { headers: { "Cache-Control": "no-store, max-age=0" } },
+    { headers: { "Cache-Control": "private, no-store, max-age=0" } },
   );
 }

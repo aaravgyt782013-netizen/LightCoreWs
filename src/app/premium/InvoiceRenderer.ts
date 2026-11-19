@@ -1,6 +1,7 @@
 import type { PremiumInvoice } from "@/lib/premium-plans";
 import type { SiteConfig } from "@/lib/site-config";
 import { getResolvedAccentHex } from "@/lib/site-config";
+import { normalizeSupportUrl } from "@/lib/site";
 
 export function formatInvoiceDateTime(iso: string): {
   dateStr: string;
@@ -75,7 +76,7 @@ export function buildInvoicePlainText(
       : []),
     `------------------------------------------------`,
     `NEXT STEPS TO ACTIVATE PREMIUM:`,
-    `1. Join Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
+    `1. Join Support Server: ${normalizeSupportUrl(inv.supportUrl || siteCfg.supportUrl)}`,
     `2. Open a Support Ticket and share this order summary.`,
     `3. The support team will explain the available payment method.`,
     `4. The owner will confirm activation after payment is verified.`,
@@ -464,7 +465,7 @@ export async function downloadInvoicePng(
   ctx.fillText("ORDER SUMMARY · SUPPORT PROCESS", 88, cursorY + 34);
 
   const steps = [
-    `1. Open a ticket in our Support Server: ${inv.supportUrl || siteCfg.supportUrl}`,
+    `1. Open a ticket in our Support Server: ${normalizeSupportUrl(inv.supportUrl || siteCfg.supportUrl)}`,
     `2. Share this order summary (${inv.invoiceId}) inside your ticket.`,
     `3. The Owner will provide the payment instructions in your ticket.`,
     `4. The owner will confirm activation after payment is verified.`,

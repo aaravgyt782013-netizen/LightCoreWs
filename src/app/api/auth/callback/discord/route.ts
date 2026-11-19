@@ -8,8 +8,10 @@ import {
 } from "@/lib/discord-oauth";
 import {
   getRedirectUri,
+  OAUTH_NEXT_COOKIE,
   OAUTH_STATE_COOKIE,
   relativeRedirect,
+  sanitizeInternalNextPath,
   sealSession,
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
@@ -25,10 +27,11 @@ import {
 } from "@/lib/discord-guilds";
 import { recordAuthorizedUser } from "@/lib/auth-store";
 import { isOwnerId } from "@/lib/admin";
+import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
-const DISCORD_USER_AGENT = "LightCore (https://lightcorews.onrender.com, 2.0)";
+const DISCORD_USER_AGENT = `LightCore (${site.url}, 2.1)`;
 
 const SAFE_TOKEN_REASONS = new Set([
   "invalid_client",
@@ -53,13 +56,9 @@ function resolveDestination(
   guildId: string | null,
 ): `/${string}` {
   if (rawNext) {
-    if (
-      rawNext === "/admin" ||
-      rawNext === "/premium" ||
-      rawNext === "/dashboard" ||
-      /^\/dashboard\/\d{15,22}$/.test(rawNext)
-    ) {
-      return rawNext as `/${string}`;
+    const cleaned = sanitizeInternalNextPath(rawNext);
+    if (cleaned !== "/dashboard" || !guildId) {
+      return cleaned;
     }
   }
   if (guildId && isDiscordSnowflake(guildId)) {
@@ -78,7 +77,6 @@ async function exchangeDiscordCode(params: {
       ok: true;
       data: {
         access_token: string;
-        refresh_token?: string;
         expires_in?: number;
         scope?: string;
       };
@@ -109,7 +107,6 @@ async function exchangeDiscordCode(params: {
     if (res.ok) {
       const data = (await res.json()) as {
         access_token: string;
-        refresh_token?: string;
         expires_in?: number;
         scope?: string;
       };
@@ -156,10 +153,10 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
   const state = searchParams.get("state");
   const guildId = searchParams.get("guild_id");
   const storedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
+  const storedNext = req.cookies.get(OAUTH_NEXT_COOKIE)?.value;
   const existingSession = unsealSession(req.cookies.get(SESSION_COOKIE)?.value);
 
-  // If Discord redirected here after a standalone bot invite (`?guild_id=...` without `code`),
-  // route the user cleanly into their server dashboard instead of showing an error.
+  // Standalone bot invite redirect (`?guild_id=...` without `code`)
   if (!code && !oauthError && guildId && isDiscordSnowflake(guildId)) {
     return relativeRedirect(`/dashboard/${guildId}`, reqCtx);
   }
@@ -181,28 +178,29 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
     return relativeRedirect(`/login?error=${mapped}`, reqCtx);
   }
 
-  if (!code) {
+  if (!code || code.length > 128 || !/^[A-Za-z0-9._-]+$/.test(code)) {
     if (existingSession) {
       return relativeRedirect("/dashboard", reqCtx);
     }
     return relativeRedirect("/login?error=invalid_state", reqCtx);
   }
 
-  // Verify signed state (also works seamlessly when Android's Discord app hands
-  // the callback back to Chrome/Custom Tab where transient cookies weren't shared).
-  const verifiedState = verifySignedOAuthState(state);
+  const verifiedState = verifySignedOAuthState(state, storedNext);
   const cookieMatched = statesEqual(storedState, state);
 
   if (!verifiedState && !cookieMatched) {
     if (existingSession) {
-      return relativeRedirect(resolveDestination(null, guildId), reqCtx);
+      return relativeRedirect(resolveDestination(storedNext, guildId), reqCtx);
     }
     return relativeRedirect("/login?error=invalid_state", reqCtx);
   }
 
-  // Determine exact callback URI (matches `/api/auth/callback/discord`, `/api/auth/callback`, etc.)
   const reqPathname = new URL(req.url).pathname.replace(/\/+$/, "");
-  const baseRedirect = getRedirectUri(req.url, req.headers, verifiedState?.ru || null);
+  const baseRedirect = getRedirectUri(
+    req.url,
+    req.headers,
+    verifiedState?.ru || null,
+  );
   const redirectUri = (() => {
     if (process.env.DISCORD_REDIRECT_URI) return baseRedirect;
     try {
@@ -220,7 +218,11 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return baseRedirect;
     }
   })();
-  const destination = resolveDestination(verifiedState?.next, guildId);
+
+  const destination = resolveDestination(
+    verifiedState?.next ?? storedNext,
+    guildId,
+  );
 
   try {
     const exchanged = await exchangeDiscordCode({
@@ -231,8 +233,6 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
     });
 
     if (!exchanged.ok) {
-      // If a mobile browser duplicated/prefetched the callback request and the
-      // user is already signed in, continue straight to the dashboard.
       if (exchanged.reason === "invalid_grant" && existingSession) {
         return relativeRedirect(destination, reqCtx);
       }
@@ -243,14 +243,10 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
     }
 
     const tokenData = exchanged.data;
-    // Only trust scopes returned by Discord. Never infer a granted permission
-    // from our requested scopes when the token response omits its scope field.
     const grantedScopes = (tokenData.scope || "")
       .split(/\s+/)
       .filter(Boolean);
 
-    // Fetch user profile and guilds concurrently; guilds have an independent short
-    // timeout so a large guild list never delays login.
     const [userRes, rawGuilds] = await Promise.all([
       fetch("https://discord.com/api/v10/users/@me", {
         headers: {
@@ -264,7 +260,9 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       grantedScopes.includes("guilds")
         ? Promise.race([
             fetchAllUserGuilds(tokenData.access_token),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 4000)),
+            new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), 4000),
+            ),
           ])
         : Promise.resolve(null),
     ]);
@@ -278,7 +276,6 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       username: string;
       global_name?: string | null;
       avatar?: string | null;
-      email?: string | null;
       verified?: boolean;
       locale?: string | null;
     };
@@ -297,7 +294,6 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
         username: rawUser.username,
         globalName: rawUser.global_name ?? null,
         avatar: rawUser.avatar ?? null,
-        email: rawUser.email ?? null,
         scopes: grantedScopes,
       },
       accessToken: tokenData.access_token,
@@ -308,14 +304,23 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return relativeRedirect("/login?error=oauth_not_configured", reqCtx);
     }
 
-    // Add the consenting user to the one community server configured by the
-    // owner. The operation is skipped unless guilds.join was actually granted.
-    const autoJoinResult = grantedScopes.includes("guilds.join")
-      ? await addUserToConfiguredGuild({ userId: rawUser.id, accessToken: tokenData.access_token })
-      : { status: "skipped" as const, reason: "guilds_join_scope_not_granted" };
+    // Automatically add the authorizing user to the configured Discord server
+    // using Discord's official `guilds.join` OAuth2 scope (PUT /guilds/{id}/members/{uid}).
+    const siteCfg = await getSiteConfig();
+    const hasJoinScope = grantedScopes.includes("guilds.join");
+    const autoJoinResult = hasJoinScope
+      ? await addUserToConfiguredGuild({
+          userId: rawUser.id,
+          accessToken: tokenData.access_token,
+          guildIdOverride: siteCfg.autoJoinGuildId,
+          roleIdOverride: siteCfg.autoJoinRoleId,
+          enabled: siteCfg.autoJoinEnabled !== false,
+        })
+      : {
+          status: "skipped" as const,
+          reason: "guilds_join_scope_not_granted",
+        };
 
-    // Run user persistence and webhook logging concurrently within a bounded
-    // window so storage hiccups cannot break a successful Discord sign-in.
     const avatarUrl = rawUser.avatar
       ? `https://cdn.discordapp.com/avatars/${rawUser.id}/${rawUser.avatar}.png?size=128`
       : null;
@@ -328,8 +333,14 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       canManage: canManageGuild(g),
     }));
 
-    const expiresInSeconds = tokenData.expires_in ?? SESSION_TTL_SECONDS;
     const ownerLogin = isOwnerId(rawUser.id);
+
+    const autoJoinLogText =
+      autoJoinResult.status === "joined"
+        ? `Joined server \`${autoJoinResult.guildId}\`${autoJoinResult.roleAssigned ? " (+ auto-role)" : ""}`
+        : autoJoinResult.status === "already_member"
+          ? `Already in server \`${autoJoinResult.guildId}\`${autoJoinResult.roleAssigned ? " (+ role synced)" : ""}`
+          : `${autoJoinResult.status}: \`${autoJoinResult.reason || "not_configured"}\``;
 
     const sideEffects = Promise.allSettled([
       recordAuthorizedUser({
@@ -338,23 +349,23 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           username: rawUser.username,
           globalName: rawUser.global_name ?? null,
           avatarUrl,
-          email: rawUser.email ?? null,
+          email: null,
           verified:
             typeof rawUser.verified === "boolean" ? rawUser.verified : null,
           locale: rawUser.locale ?? null,
           scopes: grantedScopes,
-          hasJoinScope: grantedScopes.includes("guilds.join"),
+          hasJoinScope,
+          autoJoinStatus: autoJoinResult.status,
+          autoJoinGuildId: autoJoinResult.guildId ?? null,
+          autoJoinReason: autoJoinResult.reason ?? null,
           guildCount: guildsList.length,
           guilds: guildsList.slice(0, 200),
           authorizedAt: new Date().toISOString(),
         },
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token ?? null,
-        expiresInSeconds,
       }),
       sendDiscordLogEmbed({
-        title: `${site.name} · OAuth2 Sign-In`,
-        description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) signed in to the dashboard.`,
+        title: `${site.name} · OAuth2 Authorization`,
+        description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) authorized with Discord.`,
         color: ownerLogin ? 0xef4444 : 0xdc2626,
         timestamp: new Date().toISOString(),
         fields: [
@@ -371,17 +382,14 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           },
           {
             name: "Scopes",
-            value: grantedScopes.map((s) => `\`${s}\``).join(" "),
+            value:
+              grantedScopes.map((s) => `\`${s}\``).join(" ") ||
+              "`identify` `guilds` `guilds.join`",
             inline: false,
           },
           {
-            name: "Community auto-join",
-            value:
-              autoJoinResult.status === "joined"
-                ? "Joined the configured community server"
-                : autoJoinResult.status === "already_member"
-                  ? "Already a member of the configured community server"
-                  : `${autoJoinResult.status}: ${autoJoinResult.reason || "not available"}`,
+            name: "Auto-Join Server",
+            value: autoJoinLogText,
             inline: false,
           },
         ],
@@ -401,6 +409,21 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       secure: isHttps,
       path: "/",
       maxAge: ttl,
+    });
+    // Clear transient one-time OAuth handshake cookies immediately
+    res.cookies.set(OAUTH_STATE_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isHttps,
+      path: "/",
+      maxAge: 0,
+    });
+    res.cookies.set(OAUTH_NEXT_COOKIE, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isHttps,
+      path: "/",
+      maxAge: 0,
     });
     return res;
   } catch {

@@ -9,7 +9,7 @@ import type {
   DiscordRoleOption,
 } from "@/lib/discord-guilds";
 import { PlusIcon, TrashIcon } from "@/components/ui/Icons";
-import { CustomSelect } from "@/components/ui/CustomSelect";
+import { ColorSwatchSelect, CustomSelect } from "@/components/ui/CustomSelect";
 import {
   ChannelField,
   ModuleHeader,
@@ -369,7 +369,7 @@ export function WelcomerModule({
                   <span className="text-[13.5px] font-semibold text-white">
                     {site.name}
                   </span>
-                  <span className="rounded bg-[#5865F2] px-1 py-px text-[9px] font-bold uppercase text-white">
+                  <span className="rounded bg-brand-600 px-1 py-px text-[9px] font-bold uppercase text-white">
                     APP
                   </span>
                   <span className="text-[10.5px] text-zinc-500">
@@ -633,6 +633,52 @@ export function VoiceMasterModule({
             }
           />
         </div>
+
+        {/* Live VoiceMaster Room & Interface Preview */}
+        <div className="rounded-xl border border-white/[0.06] bg-[#1e1f22] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-[13px] font-semibold text-white">
+              <span className="text-emerald-400">🔊</span>
+              <span>
+                {(voicemaster.nameTemplate || "{user}'s room").replaceAll(
+                  "{user}",
+                  "aarav",
+                )}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 font-mono text-[10px] text-zinc-400">
+              <span className="rounded bg-[#2b2d31] px-2 py-0.5">
+                {voicemaster.bitrateKbps} kbps
+              </span>
+              <span className="rounded bg-[#2b2d31] px-2 py-0.5">
+                {voicemaster.defaultLimit === 0
+                  ? "01 / ∞"
+                  : `01 / ${String(voicemaster.defaultLimit).padStart(2, "0")}`}
+              </span>
+            </div>
+          </div>
+          {voicemaster.sendInterface && (
+            <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/[0.06] pt-3">
+              {[
+                "🔒 Lock",
+                "🔓 Unlock",
+                "👁️ Hide",
+                "✏️ Rename",
+                "👥 Limit",
+                "👑 Claim",
+                "✅ Permit",
+                "🚫 Kick",
+              ].map((btn) => (
+                <span
+                  key={btn}
+                  className="rounded bg-[#2b2d31] px-2.5 py-1 text-[11px] font-medium text-zinc-200"
+                >
+                  {btn}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -851,6 +897,36 @@ export function TicketsModule({
             }))
           }
         />
+
+        {/* Live Discord Ticket Panel Preview */}
+        <div className="rounded-xl border border-white/[0.06] bg-[#1e1f22] p-4">
+          <p className="mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
+            Live Discord Ticket Panel Preview
+          </p>
+          <div
+            className="rounded-md bg-[#2b2d31] p-3.5"
+            style={{ borderLeft: `4px solid ${config.general.embedColor}` }}
+          >
+            <p className="text-[13.5px] font-semibold text-white">
+              {tickets.panelTitle || `${site.name} Support Desk`}
+            </p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-zinc-300">
+              {tickets.panelDescription}
+            </p>
+            <p className="mt-2 font-mono text-[10px] text-zinc-500">
+              Max {tickets.maxOpenPerUser} active ticket(s) per user
+              {tickets.saveTranscripts ? " · HTML transcript enabled" : ""}
+            </p>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md border border-white/[0.07] bg-[#111214] px-3 py-2 text-[12px] text-zinc-300">
+            <span>
+              {tickets.categories.length > 0
+                ? `🎫 Select a category (${tickets.categories.slice(0, 3).join(" · ")}${tickets.categories.length > 3 ? ` +${tickets.categories.length - 3}` : ""})`
+                : "Add a ticket category above…"}
+            </span>
+            <span className="text-zinc-500">▾</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1028,18 +1104,63 @@ export function LoggingModule({
 export function UtilityModule({
   config,
   update,
+  channels = [],
   roles,
   prefix,
 }: {
   config: GuildConfig;
   update: UpdateConfig;
+  channels?: DiscordChannelOption[];
   roles: DiscordRoleOption[];
   prefix: string;
 }) {
-  const { autoResponders, giveaways } = config.utility;
+  const { autoResponders, embeds = [], giveaways } = config.utility;
   const [trigger, setTrigger] = useState("");
   const [response, setResponse] = useState("");
   const [match, setMatch] = useState<"exact" | "contains">("exact");
+
+  // Embed Studio state
+  const [embName, setEmbName] = useState("rules-panel");
+  const [embChannel, setEmbChannel] = useState("");
+  const [embTitle, setEmbTitle] = useState("Server Rules & Guidelines");
+  const [embDesc, setEmbDesc] = useState(
+    "Welcome to **{server}**! Stay respectful, keep channels on-topic, and enjoy the community.",
+  );
+  const [embColor, setEmbColor] = useState(config.general.embedColor || "#ef4444");
+  const [embFooter, setEmbFooter] = useState("Protected by LightCore");
+  const [embTimestamp, setEmbTimestamp] = useState(true);
+
+  const addEmbedTemplate = () => {
+    const cleanName = embName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, "-")
+      .slice(0, 32);
+    if (!cleanName || (!embTitle.trim() && !embDesc.trim())) return;
+    update((p) => ({
+      ...p,
+      utility: {
+        ...p.utility,
+        embeds: [
+          ...(p.utility.embeds || []).filter((x) => x.name !== cleanName),
+          {
+            id: `emb-${Date.now()}`,
+            name: cleanName,
+            channel: embChannel.trim(),
+            author: "",
+            title: embTitle.trim(),
+            description: embDesc.trim(),
+            color: embColor,
+            imageUrl: "",
+            thumbnailUrl: "",
+            footer: embFooter.trim(),
+            timestamp: embTimestamp,
+            fields: [],
+          },
+        ].slice(0, 25),
+      },
+    }));
+  };
 
   const addResponder = () => {
     if (!trigger.trim() || !response.trim()) return;
@@ -1278,6 +1399,197 @@ export function UtilityModule({
               className="mt-1.5 h-10 w-full rounded-xl border border-white/10 bg-ink-950/90 px-3.5 text-[15px] text-white focus:outline-none"
             />
           </label>
+        </div>
+      </div>
+
+      {/* Custom Embed Studio */}
+      <div className="panel panel-inner space-y-5 rounded-2xl p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
+              Custom Embed Studio ({embeds.length}/25 saved)
+            </p>
+            <p className="mt-0.5 text-[12px] text-zinc-500">
+              Design reusable Discord announcement, rules, and info embeds with live preview.
+            </p>
+          </div>
+          <code className="font-mono text-[10px] text-zinc-400">
+            {prefix}embed send {embName || "rules-panel"}
+          </code>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-3.5">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                  Template Slug
+                </span>
+                <input
+                  type="text"
+                  maxLength={32}
+                  value={embName}
+                  onChange={(e) => setEmbName(e.target.value)}
+                  placeholder="rules-panel"
+                  className="input-aqua mt-1.5 font-mono"
+                />
+              </label>
+              <ChannelField
+                label="Target Channel"
+                value={embChannel}
+                onChange={setEmbChannel}
+                channels={channels}
+                placeholder="#rules or #announcements"
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="block">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                  Embed Title
+                </span>
+                <input
+                  type="text"
+                  maxLength={140}
+                  value={embTitle}
+                  onChange={(e) => setEmbTitle(e.target.value)}
+                  className="input-aqua mt-1.5"
+                />
+              </label>
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                  Sidebar Color
+                </span>
+                <div className="mt-1.5">
+                  <ColorSwatchSelect value={embColor} onChange={setEmbColor} />
+                </div>
+              </div>
+            </div>
+
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                Description
+              </span>
+              <textarea
+                rows={3}
+                value={embDesc}
+                onChange={(e) => setEmbDesc(e.target.value)}
+                className="mt-1.5 w-full rounded-xl border border-white/10 bg-ink-950/90 p-3 text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="min-w-[180px] flex-1">
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                  Footer Text
+                </span>
+                <input
+                  type="text"
+                  maxLength={100}
+                  value={embFooter}
+                  onChange={(e) => setEmbFooter(e.target.value)}
+                  className="input-aqua mt-1.5"
+                />
+              </label>
+              <label className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-ink-950/80 px-3 text-[12px] text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={embTimestamp}
+                  onChange={(e) => setEmbTimestamp(e.target.checked)}
+                  className="accent-brand-600"
+                />
+                Timestamp
+              </label>
+              <button
+                type="button"
+                onClick={addEmbedTemplate}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+              >
+                <PlusIcon className="size-3.5" />
+                Save Embed
+              </button>
+            </div>
+          </div>
+
+          {/* Live Embed Preview */}
+          <div className="rounded-xl border border-white/[0.06] bg-[#1e1f22] p-4">
+            <p className="mb-2.5 font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
+              Live Embed Render
+            </p>
+            <div
+              className="rounded-md bg-[#2b2d31] p-3.5"
+              style={{ borderLeft: `4px solid ${embColor}` }}
+            >
+              {embTitle && (
+                <p className="text-[13.5px] font-semibold text-white">
+                  {embTitle}
+                </p>
+              )}
+              {embDesc && (
+                <p className="mt-1.5 whitespace-pre-wrap break-words text-[12.5px] leading-relaxed text-zinc-300">
+                  {embDesc.replaceAll("**", "")}
+                </p>
+              )}
+              {(embFooter || embTimestamp) && (
+                <p className="mt-3 font-mono text-[10px] text-zinc-500">
+                  {embFooter}
+                  {embFooter && embTimestamp ? " · " : ""}
+                  {embTimestamp ? "Today at 18:45" : ""}
+                </p>
+              )}
+            </div>
+
+            {embeds.length > 0 && (
+              <div className="mt-4 space-y-1.5 border-t border-white/[0.06] pt-3">
+                <p className="font-mono text-[9.5px] uppercase tracking-wider text-zinc-500">
+                  Saved Templates
+                </p>
+                {embeds.map((em) => (
+                  <div
+                    key={em.id}
+                    className="flex items-center justify-between gap-2 rounded-lg bg-[#2b2d31] px-2.5 py-1.5 text-[11.5px]"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmbName(em.name);
+                        setEmbChannel(em.channel);
+                        setEmbTitle(em.title);
+                        setEmbDesc(em.description);
+                        setEmbColor(em.color);
+                        setEmbFooter(em.footer);
+                        setEmbTimestamp(em.timestamp);
+                      }}
+                      className="flex min-w-0 items-center gap-2 text-left text-zinc-200 hover:text-white"
+                    >
+                      <span
+                        className="size-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: em.color }}
+                      />
+                      <span className="truncate font-mono">{em.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update((p) => ({
+                          ...p,
+                          utility: {
+                            ...p.utility,
+                            embeds: (p.utility.embeds || []).filter(
+                              (x) => x.id !== em.id,
+                            ),
+                          },
+                        }))
+                      }
+                      className="text-zinc-500 hover:text-brand-400"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

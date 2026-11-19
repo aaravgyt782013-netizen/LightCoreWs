@@ -1,14 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { faqs, modules } from "@/lib/site";
 import { Reveal } from "@/components/ui/Reveal";
+import { openCommandPalette } from "@/components/ui/CommandPalette";
+import { ArrowRight, SearchIcon } from "@/components/ui/Icons";
 
 export function Faq() {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="relative py-22 sm:py-28">
+    <section id="faq" className="relative py-20 sm:py-28">
       <div className="container-x">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,390px)_minmax(0,1fr)]">
           <Reveal>
@@ -41,6 +44,27 @@ export function Faq() {
                 ))}
               </div>
             </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={openCommandPalette}
+                className="inline-flex items-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.03] px-3.5 py-2 text-[12px] font-medium text-zinc-300 transition hover:border-brand-500/40 hover:text-white"
+              >
+                <SearchIcon className="size-3.5 text-brand-400" />
+                Quick Search
+                <kbd className="rounded border border-white/10 bg-black/50 px-1.5 py-0.5 font-mono text-[9.5px] text-zinc-400">
+                  ⌘K
+                </kbd>
+              </button>
+              <Link
+                href="/docs"
+                className="group inline-flex items-center gap-1.5 rounded-xl border border-brand-500/25 bg-brand-950/35 px-3.5 py-2 text-[12px] font-medium text-brand-200 transition hover:border-brand-500/50 hover:text-white"
+              >
+                Full Documentation
+                <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
           </Reveal>
 
           <div className="space-y-3">
@@ -67,7 +91,7 @@ export function Faq() {
                             isOpen ? "text-brand-400" : "text-zinc-600"
                           }`}
                         >
-                          0{i + 1}
+                          {String(i + 1).padStart(2, "0")}
                         </span>
                         <span className="font-display text-[15.5px] font-semibold leading-snug tracking-tight text-zinc-100 sm:text-[16.5px]">
                           {f.q}

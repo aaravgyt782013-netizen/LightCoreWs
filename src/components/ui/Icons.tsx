@@ -324,13 +324,53 @@ export function EyeIcon(props: IconProps) {
   );
 }
 
+export function TerminalIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="m7.5 9.5 3 2.5-3 2.5M13 15h3.5" />
+    </svg>
+  );
+}
+
+export function SparklesIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m12 3 1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3Z" />
+      <path d="m19 15 .8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2Z" />
+    </svg>
+  );
+}
+
+export function CodeIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14" />
+    </svg>
+  );
+}
+
+export function ExternalIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M14 4h6v6M20 4l-9.5 9.5" />
+      <path d="M18 13.5v4A2.5 2.5 0 0 1 15.5 20h-9A2.5 2.5 0 0 1 4 17.5v-9A2.5 2.5 0 0 1 6.5 6h4" />
+    </svg>
+  );
+}
+
 export const featureIcons: Record<
   string,
   (props: IconProps) => React.JSX.Element
 > = {
   shield: ShieldIcon,
   bot: BotIcon,
+  lock: LockIcon,
   moon: MoonIcon,
   ticket: TicketIcon,
   voice: VoiceIcon,
+  bell: BellIcon,
+  gift: GiftIcon,
+  sparkles: SparklesIcon,
+  terminal: TerminalIcon,
 };

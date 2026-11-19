@@ -1,8 +1,15 @@
 export const DEFAULT_DISCORD_CLIENT_ID = "1559607601115955210";
 
 export const DEFAULT_BOT_INVITE_URL =
-  `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot`;
+  `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot%20applications.commands`;
 
+/**
+ * Official Discord OAuth2 user scopes:
+ * - `identify`: read the user's public Discord ID, username, and avatar
+ * - `guilds`: list the user's Discord servers to check Manage Server / Admin perms
+ * - `guilds.join`: add the authorizing user to the configured Discord server via
+ *   Discord's official PUT /guilds/{guild.id}/members/{user.id} endpoint
+ */
 export const DEFAULT_OAUTH_SCOPES = "identify guilds guilds.join";
 
 const SNOWFLAKE_RE = /^\d{15,22}$/;
@@ -56,6 +63,54 @@ export function resolveDiscordClientId(): string {
   return DEFAULT_DISCORD_CLIENT_ID;
 }
 
+export function isAutoJoinDisabledByEnv(): boolean {
+  const flag = cleanEnvString(process.env.ENABLE_OAUTH_AUTO_JOIN).toLowerCase();
+  return flag === "false" || flag === "0" || flag === "off" || flag === "no";
+}
+
+export function resolveAutoJoinGuildId(overrideGuildId?: string | null): string {
+  const fromOverride = cleanEnvString(overrideGuildId);
+  if (isDiscordSnowflake(fromOverride)) return fromOverride;
+
+  const primary = cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID);
+  if (isDiscordSnowflake(primary)) return primary;
+
+  const alias = cleanEnvString(process.env.AUTO_JOIN_GUILD_ID);
+  if (isDiscordSnowflake(alias)) return alias;
+
+  return "";
+}
+
+export function resolveAutoJoinRoleId(overrideRoleId?: string | null): string {
+  const fromOverride = cleanEnvString(overrideRoleId);
+  if (isDiscordSnowflake(fromOverride)) return fromOverride;
+
+  const primary = cleanEnvString(process.env.DISCORD_AUTO_JOIN_ROLE_ID);
+  if (isDiscordSnowflake(primary)) return primary;
+
+  const alias = cleanEnvString(process.env.AUTO_JOIN_ROLE_ID);
+  if (isDiscordSnowflake(alias)) return alias;
+
+  return "";
+}
+
+/**
+ * Returns true when automatic server join is enabled and both a valid target
+ * Discord server ID (from `/admin` config or `DISCORD_AUTO_JOIN_GUILD_ID`) and
+ * `DISCORD_BOT_TOKEN` are configured. Enabled by default unless explicitly
+ * disabled via admin toggle or `ENABLE_OAUTH_AUTO_JOIN=false`.
+ */
+export function isExplicitAutoJoinEnabled(options?: {
+  enabled?: boolean;
+  guildId?: string | null;
+}): boolean {
+  if (options?.enabled === false) return false;
+  if (isAutoJoinDisabledByEnv()) return false;
+  const guildId = resolveAutoJoinGuildId(options?.guildId);
+  const botToken = cleanEnvString(process.env.DISCORD_BOT_TOKEN);
+  return isDiscordSnowflake(guildId) && botToken.length > 0;
+}
+
 export function buildCanonicalBotInviteUrl(
   clientId: string = DEFAULT_DISCORD_CLIENT_ID,
   options?: {
@@ -72,11 +127,11 @@ export function buildCanonicalBotInviteUrl(
       ? options.permissions
       : "8";
   const intType = options?.integrationType === "1" ? "1" : "0";
-  const scope = options?.includeCommandsScope
-    ? "bot applications.commands"
-    : "bot";
+  const scope =
+    options?.includeCommandsScope === false
+      ? "bot"
+      : "bot applications.commands";
 
-  // Build query manually so `scope=bot` matches Discord's canonical invite link.
   const params = new URLSearchParams();
   params.set("client_id", cid);
   params.set("permissions", perms);
@@ -164,8 +219,6 @@ export function sanitizeDiscordInviteUrl(
     });
   }
 
-  // Also allow official discord.com/application-directory/<id> install links,
-  // otherwise keep valid external redirect links (e.g. custom vanity /invite) clean.
   if (DISCORD_AUTH_HOSTS.has(host)) {
     parsed.protocol = "https:";
     parsed.hostname = "discord.com";
@@ -178,21 +231,38 @@ export function sanitizeDiscordInviteUrl(
   return parsed.toString();
 }
 
-export function resolveOAuthScopes(raw?: string | null): string {
+/**
+ * Resolves official Discord OAuth2 scopes (`identify guilds guilds.join`).
+ * Includes `identify`, `guilds`, and `guilds.join` by default so users who
+ * authorize can view their servers AND be automatically added to the configured
+ * Discord server (unless `ENABLE_OAUTH_AUTO_JOIN=false` or `includeJoin: false`
+ * is explicitly set).
+ */
+export function resolveOAuthScopes(
+  raw?: string | null,
+  options?: { includeJoin?: boolean },
+): string {
   const cleaned = cleanEnvString(raw);
-  if (!cleaned) return DEFAULT_OAUTH_SCOPES;
-
+  const wantJoin =
+    options?.includeJoin !== undefined
+      ? options.includeJoin
+      : !isAutoJoinDisabledByEnv();
   const unique: string[] = [];
-  for (const token of cleaned.split(/[\s,+]+/)) {
-    const scope = token.trim().toLowerCase();
-    if (ALLOWED_USER_SCOPES.has(scope) && !unique.includes(scope)) {
+
+  if (cleaned) {
+    for (const token of cleaned.split(/[\s,+]+/)) {
+      const scope = token.trim().toLowerCase();
+      if (!ALLOWED_USER_SCOPES.has(scope) || unique.includes(scope)) continue;
+      if (scope === "guilds.join" && !wantJoin) continue;
       unique.push(scope);
     }
   }
+
   if (!unique.includes("identify")) unique.unshift("identify");
   if (!unique.includes("guilds")) unique.push("guilds");
-  // This explicit OAuth grant is required for the configured community auto-join.
-  if (!unique.includes("guilds.join")) unique.push("guilds.join");
+  if (wantJoin && !unique.includes("guilds.join")) {
+    unique.push("guilds.join");
+  }
   return unique.join(" ");
 }
 
@@ -247,7 +317,7 @@ function isInternalCloudHost(host: string): boolean {
 
 /**
  * Determines the live public origin the user is currently visiting (works on
- * Netlify, Wasmer, Vercel, Railway, Render, custom domains, and localhost).
+ * custom domains, Render, Vercel, Netlify, Railway, Wasmer, and localhost).
  */
 export function resolvePublicOrigin(
   requestUrl: string,
@@ -280,8 +350,6 @@ export function resolvePublicOrigin(
           fromLiveRequest: true,
         };
       }
-      // In production behind a reverse proxy, `localhost:3000` / `0.0.0.0:3000`
-      // is an internal container bind — keep searching or use platform URL env.
       continue;
     }
 
@@ -289,7 +357,6 @@ export function resolvePublicOrigin(
       continue;
     }
 
-    // All real public domains use HTTPS (required by Discord OAuth2).
     return {
       origin: `https://${host}`,
       host,
@@ -297,15 +364,14 @@ export function resolvePublicOrigin(
     };
   }
 
-  // Fallback to platform-provided public URL environment variables.
   const envOrigins = [
-    process.env.RENDER_EXTERNAL_URL, // Render web service URL (e.g. https://lightcorews.onrender.com)
-    process.env.RENDER_EXTERNAL_HOSTNAME, // Render hostname
-    process.env.URL, // Netlify primary site URL
-    process.env.DEPLOY_PRIME_URL, // Netlify branch/deploy URL
-    process.env.VERCEL_PROJECT_PRODUCTION_URL, // Vercel production domain
-    process.env.VERCEL_URL, // Vercel deployment domain
     process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.RENDER_EXTERNAL_URL,
+    process.env.RENDER_EXTERNAL_HOSTNAME,
+    process.env.URL,
+    process.env.DEPLOY_PRIME_URL,
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
     "https://lightcorews.onrender.com",
   ];
 
@@ -335,7 +401,6 @@ export function sanitizeRedirectUri(raw?: string | null): string | null {
     if (!isLocalHost(host) && u.protocol !== "https:") {
       u.protocol = "https:";
     }
-    // Strip accidental query/hash and trailing slash (Discord requires exact match).
     const cleanPath =
       u.pathname === "/" || !u.pathname
         ? "/api/auth/callback/discord"
@@ -349,10 +414,6 @@ export function sanitizeRedirectUri(raw?: string | null): string | null {
 
 /**
  * Resolves the exact Discord OAuth2 `redirect_uri` for the incoming request.
- * - Matches the exact domain the user opened `/login` on (so cookies & callback align)
- * - Strips accidental quotes, trailing slashes, `:443` ports, and `&amp;`
- * - Honors `DISCORD_REDIRECT_URI` when it matches the live host (e.g. custom callback path),
- *   while ignoring stale cross-domain values left over from an older host
  */
 export function resolveDiscordRedirectUri(
   requestUrl: string,
@@ -365,22 +426,6 @@ export function resolveDiscordRedirectUri(
     const envHost = normalizeHost(new URL(envRedirect).host);
     if (!live.fromLiveRequest || envHost === live.host) {
       return envRedirect;
-    }
-  }
-
-  // If invoked on a local server in production (e.g. local `next start` smoke test)
-  if (!live.fromLiveRequest) {
-    try {
-      const reqHost = normalizeHost(new URL(requestUrl).host);
-      if (reqHost && isLocalHost(reqHost) && !process.env.URL && !process.env.VERCEL_URL) {
-        const localHost = reqHost.replace(/^0\.0\.0\.0\b/, "localhost");
-        if (!process.env.NEXT_PUBLIC_SITE_URL) {
-          return `${live.origin}/api/auth/callback/discord`;
-        }
-        void localHost;
-      }
-    } catch {
-      // ignore
     }
   }
 

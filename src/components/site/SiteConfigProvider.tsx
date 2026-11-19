@@ -30,6 +30,7 @@ const SiteConfigContext = createContext<SiteConfigContextValue>({
 });
 
 const LOCAL_CACHE_KEY = "lightcore_site_config_v2";
+const LOCAL_VARS_KEY = "lightcore_site_config_vars_v2";
 
 export function applySiteThemeToDom(cfg: SiteConfig) {
   if (typeof document === "undefined") return;
@@ -37,6 +38,11 @@ export function applySiteThemeToDom(cfg: SiteConfig) {
   const vars = buildThemeCssVariables(cfg);
   for (const [k, v] of Object.entries(vars)) {
     root.style.setProperty(k, v);
+  }
+  try {
+    window.localStorage.setItem(LOCAL_VARS_KEY, JSON.stringify(vars));
+  } catch {
+    // Ignore storage quota restrictions.
   }
 
   // Sync browser chrome / mobile status bar color

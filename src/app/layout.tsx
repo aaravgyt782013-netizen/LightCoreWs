@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { site } from "@/lib/site";
 import { RouteLoader } from "@/components/ui/RouteLoader";
+import { CommandPalette } from "@/components/ui/CommandPalette";
 import { SiteConfigProvider } from "@/components/site/SiteConfigProvider";
 
 const geistSans = localFont({
@@ -61,6 +62,8 @@ const jetbrainsMono = localFont({
 
 const fullTitle = `${site.name} | ${site.tagline}`;
 
+const prePaintInitScript = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('js')}var raw=localStorage.getItem('lightcore_site_config_vars_v2');if(raw){var v=JSON.parse(raw);if(v&&typeof v==='object'){for(var k in v){if(Object.prototype.hasOwnProperty.call(v,k)&&k.indexOf('--')===0){d.style.setProperty(k,String(v[k]))}}}}}catch(e){}`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
@@ -76,8 +79,9 @@ export const metadata: Metadata = {
     "anti-nuke",
     "anti-raid",
     "automod",
-    "Voicemaster",
-    "Discord moderation",
+    "VoiceMaster",
+    "Discord tickets",
+    "Discord moderation dashboard",
     "server protection",
   ],
   authors: [{ name: site.name }],
@@ -136,17 +140,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark scroll-smooth" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{if(!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('js')}}catch(e){}`,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: prePaintInitScript }} />
       </head>
       <body
         className={`${geistSans.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} bg-ink-950 font-sans text-zinc-100 antialiased`}
       >
         <SiteConfigProvider>
           <RouteLoader />
+          <CommandPalette />
           {children}
         </SiteConfigProvider>
       </body>
