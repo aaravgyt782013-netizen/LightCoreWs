@@ -313,7 +313,7 @@ export async function deletePremiumInvoice(invoiceId: string): Promise<boolean> 
 async function tryAssignDiscordPremiumRole(userId: string | null): Promise<void> {
   if (!userId) return;
   const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
-  const supportGuild = process.env.DISCORD_AUTO_JOIN_GUILD_ID?.trim();
+  const supportGuild = process.env.DISCORD_SUPPORT_GUILD_ID?.trim();
   const siteCfg = await getSiteConfig();
   const roleId = siteCfg.premiumRoleId?.trim();
   if (!botToken || !supportGuild || !roleId) return;

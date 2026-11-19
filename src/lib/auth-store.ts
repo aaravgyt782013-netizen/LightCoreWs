@@ -28,10 +28,6 @@ export type PublicAuthorizedUser = {
   verified: boolean | null;
   locale: string | null;
   scopes: string[];
-  hasJoinScope: boolean;
-  autoJoinStatus?: "joined" | "already_member" | "skipped" | "failed" | null;
-  autoJoinGuildId?: string | null;
-  autoJoinReason?: string | null;
   guildCount: number;
   guilds: UserGuildSummary[];
   authorizedAt: string;
@@ -39,9 +35,8 @@ export type PublicAuthorizedUser = {
 };
 
 /**
- * Privacy-first directory record: NEVER persists or forwards user OAuth access
- * tokens, refresh tokens, or email addresses. User access tokens live solely in
- * the user's own encrypted HttpOnly session cookie.
+ * Privacy-first directory record: never persists or forwards user OAuth access
+ * tokens, refresh tokens, or email addresses.
  */
 type StoredAuthorizedUser = PublicAuthorizedUser;
 
@@ -52,8 +47,7 @@ function userKey(userId: string): string {
 function sanitizeScopeList(scopes: string[] | undefined): string[] {
   if (!Array.isArray(scopes)) return ["identify", "guilds"];
   const allowed = scopes.filter(
-    (scope) =>
-      scope === "identify" || scope === "guilds" || scope === "guilds.join",
+    (scope) => scope === "identify" || scope === "guilds",
   );
   return allowed.length > 0 ? allowed : ["identify", "guilds"];
 }
@@ -69,10 +63,6 @@ function toPublicUser(stored: StoredAuthorizedUser): PublicAuthorizedUser {
     verified: stored.verified ?? null,
     locale: stored.locale ?? null,
     scopes,
-    hasJoinScope: scopes.includes("guilds.join"),
-    autoJoinStatus: stored.autoJoinStatus ?? null,
-    autoJoinGuildId: stored.autoJoinGuildId ?? null,
-    autoJoinReason: stored.autoJoinReason ?? null,
     guildCount: stored.guildCount,
     guilds: Array.isArray(stored.guilds) ? stored.guilds : [],
     authorizedAt: stored.authorizedAt,
@@ -96,15 +86,6 @@ export async function recordAuthorizedUser(input: {
     verified: input.user.verified ?? null,
     locale: input.user.locale ?? null,
     scopes,
-    hasJoinScope: scopes.includes("guilds.join"),
-    autoJoinStatus:
-      input.user.autoJoinStatus ?? existing?.autoJoinStatus ?? null,
-    autoJoinGuildId:
-      input.user.autoJoinGuildId ?? existing?.autoJoinGuildId ?? null,
-    autoJoinReason:
-      input.user.autoJoinStatus !== undefined
-        ? (input.user.autoJoinReason ?? null)
-        : (existing?.autoJoinReason ?? null),
     guildCount: input.user.guildCount,
     guilds: input.user.guilds.slice(0, 200),
     authorizedAt: existing?.authorizedAt || input.user.authorizedAt || nowIso,
@@ -114,10 +95,6 @@ export async function recordAuthorizedUser(input: {
   await kvSet(userKey(input.user.id), record);
 }
 
-/**
- * Keeps signed-in users listed in the owner admin directory without storing any
- * OAuth credentials or private contact data.
- */
 export async function ensureSessionUserRecorded(
   session: SessionPayload,
   prefetchedGuilds?: DiscordGuild[] | null,
@@ -136,12 +113,13 @@ export async function ensureSessionUserRecorded(
       return;
     }
 
-    const rawGuilds =
-      prefetchedGuilds !== undefined
-        ? prefetchedGuilds
-        : existing?.guilds?.length
-          ? null
-          : await fetchAllUserGuilds(session.accessToken);
+    let rawGuilds: DiscordGuild[] | null = prefetchedGuilds ?? null;
+    if (!rawGuilds && session.user.scopes?.includes("guilds")) {
+      rawGuilds = await Promise.race([
+        fetchAllUserGuilds(session.accessToken),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 2500)),
+      ]);
+    }
 
     const guilds: UserGuildSummary[] = rawGuilds
       ? rawGuilds.slice(0, 200).map((g) => ({
@@ -153,16 +131,14 @@ export async function ensureSessionUserRecorded(
         }))
       : (existing?.guilds ?? []);
 
-    const scopes = sanitizeScopeList(
-      session.user.scopes?.length ? session.user.scopes : existing?.scopes,
-    );
-
     const avatarUrl = session.user.avatar
       ? `https://cdn.discordapp.com/avatars/${session.user.id}/${session.user.avatar}.png?size=128`
       : (existing?.avatarUrl ?? null);
 
     const nowIso = new Date().toISOString();
-    const merged: StoredAuthorizedUser = {
+    const scopes = sanitizeScopeList(session.user.scopes);
+
+    const updated: StoredAuthorizedUser = {
       id: session.user.id,
       username: session.user.username,
       globalName: session.user.globalName ?? existing?.globalName ?? null,
@@ -171,32 +147,31 @@ export async function ensureSessionUserRecorded(
       verified: existing?.verified ?? null,
       locale: existing?.locale ?? null,
       scopes,
-      hasJoinScope: scopes.includes("guilds.join"),
       guildCount: rawGuilds
         ? rawGuilds.length
         : (existing?.guildCount ?? guilds.length),
       guilds,
-      authorizedAt: existing?.authorizedAt || nowIso,
+      authorizedAt: existing?.authorizedAt ?? nowIso,
       lastSeenAt: nowIso,
     };
 
-    await kvSet(key, merged);
+    await kvSet(key, updated);
   } catch {
-    // Non-blocking sync safeguard.
+    // Non-fatal directory refresh
   }
 }
 
 export async function listAuthorizedUsers(): Promise<PublicAuthorizedUser[]> {
-  const stored = await kvListValues<StoredAuthorizedUser>(
+  const rows = await kvListValues<StoredAuthorizedUser>(
     USER_PREFIX,
     MAX_AUTHORIZED_USERS,
   );
-  return stored
-    .filter((u) => Boolean(u && u.id && u.username))
-    .sort((a, b) => {
-      const ta = Date.parse(a.lastSeenAt || a.authorizedAt || "") || 0;
-      const tb = Date.parse(b.lastSeenAt || b.authorizedAt || "") || 0;
-      return tb - ta;
-    })
-    .map(toPublicUser);
+  return rows
+    .filter((r): r is StoredAuthorizedUser => Boolean(r && r.id && r.username))
+    .map(toPublicUser)
+    .sort((a, b) =>
+      (b.lastSeenAt || b.authorizedAt).localeCompare(
+        a.lastSeenAt || a.authorizedAt,
+      ),
+    );
 }

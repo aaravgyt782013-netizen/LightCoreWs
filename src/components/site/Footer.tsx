@@ -113,7 +113,7 @@ export function Footer() {
             </p>
             <p className="inline-flex items-center gap-1.5 font-mono text-[10px] text-zinc-600">
               <ShieldIcon className="size-3 text-emerald-400/80" />
-              Official Discord OAuth2 (identify · guilds · guilds.join) · Zero credential collection
+              Read-only Discord OAuth 2.0 (identify · guilds) · No auto-join or data forms
             </p>
           </div>
 

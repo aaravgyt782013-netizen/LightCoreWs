@@ -11,7 +11,7 @@ Launch website, interactive command reference, real-time system status, live dem
 - **Interactive Demo Sandbox (`/dashboard/demo`)** — Full 12-module guild dashboard persisted locally in `localStorage` with zero sign-in required.
 - **Full Guild Control Plane (`/dashboard/[guildId]`)** — Security Posture Score (0–100), 1-click protection presets, Anti-Nuke, AutoMod, Anti-Raid, Verification Gate, Moderation, Logs, Welcome & AutoRole, Tickets (with live Discord preview), VoiceMaster, Custom Embed Studio, Giveaways, JSON Backup Export/Import, and CLI Setup Command Generator.
 - **Real-Time Status (`/status`)** — Live web, API, KV datastore, OAuth2 readiness, and Discord Bot Gateway probes with latency sparkline & manual re-probe.
-- **Security, OAuth2 Auto-Join & Trust (`/security`)** — Official Discord OAuth2 (`identify guilds guilds.join`) with automatic community server join (`PUT /guilds/{id}/members/{uid}`) + optional auto-role configurable live in `/admin`, zero database OAuth token storage, HMAC-SHA256 `HttpOnly` session cookies, anti-CSRF state verification, strict CSP/HSTS headers, and `/.well-known/security.txt`.
+- **Least-Privilege Security & Trust (`/security`)** — Strictly read-only POST-initiated Discord OAuth 2.0 (`identify guilds` only — zero `guilds.join`, zero auto-join, zero `email`), zero database OAuth token storage, HMAC-SHA256 `HttpOnly` session cookies, anti-CSRF state verification, strict CSP/HSTS headers, and `/.well-known/security.txt`.
 
 ---
 
@@ -37,28 +37,17 @@ See [`.env.example`](.env.example) for the complete reference:
 | `NEXT_PUBLIC_DISCORD_CLIENT_ID` | Discord Application Client ID |
 | `DISCORD_CLIENT_SECRET` | Discord OAuth2 Client Secret |
 | `DISCORD_REDIRECT_URI` | Exact callback registered in Discord Developer Portal: `<SITE_URL>/api/auth/callback/discord` |
-| `DISCORD_OAUTH_SCOPES` | `identify guilds guilds.join` (default — profile, guild list, and auto-join) |
+| `DISCORD_OAUTH_SCOPES` | `identify guilds` (strictly enforced read-only profile + server list) |
 | `SESSION_SECRET` | 32+ byte random secret (`openssl rand -hex 32`) |
-| `DISCORD_BOT_TOKEN` | Required for OAuth2 server auto-join + live dashboard channel/role lists |
-| `DISCORD_AUTO_JOIN_GUILD_ID` | Numeric Server ID users are automatically added to on authorize (can also be set live in `/admin` → Users; bot must be in the server with `Create Instant Invite`) |
-| `DISCORD_AUTO_JOIN_ROLE_ID` | Optional Role ID automatically assigned to newly joined users (also editable in `/admin`) |
+| `DISCORD_BOT_TOKEN` | Optional — populates live dashboard channel/role dropdowns & bot telemetry |
 | `DISCORD_OWNER_ID` | Comma-separated Discord user IDs allowed to access `/admin` |
 | `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Optional Google Search Console verification token |
 
 ---
 
-## Setting Up Automatic Server Join (`guilds` + `guilds.join`)
-
-1. Invite your bot to your target Discord server and make sure it has the **Create Instant Invite** permission (and **Manage Roles** above the role if you configure an optional auto-role).
-2. Add your redirect URL `<YOUR_SITE_URL>/api/auth/callback/discord` in **Discord Developer Portal → OAuth2 → Redirects**.
-3. Set `DISCORD_CLIENT_SECRET`, `SESSION_SECRET`, `DISCORD_BOT_TOKEN`, and `DISCORD_AUTO_JOIN_GUILD_ID=<YOUR_SERVER_ID>` in your hosting environment — **or** sign in to `/admin` → **Users** tab and pick/paste your target Server ID (and optional Role ID) directly with zero redeploy needed.
-4. When any user authorizes via **Login / Continue with Discord**, Discord prompts for `identify`, `guilds`, and `guilds.join`, loads their server list, and automatically adds them to your configured server via Discord's official `PUT /api/v10/guilds/{guild.id}/members/{user.id}` API.
-
----
-
 ## Security & Google Safe Browsing Verification
 
-- **Transparent official OAuth2 consent** — `/login`, `/security`, and `/privacy` explicitly disclose the exact Discord scopes requested (`identify`, `guilds`, `guilds.join`) and redirect strictly to `https://discord.com/oauth2/authorize`.
-- **Zero database token persistence** — User OAuth2 access tokens are used solely during authorization and inside the user's encrypted/signed `HttpOnly` session cookie; raw access/refresh tokens are never persisted on disk or forwarded externally.
-- **Strict security headers** — CSP, HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `/.well-known/security.txt`, and `noindex`/`no-store` on `/api/auth/*`.
-- **Clearing a cached Chrome warning** — Verify your site in [Google Search Console](https://search.google.com/search-console) (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) → **Security & Manual Actions → Security issues → Request Review**, and submit a false-positive report at `https://safebrowsing.google.com/safebrowsing/report_error/`. Attaching a custom domain is also recommended since shared `*.onrender.com` subdomains carry lower baseline reputation.
+- **Strict read-only OAuth 2.0 (`identify guilds`)** — Sign-in uses same-origin `POST /api/auth/discord` redirecting strictly to `https://discord.com/oauth2/authorize` with read-only `identify` and `guilds` scopes only. Both `guilds.join` and all automatic server-join endpoints have been removed.
+- **Zero database token persistence** — User OAuth 2.0 access tokens live exclusively inside the user's signed `HttpOnly`, `SameSite=Lax`, `Secure` session cookie; raw access/refresh tokens are never stored on disk or sent to third parties.
+- **Strict security headers & disclosures** — CSP, HSTS, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, clear non-affiliation notices on `/login` and the footer, plus `/security`, `/privacy`, `/terms`, and `/.well-known/security.txt`.
+- **Clearing a cached Chrome warning** — Deploy to production, open [Google Search Console](https://search.google.com/search-console) → **Security & Manual Actions → Security issues → Request Review**, and submit a false-positive report at `https://safebrowsing.google.com/safebrowsing/report_error/`.

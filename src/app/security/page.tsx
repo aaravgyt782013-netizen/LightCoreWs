@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 
 const PILLARS = [
   {
-    title: "Official Discord OAuth2",
-    badge: "identify · guilds · guilds.join",
-    body: "Sign-in redirects strictly to https://discord.com/oauth2/authorize requesting Discord's standard `identify`, `guilds`, and `guilds.join` scopes — reading your profile and server list for the dashboard and automatically adding you to our official community server upon approval. We never request `email` or `messages.read`.",
+    title: "Read-Only Discord OAuth 2.0",
+    badge: "identify · guilds",
+    body: "Authorization redirects via same-origin POST strictly to https://discord.com/oauth2/authorize requesting only read-only `identify` and `guilds` scopes. We never request `guilds.join`, `email`, `messages.read`, or any write access on user accounts.",
   },
   {
-    title: "Zero Credential & Card Collection",
-    badge: "No Password Forms",
-    body: "LightCore never asks for your Discord password, 2FA code, phone number, recovery token, or credit/debit card number anywhere on this website, nor does it offer any executable downloads.",
+    title: "Zero Account Forms or Downloads",
+    badge: "Browser-Only Dashboard",
+    body: "LightCore contains zero login input forms, zero personal or billing data collection fields, and zero software or executable downloads anywhere on this website.",
   },
   {
     title: "Zero Persistent Token Storage",
@@ -35,7 +35,7 @@ const PILLARS = [
 const VERIFY_CHECKLIST = [
   "When clicking Sign In or Invite Bot, verify your browser address bar switches to https://discord.com/oauth2/authorize.",
   `Verify the Discord application ID matches our published Client ID (${site.clientId}).`,
-  "Confirm the OAuth2 consent screen lists 'Access your username, avatar, and banner' (identify), 'Know what servers you're in' (guilds), and 'Join servers for you' (guilds.join — used to automatically add you to our official community server).",
+  "Confirm the OAuth 2.0 consent screen lists only read-only 'Access your username, avatar, and banner' (identify) and 'Know what servers you're in' (guilds).",
   "Review or revoke LightCore anytime in Discord → User Settings → Authorized Apps.",
 ];
 
@@ -112,8 +112,8 @@ export default function SecurityPage() {
               ["Application Name", `${site.name} (Independent Discord Bot)`],
               ["Discord Client ID", site.clientId],
               ["Authorization Host", "https://discord.com/oauth2/authorize"],
-              ["Default User Scopes", "identify guilds guilds.join"],
-              ["Community Server Auto-Join", "Enabled via official Discord guilds.join on OAuth2 sign-in"],
+              ["Default User Scopes", "identify guilds (read-only only)"],
+              ["Server Auto-Join", "None (guilds.join scope removed)"],
               ["Database Token Storage", "None (stateless HMAC-SHA256 HttpOnly cookie)"],
               ["Software Downloads", "None (100% browser dashboard + hosted Discord bot)"],
               ["Security Disclosure", "/.well-known/security.txt"],

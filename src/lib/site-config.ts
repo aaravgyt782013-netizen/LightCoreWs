@@ -311,11 +311,6 @@ export type SiteConfig = {
   maintenanceEnabled: boolean;
   maintenanceMessage: string;
 
-  // Discord OAuth2 Auto-Join Server (uses official `guilds.join` scope)
-  autoJoinEnabled: boolean;
-  autoJoinGuildId: string;
-  autoJoinRoleId: string;
-
   // Premium Invoice & Pricing Settings (NO website payment system)
   currencySymbol: string;
   currencyCode: string;
@@ -368,10 +363,6 @@ export function createDefaultSiteConfig(): SiteConfig {
     maintenanceEnabled: false,
     maintenanceMessage:
       "Scheduled maintenance in progress — some bot modules may respond slower than usual.",
-
-    autoJoinEnabled: true,
-    autoJoinGuildId: "",
-    autoJoinRoleId: "",
 
     currencySymbol: "₹",
     currencyCode: "INR",
@@ -615,19 +606,6 @@ export function mergeSiteConfig(
         ? p.maintenanceEnabled
         : base.maintenanceEnabled,
     maintenanceMessage: cleanStr(p.maintenanceMessage, base.maintenanceMessage, 220),
-
-    autoJoinEnabled:
-      typeof p.autoJoinEnabled === "boolean"
-        ? p.autoJoinEnabled
-        : (base.autoJoinEnabled ?? true),
-    autoJoinGuildId:
-      typeof p.autoJoinGuildId === "string"
-        ? p.autoJoinGuildId.replace(/\D/g, "").slice(0, 22)
-        : (base.autoJoinGuildId ?? ""),
-    autoJoinRoleId:
-      typeof p.autoJoinRoleId === "string"
-        ? p.autoJoinRoleId.replace(/\D/g, "").slice(0, 22)
-        : (base.autoJoinRoleId ?? ""),
 
     currencySymbol: cleanStr(p.currencySymbol, base.currencySymbol, 6),
     currencyCode: cleanStr(p.currencyCode, base.currencyCode, 6).toUpperCase(),

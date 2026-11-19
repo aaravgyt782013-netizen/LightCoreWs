@@ -443,7 +443,7 @@ export const faqs = [
   },
   {
     q: "Is signing in with Discord on this website safe?",
-    a: `Yes. Authorization runs directly on Discord's official OAuth 2.0 page (discord.com) using standard Discord bot scopes (identify, guilds, and optional guilds.join to welcome you into our community server). ${site.name} is an independent bot service, collects no login or billing data, and includes a full no-account Demo Dashboard.`,
+    a: `Yes. Authorization runs directly on Discord's official OAuth 2.0 page (discord.com) using only read-only identify and guilds scopes so the dashboard can show the servers you manage. ${site.name} is an independent bot service, never auto-joins your account to any server, collects no login or billing data, and includes a full no-account Demo Dashboard.`,
   },
   {
     q: "Will Anti-Nuke accidentally punish my trusted moderators?",

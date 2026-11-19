@@ -4,13 +4,13 @@ export const DEFAULT_BOT_INVITE_URL =
   `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot%20applications.commands`;
 
 /**
- * Official Discord OAuth2 user scopes:
- * - `identify`: read the user's public Discord ID, username, and avatar
- * - `guilds`: list the user's Discord servers to check Manage Server / Admin perms
- * - `guilds.join`: add the authorizing user to the configured Discord server via
- *   Discord's official PUT /guilds/{guild.id}/members/{user.id} endpoint
+ * Strict least-privilege, read-only Discord OAuth2 user scopes:
+ * - `identify`: read the user's public Discord ID, display name, and avatar
+ * - `guilds`: read the user's server list & permission bitfield to show managed guilds
+ * Write scopes (such as `guilds.join`) and personal data scopes (`email`) are
+ * never requested.
  */
-export const DEFAULT_OAUTH_SCOPES = "identify guilds guilds.join";
+export const DEFAULT_OAUTH_SCOPES = "identify guilds";
 
 const SNOWFLAKE_RE = /^\d{15,22}$/;
 
@@ -23,7 +23,7 @@ const DISCORD_AUTH_HOSTS = new Set([
   "www.discordapp.com",
 ]);
 
-const ALLOWED_USER_SCOPES = new Set(["identify", "guilds", "guilds.join"]);
+const ALLOWED_USER_SCOPES = new Set(["identify", "guilds"]);
 
 const SAFE_HOST_RE =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*(?::\d{1,5})?$/;
@@ -61,54 +61,6 @@ export function resolveDiscordClientId(): string {
   const srv = cleanEnvString(process.env.DISCORD_CLIENT_ID);
   if (isDiscordSnowflake(srv)) return srv;
   return DEFAULT_DISCORD_CLIENT_ID;
-}
-
-export function isAutoJoinDisabledByEnv(): boolean {
-  const flag = cleanEnvString(process.env.ENABLE_OAUTH_AUTO_JOIN).toLowerCase();
-  return flag === "false" || flag === "0" || flag === "off" || flag === "no";
-}
-
-export function resolveAutoJoinGuildId(overrideGuildId?: string | null): string {
-  const fromOverride = cleanEnvString(overrideGuildId);
-  if (isDiscordSnowflake(fromOverride)) return fromOverride;
-
-  const primary = cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID);
-  if (isDiscordSnowflake(primary)) return primary;
-
-  const alias = cleanEnvString(process.env.AUTO_JOIN_GUILD_ID);
-  if (isDiscordSnowflake(alias)) return alias;
-
-  return "";
-}
-
-export function resolveAutoJoinRoleId(overrideRoleId?: string | null): string {
-  const fromOverride = cleanEnvString(overrideRoleId);
-  if (isDiscordSnowflake(fromOverride)) return fromOverride;
-
-  const primary = cleanEnvString(process.env.DISCORD_AUTO_JOIN_ROLE_ID);
-  if (isDiscordSnowflake(primary)) return primary;
-
-  const alias = cleanEnvString(process.env.AUTO_JOIN_ROLE_ID);
-  if (isDiscordSnowflake(alias)) return alias;
-
-  return "";
-}
-
-/**
- * Returns true when automatic server join is enabled and both a valid target
- * Discord server ID (from `/admin` config or `DISCORD_AUTO_JOIN_GUILD_ID`) and
- * `DISCORD_BOT_TOKEN` are configured. Enabled by default unless explicitly
- * disabled via admin toggle or `ENABLE_OAUTH_AUTO_JOIN=false`.
- */
-export function isExplicitAutoJoinEnabled(options?: {
-  enabled?: boolean;
-  guildId?: string | null;
-}): boolean {
-  if (options?.enabled === false) return false;
-  if (isAutoJoinDisabledByEnv()) return false;
-  const guildId = resolveAutoJoinGuildId(options?.guildId);
-  const botToken = cleanEnvString(process.env.DISCORD_BOT_TOKEN);
-  return isDiscordSnowflake(guildId) && botToken.length > 0;
 }
 
 export function buildCanonicalBotInviteUrl(
@@ -232,37 +184,25 @@ export function sanitizeDiscordInviteUrl(
 }
 
 /**
- * Resolves official Discord OAuth2 scopes (`identify guilds guilds.join`).
- * Includes `identify`, `guilds`, and `guilds.join` by default so users who
- * authorize can view their servers AND be automatically added to the configured
- * Discord server (unless `ENABLE_OAUTH_AUTO_JOIN=false` or `includeJoin: false`
- * is explicitly set).
+ * Strictly enforces minimal read-only Discord OAuth2 scopes (`identify guilds`).
+ * Any legacy write or contact scope in environment variables (e.g. `guilds.join`
+ * or `email`) is ignored so authorization always remains 100% read-only.
  */
-export function resolveOAuthScopes(
-  raw?: string | null,
-  options?: { includeJoin?: boolean },
-): string {
+export function resolveOAuthScopes(raw?: string | null): string {
   const cleaned = cleanEnvString(raw);
-  const wantJoin =
-    options?.includeJoin !== undefined
-      ? options.includeJoin
-      : !isAutoJoinDisabledByEnv();
   const unique: string[] = [];
 
   if (cleaned) {
     for (const token of cleaned.split(/[\s,+]+/)) {
       const scope = token.trim().toLowerCase();
-      if (!ALLOWED_USER_SCOPES.has(scope) || unique.includes(scope)) continue;
-      if (scope === "guilds.join" && !wantJoin) continue;
-      unique.push(scope);
+      if (ALLOWED_USER_SCOPES.has(scope) && !unique.includes(scope)) {
+        unique.push(scope);
+      }
     }
   }
 
   if (!unique.includes("identify")) unique.unshift("identify");
   if (!unique.includes("guilds")) unique.push("guilds");
-  if (wantJoin && !unique.includes("guilds.join")) {
-    unique.push("guilds.join");
-  }
   return unique.join(" ");
 }
 
