@@ -14,7 +14,6 @@ import {
   CheckIcon,
   CopyIcon,
   CrownIcon,
-  DiscordIcon,
   InvoiceIcon,
   LockIcon,
   LogListIcon,
@@ -314,13 +313,16 @@ export function AdminClient() {
           and monitor logs.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <a
-            href="/api/auth/discord?next=/admin"
-            className="btn-primary btn-glow relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full px-6 text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
-          >
-            <DiscordIcon className="size-4" />
-            Sign in as Owner
-          </a>
+          <form method="POST" action="/api/auth/discord">
+            <input type="hidden" name="next" value="/admin" />
+            <button
+              type="submit"
+              className="btn-primary btn-glow relative inline-flex h-12 items-center gap-2.5 overflow-hidden rounded-full px-6 text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
+            >
+              <ShieldIcon className="size-4" />
+              Authorize Owner Session
+            </button>
+          </form>
           <Link
             href="/dashboard"
             className="group inline-flex h-11 items-center gap-2 rounded-full border border-brand-200/15 bg-white/[0.03] px-5 text-[13.5px] font-medium text-zinc-200 transition-colors hover:border-brand-400/40 hover:text-white"

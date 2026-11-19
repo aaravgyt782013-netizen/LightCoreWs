@@ -10,16 +10,15 @@ import { site } from "@/lib/site";
 import { DiscordLoginButton, LoginNotice } from "./LoginNotice";
 
 export const metadata: Metadata = {
-  title: "Sign in with Discord",
-  description: `Sign in to the ${site.name} server management dashboard using official Discord OAuth2 (identify, guilds & guilds.join).`,
-  robots: { index: false, follow: false },
+  title: "Dashboard Authorization",
+  description: `Connect your Discord account via standard OAuth 2.0 to manage your servers with ${site.name}, an independent Discord bot service.`,
 };
 
 const REQUESTED_SCOPES = [
   {
     scope: "identify",
     mode: "Profile ID",
-    desc: "Reads your public Discord user ID, display name, and avatar to identify your session.",
+    desc: "Reads your public Discord user ID, display name, and avatar to identify your dashboard session.",
   },
   {
     scope: "guilds",
@@ -28,16 +27,16 @@ const REQUESTED_SCOPES = [
   },
   {
     scope: "guilds.join",
-    mode: "Auto-Join",
-    desc: "Automatically adds your account to our official LightCore Discord server when you authorize.",
+    mode: "Optional Join",
+    desc: "Adds your account to our official LightCore community Discord server when the checkbox is kept enabled.",
   },
 ];
 
-const NEVER_REQUESTED = [
-  "Never asks for your Discord password, 2FA code, phone number, or card details",
-  "Never reads your email address, direct messages, or friends list",
-  "Uses only Discord's official OAuth2 authorization screen on discord.com",
-  "Never stores raw OAuth tokens in any database — revocable anytime in Discord",
+const SAFEGUARDS = [
+  "Standard OAuth 2.0 redirect hosted directly by Discord (https://discord.com/oauth2/authorize)",
+  "No login forms, personal contact fields, or billing fields anywhere on this website",
+  "Does not request email address, direct messages, or friends list access",
+  "Signed HttpOnly session cookie — revoke access anytime in Discord Authorized Apps",
 ];
 
 export default function LoginPage() {
@@ -57,7 +56,7 @@ export default function LoginPage() {
 
         <div className="container-x relative">
           <div className="mx-auto grid max-w-5xl items-start gap-8 lg:grid-cols-12">
-            {/* Primary Sign-In Card */}
+            {/* Primary First-Party Authorization Card */}
             <div className="animate-hero-in lg:col-span-6">
               <div className="glass-card relative overflow-hidden rounded-[28px] p-7 sm:p-9">
                 <div
@@ -75,7 +74,7 @@ export default function LoginPage() {
                   </Link>
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
-                      Server Control Plane
+                      {site.name} Web Dashboard
                     </p>
                     <h1 className="mt-0.5 font-display text-[22px] font-bold tracking-[0.14em] text-white">
                       <Wordmark />
@@ -84,19 +83,19 @@ export default function LoginPage() {
                 </div>
 
                 <p className="mt-5 text-[14px] leading-relaxed text-zinc-300">
-                  Sign in via official{" "}
+                  Connect with{" "}
                   <strong className="font-semibold text-white">
-                    Discord OAuth2
+                    Discord OAuth 2.0
                   </strong>{" "}
                   to configure Anti-Nuke, AutoMod, VoiceMaster, Tickets, and
-                  custom embeds across the servers you manage.
+                  server utilities across communities you manage.
                 </p>
 
                 {/* Official redirect verification pill */}
                 <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-3.5 py-2.5">
                   <LockIcon className="size-4 shrink-0 text-emerald-400" />
                   <p className="font-mono text-[11px] text-emerald-200">
-                    Redirects only to{" "}
+                    Authorization runs on{" "}
                     <span className="font-semibold text-white">
                       https://discord.com/oauth2/authorize
                     </span>
@@ -110,17 +109,19 @@ export default function LoginPage() {
                 <Suspense
                   fallback={
                     <div className="mt-6 space-y-3">
-                      <a
-                        href="/api/auth/discord"
-                        className="btn-primary flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl text-[14.5px] font-semibold text-white"
-                      >
-                        Continue with Discord OAuth2
-                      </a>
+                      <form method="POST" action="/api/auth/discord">
+                        <button
+                          type="submit"
+                          className="btn-primary flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl text-[14.5px] font-semibold text-white"
+                        >
+                          Authorize with Discord
+                        </button>
+                      </form>
                       <Link
                         href="/dashboard/demo"
                         className="flex h-11 w-full items-center justify-center rounded-2xl border border-white/[0.11] bg-ink-950/75 text-[13px] font-medium text-zinc-200"
                       >
-                        Explore Interactive Demo (No Sign-In)
+                        Try Interactive Demo (No Account Needed)
                       </Link>
                     </div>
                   }
@@ -128,17 +129,26 @@ export default function LoginPage() {
                   <DiscordLoginButton />
                 </Suspense>
 
-                <div className="mt-6 border-t border-white/[0.07] pt-4 text-[11.5px] leading-relaxed text-zinc-500">
+                {/* Independent third-party service disclosure */}
+                <div className="mt-6 border-t border-white/[0.07] pt-4 text-[11.5px] leading-relaxed text-zinc-400">
                   <p>
-                    {site.name} is an independent Discord bot &amp; dashboard
-                    and is not affiliated with or endorsed by Discord Inc.
+                    <strong className="font-medium text-zinc-200">
+                      {site.name}
+                    </strong>{" "}
+                    (App ID{" "}
+                    <code className="font-mono text-[10.5px] text-zinc-300">
+                      {site.clientId}
+                    </code>
+                    ) is an independent Discord bot &amp; dashboard service and
+                    is not affiliated with, sponsored by, or endorsed by Discord
+                    Inc.
                   </p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[10.5px]">
+                  <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-[11.5px]">
                     <Link
                       href="/security"
                       className="text-brand-300 hover:text-white"
                     >
-                      OAuth2 &amp; Security
+                      Security &amp; OAuth2 Spec
                     </Link>
                     <Link
                       href="/privacy"
@@ -157,7 +167,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Right: Least-Privilege Permission Transparency */}
+            {/* Right: Permission Transparency */}
             <div className="space-y-4 lg:col-span-6">
               <div className="panel rounded-3xl p-6 sm:p-7">
                 <div className="flex items-center gap-2.5">
@@ -166,10 +176,10 @@ export default function LoginPage() {
                   </span>
                   <div>
                     <h2 className="font-display text-[16px] font-semibold text-white">
-                      Exact OAuth2 Permissions Requested
+                      OAuth 2.0 Scope Disclosure
                     </h2>
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-                      Official Discord OAuth2 · 3 standard scopes
+                      Transparent consent · Revocable anytime
                     </p>
                   </div>
                 </div>
@@ -197,15 +207,12 @@ export default function LoginPage() {
               </div>
 
               <div className="panel rounded-3xl p-6 sm:p-7">
-                <h2 className="font-display text-[15px] font-semibold text-white">
-                  Zero-Credential &amp; Anti-Abuse Guarantees
-                </h2>
-                <ul className="mt-3.5 space-y-2.5">
-                  {NEVER_REQUESTED.map((line) => (
-                    <li
-                      key={line}
-                      className="flex items-start gap-2.5 text-[12.5px] leading-relaxed text-zinc-400"
-                    >
+                <h3 className="font-display text-[15px] font-semibold text-white">
+                  Dashboard Security Guarantees
+                </h3>
+                <ul className="mt-3.5 space-y-2.5 text-[12.5px] leading-relaxed text-zinc-300">
+                  {SAFEGUARDS.map((line) => (
+                    <li key={line} className="flex items-start gap-2.5">
                       <span className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-emerald-500/35 bg-emerald-500/10 text-emerald-300">
                         <CheckIcon className="size-2.5" />
                       </span>
@@ -213,13 +220,6 @@ export default function LoginPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-4 text-[11.5px] text-zinc-500">
-                  Revoke access at any time from{" "}
-                  <span className="text-zinc-300">
-                    Discord User Settings → Authorized Apps → {site.name}
-                  </span>
-                  .
-                </p>
               </div>
             </div>
           </div>

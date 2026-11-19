@@ -39,7 +39,7 @@ export const PREMIUM_PLANS: PremiumPlanSpec[] = [
     prices: { "1m": 299, "3m": 799, "1y": 2699 },
     features: [
       "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
+      "Automod (Anti Raid-Bot Spam)",
       "Secure Channel Protection",
       "Anti Betray System",
       "AntiBetray Mode",
@@ -56,7 +56,7 @@ export const PREMIUM_PLANS: PremiumPlanSpec[] = [
     prices: { "1m": 499, "3m": 1349, "1y": 4499 },
     features: [
       "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
+      "Automod (Anti Raid-Bot Spam)",
       "Secure Channel Protection",
       "Anti Betray System",
       "AntiBetray Mode",
@@ -74,7 +74,7 @@ export const PREMIUM_PLANS: PremiumPlanSpec[] = [
     prices: { "1m": 749, "3m": 1999, "1y": 6749 },
     features: [
       "Limit System (advanced security)",
-      "Automod (Anti Token Spam)",
+      "Automod (Anti Raid-Bot Spam)",
       "Secure Channel Protection",
       "Anti Betray System",
       "Auto Emergency Mode",

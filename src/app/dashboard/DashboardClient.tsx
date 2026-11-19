@@ -11,7 +11,6 @@ import {
   ArrowRight,
   CheckIcon,
   CrownIcon,
-  DiscordIcon,
   LockIcon,
   PlusIcon,
   RefreshIcon,
@@ -199,18 +198,21 @@ export function DashboardClient() {
             ))}
           </ul>
 
-          <a
-            href="/api/auth/discord?next=/dashboard"
-            className="btn-primary btn-glow relative mt-7 flex h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
-          >
-            <DiscordIcon className="size-[19px]" />
-            Continue with Discord OAuth2
-          </a>
+          <form method="POST" action="/api/auth/discord" className="mt-7">
+            <input type="hidden" name="next" value="/dashboard" />
+            <button
+              type="submit"
+              className="btn-primary btn-glow relative flex h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
+            >
+              <ShieldIcon className="size-[18px]" />
+              Authorize with Discord
+            </button>
+          </form>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] text-zinc-500">
             <span className="inline-flex items-center gap-1.5">
               <LockIcon className="size-3 text-emerald-400" />
-              Zero password or token DB storage
+              Stateless HttpOnly OAuth2 session
             </span>
             <Link
               href="/security"
@@ -383,7 +385,7 @@ export function DashboardClient() {
               <p className="mt-0.5 text-[12.5px] text-zinc-400">
                 {premium
                   ? `${premium.expiresAt ? `Valid until ${new Date(premium.expiresAt).toLocaleDateString()}` : "Lifetime access"}${premium.guildName ? ` · Bound to ${premium.guildName}` : " · Assign a server slot anytime"}`
-                  : `Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Guard, No-Prefix & Custom Branded Bot — from ${currency}299/mo.`}
+                  : `Unlock Limit System, Anti-Raid Bot Filter, Anti-Betray Mode, Vanity Guard, No-Prefix & Custom Branded Bot — from ${currency}299/mo.`}
               </p>
             </div>
           </div>

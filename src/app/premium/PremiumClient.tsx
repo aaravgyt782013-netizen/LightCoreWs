@@ -44,7 +44,7 @@ const COMPARISON_ROWS: {
   ultra: boolean;
 }[] = [
   { feature: "Limit System (advanced security)", plus: true, pro: true, ultra: true },
-  { feature: "Automod (Anti Token Spam)", plus: true, pro: true, ultra: true },
+  { feature: "Automod (Anti Raid-Bot Spam)", plus: true, pro: true, ultra: true },
   { feature: "Secure Channel Protection", plus: true, pro: true, ultra: true },
   { feature: "Anti Betray System & Mode", plus: true, pro: true, ultra: true },
   { feature: "Priority 24/7 Support", plus: true, pro: true, ultra: true },
@@ -396,17 +396,17 @@ export function PremiumClient() {
         </p>
 
         <p className="mx-auto mt-4 max-w-2xl text-[12px] leading-relaxed text-zinc-500">
-          This document is an order summary, not a tax invoice or proof of payment. No payment
-          is taken here. Confirm the seller and amount in the official Support Server before
-          paying. Never share your Discord password or one-time codes.
+          This site only prepares a non-binding plan reference summary — no checkout or billing
+          information is collected on this website. {siteCfg.brandName} is an independent bot
+          service and is not affiliated with Discord Inc.
         </p>
 
         {/* 3-Step How Purchase Works Strip */}
         <div className="mx-auto mt-6 grid max-w-2xl gap-2 text-left sm:grid-cols-3">
           {[
-            { step: "01", title: "Create Order Summary", sub: "Review & download" },
-            { step: "02", title: "Send in Ticket", sub: "Owner shares payment QR" },
-            { step: "03", title: "Activation", sub: "After payment confirmation" },
+            { step: "01", title: "Choose Plan Tier", sub: "Generate reference ID" },
+            { step: "02", title: "Open Support Ticket", sub: "Share order reference" },
+            { step: "03", title: "Bot Tier Activated", sub: "Live countdown synced" },
           ].map((s) => (
             <div
               key={s.step}
@@ -1118,13 +1118,16 @@ export function PremiumClient() {
                       selected server, and exact timestamp directly onto your
                       downloadable invoice for fast ticket activation.
                     </p>
-                    <a
-                      href="/api/auth/discord?next=/premium"
-                      className="btn-primary btn-glow relative mt-3 inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[13.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
-                    >
-                      <DiscordIcon className="size-4" />
-                      Continue with Discord
-                    </a>
+                    <form method="POST" action="/api/auth/discord" className="mt-3">
+                      <input type="hidden" name="next" value="/premium" />
+                      <button
+                        type="submit"
+                        className="btn-primary btn-glow relative inline-flex h-11 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[13.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"
+                      >
+                        <ShieldIcon className="size-4" />
+                        Authorize with Discord
+                      </button>
+                    </form>
                   </div>
                 )}
 

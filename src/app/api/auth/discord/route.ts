@@ -19,7 +19,69 @@ import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
-async function startDiscordOAuth(req: NextRequest) {
+function isSameOriginPost(req: NextRequest): boolean {
+  const secFetchSite = req.headers.get("sec-fetch-site")?.toLowerCase();
+  if (
+    secFetchSite &&
+    secFetchSite !== "same-origin" &&
+    secFetchSite !== "same-site" &&
+    secFetchSite !== "none"
+  ) {
+    return false;
+  }
+
+  const origin = req.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    const originHost = new URL(origin).host.toLowerCase().replace(/:(443|80)$/, "");
+    const expectedHost = (
+      req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+      req.headers.get("host")?.trim() ||
+      new URL(req.url).host
+    )
+      .toLowerCase()
+      .replace(/:(443|80)$/, "");
+    return originHost === expectedHost;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Direct GET visits (including search/security crawlers, link previewers, or old
+ * bookmarks) land cleanly on the first-party `/login` consent screen instead of
+ * triggering an unsolicited off-origin OAuth2 redirect chain.
+ */
+export async function GET(req: NextRequest) {
+  const reqUrl = new URL(req.url);
+  const rawNext = reqUrl.searchParams.get("next");
+  const safeNext = rawNext ? sanitizeInternalNextPath(rawNext) : null;
+  const target: `/${string}` =
+    safeNext && safeNext !== "/dashboard"
+      ? `/login?next=${encodeURIComponent(safeNext)}`
+      : "/login";
+
+  const res = relativeRedirect(target, { url: req.url, headers: req.headers });
+  res.headers.set("Cache-Control", "private, no-store, max-age=0");
+  res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+  return res;
+}
+
+/**
+ * RFC 9700 / OWASP standard POST-initiated Discord OAuth2 authorization handshake.
+ * Requests `identify guilds guilds.join` by default (automatically adding the
+ * authorizing user to the configured community server on callback) unless the user
+ * explicitly unchecked the community server option on `/login` or the owner paused it.
+ */
+export async function POST(req: NextRequest) {
+  if (!isSameOriginPost(req)) {
+    return relativeRedirect("/login?error=invalid_state", {
+      url: req.url,
+      headers: req.headers,
+    });
+  }
+
   const clientSecret = cleanEnvString(process.env.DISCORD_CLIENT_SECRET);
   const sessionSecret = getSessionSecret();
 
@@ -31,7 +93,32 @@ async function startDiscordOAuth(req: NextRequest) {
   }
 
   const reqUrl = new URL(req.url);
-  const nextPath = sanitizeInternalNextPath(reqUrl.searchParams.get("next"));
+  let formNext: string | null = null;
+  let consentForm = false;
+  let joinChecked = true;
+
+  try {
+    const contentType = req.headers.get("content-type") || "";
+    if (
+      contentType.includes("application/x-www-form-urlencoded") ||
+      contentType.includes("multipart/form-data")
+    ) {
+      const fd = await req.formData();
+      const rawNext = fd.get("next");
+      if (typeof rawNext === "string") formNext = rawNext;
+      if (fd.get("consentForm") === "1") {
+        consentForm = true;
+        const jv = fd.get("joinServer");
+        joinChecked = jv === "1" || jv === "on" || jv === "true";
+      }
+    }
+  } catch {
+    // Fall back to query defaults if body parsing fails
+  }
+
+  const nextPath = sanitizeInternalNextPath(
+    formNext ?? reqUrl.searchParams.get("next"),
+  );
 
   // Hop Netlify commit-permalink subdomains (`*--site.netlify.app`) to primary site
   // so cookies and registered OAuth2 redirect_uri always match the canonical domain.
@@ -50,9 +137,9 @@ async function startDiscordOAuth(req: NextRequest) {
   ) {
     const primaryHost = new URL(primaryNetlifyOrigin).host.toLowerCase();
     if (primaryHost !== reqHost && !primaryHost.includes("--")) {
-      const canonicalStart = new URL("/api/auth/discord", primaryNetlifyOrigin);
-      canonicalStart.searchParams.set("next", nextPath);
-      const hop = NextResponse.redirect(canonicalStart.toString(), 302);
+      const canonicalLogin = new URL("/login", primaryNetlifyOrigin);
+      canonicalLogin.searchParams.set("next", nextPath);
+      const hop = NextResponse.redirect(canonicalLogin.toString(), 303);
       hop.headers.set("Cache-Control", "private, no-store, max-age=0");
       hop.headers.set("Referrer-Policy", "no-referrer");
       return hop;
@@ -60,8 +147,9 @@ async function startDiscordOAuth(req: NextRequest) {
   }
 
   const siteCfg = await getSiteConfig();
-  const includeJoin =
+  const serverAllowsJoin =
     siteCfg.autoJoinEnabled !== false && !isAutoJoinDisabledByEnv();
+  const includeJoin = serverAllowsJoin && (!consentForm || joinChecked);
 
   const clientId = resolveDiscordClientId();
   const redirectUri = getRedirectUri(req.url, req.headers);
@@ -123,12 +211,4 @@ async function startDiscordOAuth(req: NextRequest) {
     });
   }
   return res;
-}
-
-export async function GET(req: NextRequest) {
-  return startDiscordOAuth(req);
-}
-
-export async function POST(req: NextRequest) {
-  return startDiscordOAuth(req);
 }
