@@ -324,7 +324,7 @@ export function DashboardClient() {
 
           <Link
             href="/premium"
-            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgb(var(--brand-500)/0.82)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
+            className="btn-primary btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full px-4 text-[12.5px] font-semibold transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
           >
             <CrownIcon className="size-4" />
             {premium ? "Manage Premium" : "Buy Premium"}
@@ -474,7 +474,7 @@ export function DashboardClient() {
             href={safeInviteHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-brand-600 px-5 text-[13px] font-semibold text-white hover:bg-brand-500"
+            className="btn-primary mt-5 inline-flex h-10 items-center gap-2 rounded-full px-5 text-[13px] font-semibold"
           >
             Invite {brandName}
           </a>
@@ -493,9 +493,9 @@ export function DashboardClient() {
                   handleOpenGuild(g);
                 }
               }}
-              className={`group relative flex flex-col overflow-hidden rounded-2xl border border-brand-200/[0.09] bg-ink-900/85 shadow-panel transition-all duration-300 ease-smooth ${
+              className={`group relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.075] bg-ink-900/80 shadow-panel transition-all duration-500 ease-smooth ${
                 g.canManage
-                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/50 hover:shadow-[0_22px_55px_-22px_rgb(var(--brand-500)/0.5)]"
+                  ? "cursor-pointer hover:-translate-y-1 hover:border-brand-400/35 hover:shadow-[0_26px_64px_-26px_rgb(var(--brand-400)/0.36)]"
                   : "opacity-70"
               }`}
             >
@@ -577,10 +577,10 @@ export function DashboardClient() {
                       <Link
                         href={`/dashboard/${g.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="group/btn inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-500"
+                        className="btn-primary group/btn inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-semibold active:scale-[0.985]"
                       >
                         {g.botPresent === true ? "Manage" : "Configure"}
-                        <ArrowRight className="size-3.5 transition-transform group-hover/btn:translate-x-0.5" />
+                        <ArrowRight className="size-3.5 transition-transform duration-300 ease-smooth group-hover/btn:translate-x-0.5" />
                       </Link>
                       {g.botPresent !== true && (
                         <a
@@ -588,7 +588,7 @@ export function DashboardClient() {
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="inline-flex h-10 items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] px-3.5 text-[12px] font-medium text-zinc-200 transition-colors hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
+                          className="btn-soft inline-flex h-10 items-center justify-center px-4 text-[12px] font-medium"
                         >
                           Invite
                         </a>

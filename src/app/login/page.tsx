@@ -53,19 +53,19 @@ export default function LoginPage() {
           <div className="mx-auto grid max-w-5xl items-start gap-8 lg:grid-cols-12">
             {/* Primary First-Party Authorization Card */}
             <div className="animate-hero-in lg:col-span-6">
-              <div className="glass-card relative overflow-hidden rounded-[28px] p-7 sm:p-9">
+              <div className="glass-card relative overflow-hidden rounded-[32px] p-7 sm:p-9">
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500 to-transparent"
+                  className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/65 to-transparent"
                 />
 
                 <div className="flex items-center gap-4">
                   <Link
                     href="/"
                     aria-label={`${site.name} home`}
-                    className="flex size-14 shrink-0 items-center justify-center rounded-2xl border border-brand-500/35 bg-black/75 p-1.5 shadow-[0_0_36px_-8px_rgb(var(--brand-500)/0.6)]"
+                    className="group flex size-14 shrink-0 items-center justify-center rounded-[20px] border border-brand-400/30 bg-black p-1 shadow-[0_0_36px_-8px_rgb(var(--brand-400)/0.5)]"
                   >
-                    <Logo size={42} className="size-10 rounded-xl" />
+                    <Logo size={44} />
                   </Link>
                   <div>
                     <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-300">
@@ -107,14 +107,14 @@ export default function LoginPage() {
                       <form method="POST" action="/api/auth/discord">
                         <button
                           type="submit"
-                          className="btn-primary flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl text-[14.5px] font-semibold text-white"
+                          className="btn-primary flex h-[52px] w-full items-center justify-center gap-2.5 rounded-full text-[14.5px] font-semibold"
                         >
                           Authorize with Discord
                         </button>
                       </form>
                       <Link
                         href="/dashboard/demo"
-                        className="flex h-11 w-full items-center justify-center rounded-2xl border border-white/[0.11] bg-ink-950/75 text-[13px] font-medium text-zinc-200"
+                        className="btn-soft flex h-11 w-full items-center justify-center text-[13px] font-medium"
                       >
                         Try Interactive Demo (No Account Needed)
                       </Link>

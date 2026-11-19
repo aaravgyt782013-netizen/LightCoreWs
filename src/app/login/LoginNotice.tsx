@@ -46,18 +46,18 @@ export function DiscordLoginButton() {
         <button
           type="submit"
           disabled={connecting}
-          className="btn-primary btn-glow group relative flex h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14.5px] font-semibold tracking-tight text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] disabled:opacity-80"
+          className="btn-primary btn-glow group relative flex h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-full text-[14.5px] font-semibold tracking-tight transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] disabled:opacity-80"
         >
           {connecting ? (
             <>
-              <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               <span>Opening Discord OAuth 2.0…</span>
             </>
           ) : (
             <>
-              <ShieldIcon className="size-[18px] transition-transform duration-300 ease-smooth group-hover:scale-105" />
-              <span>Authorize with Discord</span>
-              <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
+              <ShieldIcon className="relative z-10 size-[18px] transition-transform duration-300 ease-smooth group-hover:scale-105" />
+              <span className="relative z-10">Authorize with Discord</span>
+              <ArrowRight className="relative z-10 size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
             </>
           )}
         </button>
@@ -65,10 +65,10 @@ export function DiscordLoginButton() {
 
       <Link
         href="/dashboard/demo"
-        className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.11] bg-ink-950/75 px-4 text-[13px] font-medium text-zinc-200 transition-all hover:border-brand-500/40 hover:bg-brand-950/30 hover:text-white"
+        className="btn-soft group flex h-11 w-full items-center justify-center gap-2 px-4 text-[13px] font-medium"
       >
         <span>Try Interactive Demo (No Account Needed)</span>
-        <ArrowRight className="size-3.5 text-brand-400 transition-transform group-hover:translate-x-0.5" />
+        <ArrowRight className="size-3.5 text-brand-300 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
       </Link>
 
       {oauthReady === false && (

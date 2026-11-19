@@ -311,7 +311,7 @@ export function AdminClient() {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/dashboard"
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-brand-600 px-5 text-[13px] font-semibold text-white hover:bg-brand-500"
+            className="btn-primary inline-flex h-10 items-center gap-2 rounded-full px-5 text-[13px] font-semibold"
           >
             Go to Dashboard
           </Link>
@@ -889,7 +889,7 @@ export function AdminClient() {
               <button
                 type="submit"
                 disabled={logBusy || !logMsg.trim()}
-                className="h-10 flex-1 rounded-xl bg-brand-600 text-[12.5px] font-semibold text-white hover:bg-brand-500 disabled:opacity-40"
+                className="btn-primary h-10 flex-1 rounded-full text-[12.5px] font-semibold disabled:opacity-40"
               >
                 Send Log
               </button>

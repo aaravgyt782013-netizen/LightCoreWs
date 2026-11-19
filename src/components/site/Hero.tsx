@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { Wordmark } from "@/components/ui/Logo";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
@@ -9,143 +9,191 @@ import { openCommandPalette } from "@/components/ui/CommandPalette";
 import {
   ArrowRight,
   BoltIcon,
-  CheckIcon,
   LockIcon,
   SearchIcon,
   ShieldIcon,
   SparklesIcon,
-  TerminalIcon,
+  TicketIcon,
+  UsersIcon,
+  VoiceIcon,
 } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
-import { BOT_COMMANDS } from "@/lib/commands";
-import { defaultLogs, site, type LogEntry } from "@/lib/site";
+import { DEFAULT_TAGLINE, site, type LogEntry } from "@/lib/site";
 
-const SIMULATED_RAID: LogEntry[] = [
-  { t: "ALERT", ok: false, msg: "Unwhitelisted bot triggered 6 channel deletes in 1.4s" },
-  { t: "GATE", ok: false, msg: "Predicate channel_delete:2:60s tripped · locking actor" },
-  { t: "PUNISH", ok: false, msg: "Rogue integration banned & dangerous perms stripped (162ms)" },
-  { t: "ROLLBACK", ok: true, msg: "Restored 6 deleted channels, categories & role overwrites" },
-  { t: "SEALED", ok: true, msg: "Audit report posted to #antinuke-logs · zero data lost" },
+type QuickModule = {
+  id: string;
+  title: string;
+  subtitle: string;
+  statusNote: string;
+  Icon: typeof ShieldIcon;
+  defaultOn: boolean;
+};
+
+const QUICK_MODULES: QuickModule[] = [
+  {
+    id: "antinuke",
+    title: "Server Protection",
+    subtitle: "Stops raids, rogue bots, and mass deletes automatically",
+    statusNote: "Server Protection is watching channels, roles & bans",
+    Icon: ShieldIcon,
+    defaultOn: true,
+  },
+  {
+    id: "automod",
+    title: "Smart Auto-Mod",
+    subtitle: "Keeps chat clean from spam, scam links, and invite floods",
+    statusNote: "Smart Auto-Mod is keeping every text channel clean",
+    Icon: BoltIcon,
+    defaultOn: true,
+  },
+  {
+    id: "voicemaster",
+    title: "VoiceMaster Rooms",
+    subtitle: "Private temporary voice channels created when members join",
+    statusNote: "Join-to-Create voice rooms & auto-cleanup ready",
+    Icon: VoiceIcon,
+    defaultOn: true,
+  },
+  {
+    id: "tickets",
+    title: "Support Tickets",
+    subtitle: "One-click member help channels with saved transcripts",
+    statusNote: "Support ticket panel & clean transcripts enabled",
+    Icon: TicketIcon,
+    defaultOn: true,
+  },
+  {
+    id: "welcome",
+    title: "Welcomes & Auto-Roles",
+    subtitle: "Warm custom greetings and instant member roles on join",
+    statusNote: "Custom welcome embeds & auto-roles greeting newcomers",
+    Icon: UsersIcon,
+    defaultOn: true,
+  },
 ];
 
-const INITIAL_SHIELDS = [
-  { key: "antinuke", label: "14-Rule Anti-Nuke Engine", sub: "ban:3:60s · ch_del:2:60s", weight: 32, on: true },
-  { key: "rollback", label: "Automated State Rollback", sub: "Channels, roles & overwrites", weight: 18, on: true },
-  { key: "automod", label: "8-Layer AutoMod Firewall", sub: "Spam, invites, phishing, Zalgo", weight: 18, on: true },
-  { key: "verify", label: "Captcha & Age Verification", sub: "Holds fresh burner accounts", weight: 14, on: true },
-  { key: "vanity", label: "Vanity URL & Webhook Lock", sub: "Instant unauthorized revert", weight: 10, on: true },
-  { key: "betray", label: "Anti-Betray Burst Monitor", sub: "Flags abnormal staff spikes", weight: 8, on: false },
-] as const;
-
 const HERO_STATS = [
-  { value: "14", label: "Anti-Nuke Guards" },
-  { value: "68+", label: "Bot Commands" },
-  { value: "12", label: "Dashboard Modules" },
-  { value: "8", label: "AutoMod Filters" },
+  { value: "12", label: "Built-in Modules" },
+  { value: "68+", label: "Easy Commands" },
+  { value: "30s", label: "Quick Setup" },
+  { value: "24/7", label: "Always Guarding" },
 ] as const;
 
 export function Hero() {
   const { config } = useSiteConfig();
+  const tagline = (config.tagline || DEFAULT_TAGLINE).trim();
+  const isDefaultTagline =
+    tagline.toLowerCase() === DEFAULT_TAGLINE.toLowerCase();
 
   return (
-    <section className="relative overflow-hidden pb-14 pt-[112px] sm:pb-20 sm:pt-[138px]">
+    <section className="relative overflow-hidden pb-16 pt-[116px] sm:pb-24 sm:pt-[144px]">
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:gap-14">
-          {/* Left: Flagship Brand Headline & Actions */}
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,486px)] lg:gap-16">
+          {/* Left: Radiant Brand Story & Actions */}
           <div className="relative">
             <div
-              className="animate-hero-in inline-flex items-center gap-2.5 rounded-full border border-brand-500/30 bg-brand-950/45 py-1.5 pl-1.5 pr-4 shadow-[0_0_36px_-10px_rgb(var(--brand-500)/0.65),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl"
+              className="animate-hero-in inline-flex items-center gap-2.5 rounded-full border border-brand-400/22 bg-brand-400/[0.07] py-1.5 pl-2 pr-4 shadow-[0_0_40px_-14px_rgb(var(--brand-400)/0.45),inset_0_1px_0_rgb(255_252_235/0.09)] backdrop-blur-xl"
               style={{ animationDelay: "0ms" }}
             >
-              <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-500/20">
-                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-400/75" />
-                <span className="size-1.5 rounded-full bg-brand-400 shadow-[0_0_10px_rgb(var(--brand-400))]" />
+              <span className="relative flex size-5 items-center justify-center rounded-full bg-brand-400/20">
+                <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-300/60" />
+                <span className="size-1.5 rounded-full bg-brand-300 shadow-[0_0_10px_rgb(var(--brand-300))]" />
               </span>
-              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.18em] text-zinc-100 sm:text-[10.5px] sm:tracking-[0.22em]">
-                {config.tagline}
+              <span className="text-[12px] font-medium tracking-wide text-brand-100">
+                All-in-One Discord Bot · Since 2026
               </span>
             </div>
 
             <h1
-              className="animate-hero-in mt-6 font-display text-[44px] font-bold leading-[0.94] tracking-[0.05em] text-white drop-shadow-[0_16px_50px_rgb(var(--brand-600)/0.3)] sm:text-[62px] lg:text-[72px]"
-              style={{ animationDelay: "65ms" }}
+              className="animate-hero-in mt-6 font-display text-[44px] font-bold leading-[1.03] tracking-[-0.025em] text-white sm:text-[62px] lg:text-[68px]"
+              style={{ animationDelay: "70ms" }}
             >
-              <Wordmark leadClassName="text-white" />
-              <span className="mt-3 block font-display text-[21px] font-semibold leading-[1.2] tracking-tight text-zinc-300 sm:text-[26px]">
-                Unbreakable Discord security &amp;{" "}
-                <span className="text-gradient-brand">server automation.</span>
-              </span>
+              {isDefaultTagline ? (
+                <>
+                  The bright side of{" "}
+                  <span className="text-gradient-brand">automation.</span>
+                </>
+              ) : (
+                <span className="text-gradient-brand">{tagline}</span>
+              )}
             </h1>
 
             <p
-              className="animate-hero-in mt-5 max-w-[35.5rem] text-balance text-[15.5px] leading-[1.7] text-zinc-300 sm:text-[16.5px]"
-              style={{ animationDelay: "130ms" }}
+              className="animate-hero-in mt-5 max-w-[34rem] text-balance text-[16px] leading-[1.72] text-zinc-300/95 sm:text-[17.5px]"
+              style={{ animationDelay: "135ms" }}
             >
-              {config.description}.{" "}
-              <span className="text-zinc-400">
-                {config.heroSubtext ||
-                  "Replace six bloated bots with one precision guard engine, VoiceMaster hub, ticket desk, and real-time web control plane."}
-              </span>
+              Meet{" "}
+              <span className="font-semibold text-white">
+                {config.brandName || site.name}
+              </span>{" "}
+              — {config.heroSubtext ||
+                "smart security, gentle auto-moderation, temporary voice rooms, support tickets, and welcomes, all managed from one calm, effortless dashboard."}
             </p>
 
-            {/* Primary CTAs */}
+            {/* Plush Capsule CTAs */}
             <div
               className="animate-hero-in mt-8 flex flex-wrap items-center gap-3"
               style={{ animationDelay: "195ms" }}
             >
               <InviteButton size="lg" />
               <Link
-                href={site.demo}
-                className="group inline-flex h-[52px] items-center gap-2.5 rounded-full border border-white/[0.14] bg-white/[0.045] px-6 text-[14.5px] font-semibold text-zinc-100 shadow-[inset_0_1px_0_rgb(255_255_255/0.1)] backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/55 hover:bg-brand-500/[0.12] hover:text-white hover:shadow-[0_18px_44px_-16px_rgb(var(--brand-600)/0.6)] active:scale-[0.98]"
+                href={site.dashboard}
+                className="btn-soft group inline-flex h-[52px] items-center gap-2.5 px-6 text-[14.5px] font-semibold active:scale-[0.985]"
               >
-                <SparklesIcon className="size-4 text-brand-400" />
-                Try Live Demo
-                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
+                Open Dashboard
+                <ArrowRight className="size-4 text-brand-300 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href={site.dashboard}
-                className="inline-flex h-[52px] items-center gap-2 rounded-full border border-white/[0.09] bg-ink-900/75 px-5 text-[14px] font-medium text-zinc-300 backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-white/[0.22] hover:text-white active:scale-[0.98]"
+                href={site.demo}
+                className="group inline-flex h-[52px] items-center gap-2 rounded-full px-4 text-[14px] font-medium text-zinc-300 transition-all duration-300 ease-smooth hover:bg-white/[0.04] hover:text-brand-200 active:scale-[0.985]"
               >
-                Dashboard
+                <SparklesIcon className="size-4 text-brand-400" />
+                Try Demo
               </Link>
             </div>
 
-            {/* Trust & Quick Command Bar */}
+            {/* Gentle Reassurance Row */}
             <div
-              className="animate-hero-in mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10.5px] text-zinc-500"
-              style={{ animationDelay: "240ms" }}
+              className="animate-hero-in mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-zinc-400"
+              style={{ animationDelay: "245ms" }}
             >
               <Link
                 href="/security"
-                className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-emerald-300"
+                className="inline-flex items-center gap-2 transition-colors duration-300 hover:text-emerald-300"
               >
                 <LockIcon className="size-3.5 text-emerald-400" />
-                Read-only Discord OAuth 2.0 · Zero auto-join
+                <span>Official read-only Discord sign-in</span>
               </Link>
               <button
                 type="button"
                 onClick={openCommandPalette}
-                className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-brand-300"
+                className="inline-flex items-center gap-2 transition-colors duration-300 hover:text-brand-200"
               >
                 <SearchIcon className="size-3.5 text-brand-400" />
-                Press <kbd className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9.5px] text-zinc-300">⌘K</kbd> to search commands
+                <span>
+                  Press{" "}
+                  <kbd className="rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10.5px] text-zinc-300">
+                    ⌘K
+                  </kbd>{" "}
+                  to explore commands
+                </span>
               </button>
             </div>
 
-            {/* Crisp Capability Metrics */}
+            {/* Soft Rounded Stat Pills */}
             <div
-              className="animate-hero-in mt-9 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-4"
-              style={{ animationDelay: "290ms" }}
+              className="animate-hero-in mt-10 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-4"
+              style={{ animationDelay: "295ms" }}
             >
               {HERO_STATS.map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl border border-white/[0.075] bg-ink-900/70 px-3.5 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] backdrop-blur-md"
+                  className="rounded-[22px] border border-white/[0.065] bg-ink-900/65 px-4 py-3.5 shadow-[inset_0_1px_0_rgb(255_250_230/0.05)] backdrop-blur-md transition-all duration-500 ease-smooth hover:border-brand-400/22 hover:bg-ink-900/85"
                 >
-                  <p className="font-display text-[22px] font-bold leading-none tracking-tight text-white">
+                  <p className="font-display text-[23px] font-bold leading-none tracking-tight text-white">
                     {item.value}
                   </p>
-                  <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-500">
+                  <p className="mt-1.5 text-[11.5px] font-medium text-zinc-400">
                     {item.label}
                   </p>
                 </div>
@@ -153,9 +201,9 @@ export function Hero() {
             </div>
           </div>
 
-          {/* Right: 3-Tab Interactive Guard Console */}
-          <div className="animate-hero-in" style={{ animationDelay: "160ms" }}>
-            <ConsolePanel />
+          {/* Right: Plush Velvet & Solar-Gold Emblem + 1-Tap Module Studio */}
+          <div className="animate-hero-in" style={{ animationDelay: "150ms" }}>
+            <QuickStudioCard />
           </div>
         </div>
       </div>
@@ -163,415 +211,178 @@ export function Hero() {
   );
 }
 
-function ConsolePanel() {
+function QuickStudioCard() {
   const { config } = useSiteConfig();
+  const logoSrc = config.logoUrl || site.logo;
   const prefix = config.prefix || site.prefix;
-  const [tab, setTab] = useState<"stream" | "terminal" | "shields">("stream");
 
-  // Feed tab state
-  const [entries, setEntries] = useState<LogEntry[]>(defaultLogs);
-  const [isLive, setIsLive] = useState(false);
-  const [step, setStep] = useState(5);
-  const [simulating, setSimulating] = useState(false);
-  const [simLogs, setSimLogs] = useState<LogEntry[]>([]);
-  const simTimers = useRef<number[]>([]);
-
-  // Terminal tab state
-  const [termInput, setTermInput] = useState("");
-  const [termHistory, setTermHistory] = useState<
-    { cmd: string; out: string; ok: boolean }[]
-  >([
-    {
-      cmd: `${site.prefix}antinuke enable`,
-      out: "Armed 14 Anti-Nuke guards · punishment: BAN · auto-rollback: ACTIVE",
-      ok: true,
-    },
-    {
-      cmd: `${site.prefix}voicemaster setup`,
-      out: "Created VoiceMaster category, ➕ Join to Create hub & button control deck",
-      ok: true,
-    },
-  ]);
-
-  // Shield matrix tab state
-  const [shields, setShields] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(INITIAL_SHIELDS.map((s) => [s.key, s.on])),
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(QUICK_MODULES.map((m) => [m.id, m.defaultOn])),
   );
-
-  useEffect(() => {
-    return () => {
-      simTimers.current.forEach((t) => window.clearTimeout(t));
-    };
-  }, []);
+  const [statusLine, setStatusLine] = useState<string>(
+    "All core modules active and running smoothly",
+  );
+  const [liveConnected, setLiveConnected] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const load = async () => {
-      try {
-        const res = await fetch("/api/logs?limit=12", { cache: "no-store" });
-        if (!res.ok || !active) return;
-        const data = (await res.json()) as {
-          live?: boolean;
-          logs?: LogEntry[];
-        };
-        if (
-          active &&
-          data.live &&
-          Array.isArray(data.logs) &&
-          data.logs.length > 0
-        ) {
-          setEntries(data.logs);
-          setIsLive(true);
+    fetch("/api/logs", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { logs?: LogEntry[]; live?: boolean } | null) => {
+        if (!active || !data) return;
+        if (data.live && Array.isArray(data.logs) && data.logs[0]?.msg) {
+          setLiveConnected(true);
+          setStatusLine(data.logs[0].msg);
         }
-      } catch {
-        // Keep default preview stream when offline
-      }
-    };
-    void load();
-    const poll = window.setInterval(() => void load(), 12000);
+      })
+      .catch(() => {});
     return () => {
       active = false;
-      window.clearInterval(poll);
     };
   }, []);
 
-  useEffect(() => {
-    if (isLive || simulating || tab !== "stream") return;
-    const id = window.setInterval(() => {
-      setStep((s) =>
-        s + 1 > entries.length ? Math.min(4, entries.length) : s + 1,
-      );
-    }, 2400);
-    return () => window.clearInterval(id);
-  }, [isLive, simulating, entries.length, tab]);
+  const enabledCount = QUICK_MODULES.filter((m) => enabled[m.id]).length;
 
-  const runSimulation = useCallback(() => {
-    if (simulating) return;
-    setTab("stream");
-    setSimulating(true);
-    setSimLogs([{ ...SIMULATED_RAID[0], id: `sim-0-${Date.now()}` }]);
-    simTimers.current.forEach((t) => window.clearTimeout(t));
-    simTimers.current = [];
-
-    SIMULATED_RAID.slice(1).forEach((entry, idx) => {
-      const id = window.setTimeout(
-        () => {
-          setSimLogs((prev) => [
-            ...prev,
-            { ...entry, id: `sim-${Date.now()}-${idx}` },
-          ]);
-        },
-        (idx + 1) * 520,
+  const toggleModule = (mod: QuickModule) => {
+    setEnabled((prev) => {
+      const nextVal = !prev[mod.id];
+      setStatusLine(
+        nextVal ? mod.statusNote : `${mod.title} paused — tap anytime to re-enable`,
       );
-      simTimers.current.push(id);
+      return { ...prev, [mod.id]: nextVal };
     });
-
-    const endId = window.setTimeout(() => {
-      setSimulating(false);
-    }, SIMULATED_RAID.length * 520 + 3400);
-    simTimers.current.push(endId);
-  }, [simulating]);
-
-  const executeTerminalCmd = (raw: string) => {
-    const cleaned = raw.trim();
-    if (!cleaned) return;
-    const withoutPrefix = cleaned.replace(/^[.!/&?$]+/, "").trim().toLowerCase();
-    const displayCmd = cleaned.startsWith(prefix) ? cleaned : `${prefix}${withoutPrefix}`;
-
-    if (withoutPrefix === "clear") {
-      setTermHistory([]);
-      setTermInput("");
-      return;
-    }
-    if (withoutPrefix === "help") {
-      setTermHistory((h) => [
-        ...h.slice(-3),
-        {
-          cmd: displayCmd,
-          out: `${BOT_COMMANDS.length} commands ready across 12 modules. Try ${prefix}antinuke, ${prefix}automod, ${prefix}verify, or ${prefix}ticket.`,
-          ok: true,
-        },
-      ]);
-      setTermInput("");
-      return;
-    }
-
-    const match = BOT_COMMANDS.find(
-      (c) =>
-        c.name.toLowerCase() === withoutPrefix ||
-        withoutPrefix.startsWith(c.name.toLowerCase().split(" ")[0]) ||
-        c.aliases?.some((a) => a.toLowerCase() === withoutPrefix.split(" ")[0]),
-    );
-
-    setTermHistory((h) => [
-      ...h.slice(-3),
-      match
-        ? {
-            cmd: displayCmd,
-            out: `[${match.category}] ${match.desc} (Requires: ${match.permission})`,
-            ok: true,
-          }
-        : {
-            cmd: displayCmd,
-            out: `Unknown command. Try ${prefix}help, ${prefix}antinuke enable, ${prefix}automod strict, or ${prefix}ticket setup.`,
-            ok: false,
-          },
-    ]);
-    setTermInput("");
   };
-
-  const shieldScore = INITIAL_SHIELDS.reduce(
-    (sum, s) => sum + (shields[s.key] ? s.weight : 0),
-    0,
-  );
-  const shieldGrade =
-    shieldScore >= 90 ? "S+" : shieldScore >= 75 ? "A" : shieldScore >= 50 ? "B" : "C";
-
-  const visible =
-    simLogs.length > 0 && simulating
-      ? simLogs
-      : isLive
-        ? entries.slice(-5)
-        : entries.slice(Math.max(0, step - 5), step);
 
   return (
     <div className="relative">
+      {/* Ultra-soft diffused golden aura behind the card */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-8 rounded-[2.4rem] blur-3xl"
+        className="pointer-events-none absolute -inset-6 -z-10 rounded-[44px] blur-3xl"
         style={{
           background:
-            "radial-gradient(closest-side, rgb(var(--brand-600) / 0.28), rgb(var(--brand-800) / 0.1) 56%, transparent 82%)",
+            "radial-gradient(closest-side, rgb(var(--brand-400) / 0.2), rgb(var(--brand-600) / 0.06) 62%, transparent 100%)",
         }}
       />
 
-      <SpotlightCard className="overflow-hidden rounded-[26px] border-brand-500/30 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
+      <SpotlightCard className="overflow-hidden rounded-[32px] p-5 sm:p-6">
         <div
           aria-hidden
-          className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500 to-transparent"
+          className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent"
         />
 
-        {/* Console Chrome Header */}
-        <div className="relative flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.075] bg-black/55 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-1.5 sm:flex">
-              <span className="size-2.5 rounded-full bg-brand-500 shadow-[0_0_10px_rgb(var(--brand-500))]" />
-              <span className="size-2.5 rounded-full bg-white/12" />
-              <span className="size-2.5 rounded-full bg-white/12" />
-            </span>
+        {/* Brand Identity Header showcasing the new LightCore Logo */}
+        <div className="relative flex items-center gap-4 rounded-[24px] border border-white/[0.065] bg-black/55 p-3.5 sm:p-4">
+          <div className="relative shrink-0">
+            <span
+              aria-hidden
+              className="absolute -inset-1.5 rounded-[22px] bg-brand-400/25 blur-lg"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoSrc}
+              alt={`${config.brandName || site.name} emblem`}
+              width={64}
+              height={64}
+              className="relative size-16 rounded-[20px] bg-black object-cover ring-1 ring-brand-300/35 shadow-[0_10px_30px_-6px_rgb(var(--brand-400)/0.5)]"
+            />
+          </div>
 
-            <div className="inline-flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-0.5 font-mono text-[9.5px] uppercase tracking-[0.15em]">
-              {(
-                [
-                  { id: "stream", label: "Guard Feed" },
-                  { id: "terminal", label: "Terminal" },
-                  { id: "shields", label: "Shields" },
-                ] as const
-              ).map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTab(t.id)}
-                  className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${
-                    tab === t.id
-                      ? "bg-brand-600/28 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.5)]"
-                      : "text-zinc-500 hover:text-zinc-200"
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-display text-[17px] font-bold tracking-[0.08em] text-white">
+                <Wordmark />
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[10.5px] font-medium text-emerald-300">
+                <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+                {liveConnected ? "Live" : "Online"}
+              </span>
+            </div>
+            <p className="mt-1 truncate text-[12.5px] text-brand-200/90">
+              {config.tagline || DEFAULT_TAGLINE}
+            </p>
+            <p className="mt-1 text-[11px] text-zinc-500">
+              Prefix{" "}
+              <code className="rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-brand-300">
+                {prefix}
+              </code>{" "}
+              + Slash Commands · {enabledCount}/{QUICK_MODULES.length} active
+            </p>
+          </div>
+        </div>
+
+        {/* Smooth 1-Tap Module Toggles */}
+        <div className="relative mt-4 space-y-2">
+          {QUICK_MODULES.map((mod) => {
+            const isOn = Boolean(enabled[mod.id]);
+            const Icon = mod.Icon;
+            return (
+              <button
+                key={mod.id}
+                type="button"
+                role="switch"
+                aria-checked={isOn}
+                onClick={() => toggleModule(mod)}
+                className={`group flex w-full items-center gap-3.5 rounded-[20px] border px-3.5 py-3 text-left transition-all duration-300 ease-smooth active:scale-[0.99] ${
+                  isOn
+                    ? "border-brand-400/18 bg-white/[0.03] hover:border-brand-300/32 hover:bg-white/[0.05]"
+                    : "border-white/[0.05] bg-black/30 opacity-70 hover:opacity-95"
+                }`}
+              >
+                <span
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-2xl border transition-all duration-300 ease-smooth ${
+                    isOn
+                      ? "border-brand-400/28 bg-brand-400/[0.11] text-brand-300 shadow-[0_0_24px_-8px_rgb(var(--brand-400)/0.5)]"
+                      : "border-white/[0.07] bg-white/[0.03] text-zinc-500"
                   }`}
                 >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
+                  <Icon className="size-[18px]" />
+                </span>
 
-          <button
-            type="button"
-            onClick={runSimulation}
-            disabled={simulating}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider transition-all duration-300 ease-smooth active:scale-95 ${
-              simulating
-                ? "border-brand-400/65 bg-brand-500/28 text-white shadow-[0_0_20px_-4px_rgb(var(--brand-500))]"
-                : "border-brand-500/40 bg-brand-500/14 text-brand-200 hover:border-brand-400/75 hover:bg-brand-500/25 hover:text-white"
-            }`}
-          >
-            <BoltIcon className="size-3 text-brand-400" />
-            {simulating ? "Mitigating…" : "Simulate Nuke"}
-          </button>
-        </div>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13.5px] font-semibold text-zinc-100">
+                    {mod.title}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11.5px] text-zinc-400">
+                    {mod.subtitle}
+                  </span>
+                </span>
 
-        {/* Sub-header status ribbon */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] bg-brand-950/20 px-4 py-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400">
-          <span>
-            {tab === "terminal"
-              ? `Interactive command runner · prefix "${prefix}"`
-              : tab === "shields"
-                ? "Toggle guards to calculate posture score"
-                : isLive
-                  ? "Connected guild security feed"
-                  : simulating
-                    ? "Nuke interception sequence"
-                    : "Guard engine preview · click Simulate Nuke"}
-          </span>
-          <span className="font-semibold text-emerald-300">
-            {shieldScore}/100 {shieldGrade}
-          </span>
-        </div>
-
-        {/* Console Body — fixed height for zero layout shift */}
-        <div className="relative p-4">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/60 to-transparent" />
-
-          {tab === "stream" && (
-            <div className="flex h-[312px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto">
-              {visible.map((l, i) => (
-                <div
-                  key={l.id ?? `${l.t}-${l.msg}-${i}`}
-                  className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.065] bg-black/60 px-3 py-2.5 transition-colors duration-200 hover:border-brand-500/35"
+                {/* Butter-smooth capsule switch */}
+                <span
+                  aria-hidden
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors duration-300 ease-smooth ${
+                    isOn
+                      ? "bg-brand-400 shadow-[0_0_18px_-4px_rgb(var(--brand-400)/0.75)]"
+                      : "bg-white/[0.1]"
+                  }`}
                 >
                   <span
-                    className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
-                      l.ok
-                        ? "border border-emerald-500/30 bg-emerald-500/12 text-emerald-300"
-                        : "border border-brand-500/45 bg-brand-600/25 text-brand-200"
+                    className={`size-5 rounded-full transition-transform duration-300 ease-smooth ${
+                      isOn
+                        ? "translate-x-5 bg-ink-950 shadow-sm"
+                        : "translate-x-0 bg-zinc-400"
                     }`}
-                  >
-                    {l.t}
-                  </span>
-                  <span className="text-zinc-200">{l.msg}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === "terminal" && (
-            <div className="flex h-[312px] flex-col justify-between">
-              <div className="space-y-2.5 overflow-y-auto pr-1 font-mono text-[11.5px]">
-                {termHistory.map((item, idx) => (
-                  <div
-                    key={`${item.cmd}-${idx}`}
-                    className="rounded-xl border border-white/[0.065] bg-black/60 p-3"
-                  >
-                    <p className="text-brand-300">
-                      <span className="text-zinc-500">$ </span>
-                      {item.cmd}
-                    </p>
-                    <p
-                      className={`mt-1 leading-snug ${
-                        item.ok ? "text-zinc-200" : "text-amber-300"
-                      }`}
-                    >
-                      {item.out}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-3 space-y-2">
-                <div className="flex flex-wrap gap-1.5">
-                  {["automod strict", "verify setup", "ticket setup", "nightmode", "gstart"].map(
-                    (chip) => (
-                      <button
-                        key={chip}
-                        type="button"
-                        onClick={() => executeTerminalCmd(`${prefix}${chip}`)}
-                        className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[9.5px] text-zinc-400 transition hover:border-brand-500/40 hover:text-brand-200"
-                      >
-                        {prefix}
-                        {chip}
-                      </button>
-                    ),
-                  )}
-                </div>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    executeTerminalCmd(termInput);
-                  }}
-                  className="flex items-center gap-2 rounded-xl border border-brand-500/35 bg-black/80 px-3 py-2"
-                >
-                  <TerminalIcon className="size-3.5 shrink-0 text-brand-400" />
-                  <input
-                    type="text"
-                    value={termInput}
-                    onChange={(e) => setTermInput(e.target.value)}
-                    placeholder={`Type a command (e.g. ${prefix}lockdown, ${prefix}help)…`}
-                    className="flex-1 bg-transparent font-mono text-[12px] text-white placeholder:text-zinc-600 focus:outline-none"
                   />
-                  <button
-                    type="submit"
-                    className="rounded-md bg-brand-600/30 px-2.5 py-1 font-mono text-[9.5px] uppercase text-brand-200 hover:bg-brand-600/50 hover:text-white"
-                  >
-                    Run
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-          {tab === "shields" && (
-            <div className="flex h-[312px] flex-col justify-between">
-              <div className="space-y-1.5 overflow-y-auto pr-0.5">
-                {INITIAL_SHIELDS.map((s) => {
-                  const active = Boolean(shields[s.key]);
-                  return (
-                    <button
-                      key={s.key}
-                      type="button"
-                      onClick={() =>
-                        setShields((prev) => ({ ...prev, [s.key]: !prev[s.key] }))
-                      }
-                      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition-all ${
-                        active
-                          ? "border-brand-500/35 bg-brand-950/35 text-white"
-                          : "border-white/[0.06] bg-black/45 text-zinc-400 hover:border-white/[0.14]"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-[12px] font-medium">
-                          {s.label}
-                        </p>
-                        <p className="truncate font-mono text-[9.5px] text-zinc-500">
-                          {s.sub}
-                        </p>
-                      </div>
-                      <span
-                        className={`inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition ${
-                          active
-                            ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-300"
-                            : "border-white/15 bg-black/40 text-transparent"
-                        }`}
-                      >
-                        <CheckIcon className="size-3" />
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
-                <div
-                  style={{ width: `${shieldScore}%` }}
-                  className="h-full rounded-full bg-gradient-to-r from-brand-600 via-brand-400 to-emerald-400 transition-all duration-300"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Console Footer */}
-          <div className="mt-3 flex items-center justify-between border-t border-white/[0.065] pt-3 font-mono text-[10px] text-zinc-500">
-            <span>
-              prefix <span className="text-brand-400">{prefix}</span> · slash{" "}
-              <span className="text-zinc-300">/antinuke</span>
-            </span>
-            <Link
-              href="/dashboard/demo"
-              className="inline-flex items-center gap-1.5 text-brand-300 transition hover:text-white"
-            >
-              <ShieldIcon className="size-3" />
-              Open Full Control Plane →
-            </Link>
-          </div>
+        {/* Soft Live Feedback Footer */}
+        <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/[0.06] bg-black/45 px-4 py-2.5 text-[12px]">
+          <span className="flex min-w-0 flex-1 items-center gap-2 text-zinc-300">
+            <span className="size-1.5 shrink-0 rounded-full bg-brand-400 shadow-[0_0_8px_rgb(var(--brand-300))]" />
+            <span className="truncate">{statusLine}</span>
+          </span>
+          <Link
+            href={site.demo}
+            className="group inline-flex shrink-0 items-center gap-1 font-medium text-brand-300 transition-colors hover:text-brand-100"
+          >
+            All 12 modules
+            <ArrowRight className="size-3.5 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </SpotlightCard>
     </div>

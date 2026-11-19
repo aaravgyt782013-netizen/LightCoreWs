@@ -170,27 +170,27 @@ export async function downloadInvoicePng(
   const dt = formatInvoiceDateTime(inv.createdAt);
   const brand = inv.brandName || siteCfg.brandName || "LightCore";
 
-  // Background base — sleek Obsidian Black
+  // Background base — warm Velvet Black
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, "#0a080a");
-  bgGrad.addColorStop(0.5, "#060608");
-  bgGrad.addColorStop(1, "#030305");
+  bgGrad.addColorStop(0, "#0d0b07");
+  bgGrad.addColorStop(0.5, "#080604");
+  bgGrad.addColorStop(1, "#050403");
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
   // Subtle top radial glow
-  const glow = ctx.createRadialGradient(W / 2, 0, 20, W / 2, 40, 520);
-  glow.addColorStop(0, `${accent}36`);
+  const glow = ctx.createRadialGradient(W / 2, 0, 20, W / 2, 40, 540);
+  glow.addColorStop(0, `${accent}30`);
   glow.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, W, 460);
 
   // Outer card frame
-  roundRectPath(ctx, 28, 28, W - 56, H - 56, 26);
-  ctx.fillStyle = "rgba(12, 12, 16, 0.95)";
+  roundRectPath(ctx, 28, 28, W - 56, H - 56, 30);
+  ctx.fillStyle = "rgba(15, 13, 9, 0.96)";
   ctx.fill();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = `${accent}48`;
+  ctx.lineWidth = 1.25;
+  ctx.strokeStyle = `${accent}42`;
   ctx.stroke();
 
   // Top glowing accent bar

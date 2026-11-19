@@ -446,7 +446,7 @@ export function PremiumClient() {
                 onClick={() => setCycle(opt.id)}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[12.5px] font-semibold transition-all duration-200 sm:text-[13px] ${
                   active
-                    ? "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-400)/0.85)]"
+                    ? "btn-primary shadow-[0_8px_26px_-8px_rgb(var(--brand-400)/0.65)]"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
@@ -577,7 +577,7 @@ export function PremiumClient() {
                   <span
                     className={`rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-[0.18em] ${
                       isFeatured
-                        ? "border-brand-300/50 bg-brand-500 text-ink-950 shadow-[0_0_20px_-4px_rgb(var(--brand-400))]"
+                        ? "border-brand-300/60 bg-brand-400 text-brand-ink shadow-[0_0_20px_-4px_rgb(var(--brand-400))]"
                         : plan.id === "ultra"
                           ? "border-brand-300/40 bg-brand-400/15 text-brand-200"
                           : "border-brand-200/15 bg-brand-200/[0.06] text-zinc-200"
@@ -624,12 +624,10 @@ export function PremiumClient() {
                   setDownloadedOnce(false);
                   setSelectedPlan(plan);
                 }}
-                className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl text-[14px] font-semibold transition-all duration-200 ${
-                  isFeatured
-                    ? "btn-glow bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.85)] hover:brightness-110"
-                    : plan.id === "ultra"
-                      ? "btn-glow bg-gradient-to-r from-brand-700 via-brand-500 to-brand-400 text-white shadow-[0_12px_36px_-10px_rgb(var(--brand-400)/0.65)] hover:brightness-110"
-                      : "border border-brand-400/40 bg-brand-950/55 text-white hover:border-brand-400 hover:bg-brand-600"
+                className={`group/btn relative mt-8 inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-full text-[14px] font-semibold transition-all duration-300 ease-smooth active:scale-[0.985] ${
+                  isFeatured || plan.id === "ultra"
+                    ? "btn-primary btn-glow hover:-translate-y-0.5"
+                    : "btn-soft hover:-translate-y-0.5"
                 }`}
               >
                 <InvoiceIcon className="size-4" />
@@ -1045,7 +1043,7 @@ export function PremiumClient() {
                     type="button"
                     disabled={downloading}
                     onClick={() => void handleDownloadPng(activeInvoice)}
-                    className="btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-4 text-[13.5px] font-semibold text-white shadow-[0_10px_30px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                    className="btn-primary btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-full px-5 text-[13.5px] font-semibold active:scale-[0.985] disabled:opacity-60"
                   >
                     <DownloadIcon className="size-4" />
                     {downloading
@@ -1228,7 +1226,7 @@ export function PremiumClient() {
                     type="button"
                     disabled={generating}
                     onClick={() => void handleGenerateInvoice()}
-                    className="btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 via-brand-500 to-brand-400 px-5 text-[14px] font-semibold text-white shadow-[0_12px_34px_-8px_rgb(var(--brand-400)/0.85)] transition-all hover:brightness-110 disabled:opacity-60"
+                    className="btn-primary btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-full px-5 text-[14px] font-semibold active:scale-[0.985] disabled:opacity-60"
                   >
                     <InvoiceIcon className="size-4" />
                     {generating

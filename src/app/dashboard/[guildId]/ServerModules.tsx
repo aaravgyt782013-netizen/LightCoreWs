@@ -369,7 +369,7 @@ export function WelcomerModule({
                   <span className="text-[13.5px] font-semibold text-white">
                     {site.name}
                   </span>
-                  <span className="rounded bg-brand-600 px-1 py-px text-[9px] font-bold uppercase text-white">
+                  <span className="rounded bg-brand-400 px-1.5 py-px text-[9px] font-bold uppercase text-brand-ink">
                     APP
                   </span>
                   <span className="text-[10.5px] text-zinc-500">
@@ -851,7 +851,7 @@ export function TicketsModule({
             <button
               type="button"
               onClick={addCategory}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+              className="btn-primary inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
             >
               <PlusIcon className="size-3.5" />
               Add
@@ -1126,7 +1126,7 @@ export function UtilityModule({
   const [embDesc, setEmbDesc] = useState(
     "Welcome to **{server}**! Stay respectful, keep channels on-topic, and enjoy the community.",
   );
-  const [embColor, setEmbColor] = useState(config.general.embedColor || "#ef4444");
+  const [embColor, setEmbColor] = useState(config.general.embedColor || "#facc15");
   const [embFooter, setEmbFooter] = useState("Protected by LightCore");
   const [embTimestamp, setEmbTimestamp] = useState(true);
 
@@ -1244,7 +1244,7 @@ export function UtilityModule({
           <button
             type="button"
             onClick={addResponder}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+            className="btn-primary inline-flex h-11 items-center justify-center gap-1.5 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
           >
             <PlusIcon className="size-3.5" />
             Add
@@ -1503,7 +1503,7 @@ export function UtilityModule({
               <button
                 type="button"
                 onClick={addEmbedTemplate}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+                className="btn-primary inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
               >
                 <PlusIcon className="size-3.5" />
                 Save Embed

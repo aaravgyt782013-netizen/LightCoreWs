@@ -226,7 +226,7 @@ export function SiteCustomizerTab({
             type="button"
             disabled={saving}
             onClick={() => void handleSave()}
-            className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-5 text-[13px] font-semibold text-white shadow-[0_8px_24px_-6px_rgb(var(--brand-400)/0.8)] hover:brightness-110 disabled:opacity-50"
+            className="btn-primary btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full px-5 text-[13px] font-semibold disabled:opacity-50"
           >
             <CheckIcon className="size-4" />
             {saving
@@ -456,7 +456,7 @@ export function SiteCustomizerTab({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-3 text-[12px] font-semibold text-white hover:bg-brand-500"
+                className="btn-primary inline-flex h-10 items-center justify-center gap-1.5 rounded-full px-4 text-[12px] font-semibold"
               >
                 <UploadIcon className="size-3.5" />
                 Upload Logo
@@ -933,13 +933,13 @@ function ToggleTile({
         <p className="mt-0.5 text-[11px] text-zinc-400">{description}</p>
       </div>
       <span
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-          checked ? "bg-brand-500" : "bg-ink-700"
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-300 ease-smooth ${
+          checked ? "bg-brand-400" : "bg-ink-700"
         }`}
       >
         <span
-          className={`inline-block size-4 rounded-full bg-white shadow transition-transform ${
-            checked ? "translate-x-6" : "translate-x-1"
+          className={`inline-block size-4 rounded-full shadow transition-transform duration-300 ease-smooth ${
+            checked ? "translate-x-6 bg-brand-ink" : "translate-x-1 bg-zinc-300"
           }`}
         />
       </span>

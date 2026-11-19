@@ -4,9 +4,8 @@ import { Hero } from "@/components/site/Hero";
 import { ModuleMarquee } from "@/components/site/ModuleMarquee";
 import { Features } from "@/components/site/Features";
 import { DashboardShowcase } from "@/components/site/DashboardShowcase";
-import { Setup } from "@/components/site/Setup";
-import { Protocol } from "@/components/site/Protocol";
 import { VoiceMaster } from "@/components/site/VoiceMaster";
+import { Setup } from "@/components/site/Setup";
 import { Faq } from "@/components/site/Faq";
 import { CtaSection } from "@/components/site/CtaSection";
 import { Footer } from "@/components/site/Footer";
@@ -17,7 +16,7 @@ const jsonLd = {
   "@type": "SoftwareApplication",
   name: site.name,
   slogan: site.tagline,
-  applicationCategory: "SecurityApplication",
+  applicationCategory: "UtilitiesApplication",
   operatingSystem: "Discord",
   description: site.description,
   url: site.url,
@@ -46,7 +45,6 @@ export default function Home() {
         <div className="container-x">
           <div className="hairline" />
         </div>
-        <Protocol />
         <VoiceMaster />
         <Setup />
         <Faq />

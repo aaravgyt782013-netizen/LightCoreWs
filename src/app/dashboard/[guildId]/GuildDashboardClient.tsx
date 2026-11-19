@@ -231,7 +231,7 @@ function createDemoPayload(): GuildPayload {
       title: "LightCore Sanctuary · Official Rules",
       description:
         "1. Respect every member & staff decision.\n2. Zero phishing links, self-promo, or token spam.\n3. Open a ticket in #open-a-ticket for fast assistance.",
-      color: "#ef4444",
+      color: "#facc15",
       imageUrl: "",
       thumbnailUrl: "",
       footer: "Guarded 24/7 by LightCore",
@@ -279,7 +279,7 @@ function createDemoPayload(): GuildPayload {
         { id: "cat-support", name: "Support Desk", type: "category", position: 16 },
       ],
       roles: [
-        { id: "rl-head", name: "Head Admin", color: "#ef4444", position: 9 },
+        { id: "rl-head", name: "Head Admin", color: "#facc15", position: 9 },
         { id: "rl-staff", name: "Support Staff", color: "#f43f5e", position: 8 },
         { id: "rl-night", name: "Night Watch", color: "#8b5cf6", position: 7 },
         { id: "rl-gw", name: "Giveaway Host", color: "#f59e0b", position: 6 },
@@ -819,7 +819,7 @@ export function GuildDashboardClient({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/dashboard"
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-brand-600 px-5 text-[13px] font-semibold text-white hover:bg-brand-500"
+              className="btn-primary inline-flex h-10 items-center gap-2 rounded-full px-5 text-[13px] font-semibold"
             >
               Choose Another Server
             </Link>
@@ -1307,7 +1307,7 @@ export function GuildDashboardClient({
 
             <Link
               href={premiumHref}
-              className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-500)/0.82)] transition-all hover:-translate-y-0.5 hover:brightness-110"
+              className="btn-primary btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full px-4 text-[12px] font-semibold transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
             >
               <CrownIcon className="size-3.5" />
               <span className="hidden sm:inline">
@@ -1467,7 +1467,7 @@ export function GuildDashboardClient({
                 href={guild.inviteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 items-center gap-2 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+                className="btn-primary inline-flex h-10 items-center gap-2 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
               >
                 Invite to {guild.name}
                 <ArrowRight className="size-3.5" />
@@ -1783,7 +1783,7 @@ export function GuildDashboardClient({
                           options={guild.roles.map((r) => ({
                             value: r.id,
                             label: `@${r.name}`,
-                            colorDot: r.color || "#ef4444",
+                            colorDot: r.color || "#facc15",
                           }))}
                         />
                       ) : (
@@ -2046,7 +2046,7 @@ export function GuildDashboardClient({
                   type="button"
                   disabled={saving}
                   onClick={() => void handleSave()}
-                  className="h-9 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_6px_20px_-6px_rgb(var(--brand-500)/0.8)] transition-all hover:brightness-110 disabled:opacity-60"
+                  className="btn-primary h-9 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985] disabled:opacity-60"
                 >
                   {saving ? "Saving…" : "Save Changes"}
                 </button>

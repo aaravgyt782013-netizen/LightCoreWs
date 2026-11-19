@@ -15,14 +15,18 @@ export function Logo({
   srcOverride?: string;
 }) {
   const { config } = useSiteConfig();
-  const src = srcOverride || config.logoUrl || site.logo;
+  const baseSrc = srcOverride || config.logoUrl || site.logo;
+  const src =
+    !srcOverride && baseSrc === "/brand/logo.png" && size <= 56
+      ? "/brand/lightcore-mark.png"
+      : baseSrc;
   const showGlow = glow && config.logoGlow;
   const radiusClass =
     config.logoShape === "circle"
       ? "rounded-full"
       : config.logoShape === "rounded"
-        ? "rounded-lg"
-        : "rounded-[24%]";
+        ? "rounded-xl"
+        : "rounded-[28%]";
 
   return (
     <span
@@ -32,7 +36,7 @@ export function Logo({
       {showGlow && (
         <span
           aria-hidden
-          className="absolute inset-0 rounded-full bg-brand-500/40 blur-xl transition-opacity duration-300 group-hover:opacity-100"
+          className="absolute -inset-1 rounded-full bg-brand-400/25 blur-xl transition-opacity duration-500 ease-smooth group-hover:opacity-100"
         />
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,7 +45,7 @@ export function Logo({
         alt={`${config.brandName || site.name} logo`}
         width={size}
         height={size}
-        className={`relative size-full ${radiusClass} object-cover ring-1 ring-brand-500/30 drop-shadow-[0_0_16px_rgb(var(--brand-500)/0.55)] transition-transform duration-300 ease-smooth group-hover:scale-[1.03]`}
+        className={`relative size-full ${radiusClass} bg-black object-cover ring-1 ring-brand-300/25 shadow-[0_8px_28px_-8px_rgb(var(--brand-400)/0.55)] transition-transform duration-500 ease-smooth group-hover:scale-[1.04]`}
       />
     </span>
   );
@@ -49,7 +53,7 @@ export function Logo({
 
 export function Wordmark({
   leadClassName = "text-white",
-  accentClassName = "text-brand-500",
+  accentClassName = "text-brand-400",
 }: {
   leadClassName?: string;
   accentClassName?: string;

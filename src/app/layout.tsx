@@ -62,7 +62,7 @@ const jetbrainsMono = localFont({
 
 const fullTitle = `${site.name} | ${site.tagline}`;
 
-const prePaintInitScript = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('js')}var raw=localStorage.getItem('lightcore_site_config_vars_v2');if(raw){var v=JSON.parse(raw);if(v&&typeof v==='object'){for(var k in v){if(Object.prototype.hasOwnProperty.call(v,k)&&k.indexOf('--')===0){d.style.setProperty(k,String(v[k]))}}}}}catch(e){}`;
+const prePaintInitScript = `try{var d=document.documentElement;if(!matchMedia('(prefers-reduced-motion: reduce)').matches){d.classList.add('js')}var raw=localStorage.getItem('lightcore_site_config_vars_v3');if(raw){var v=JSON.parse(raw);if(v&&typeof v==='object'){for(var k in v){if(Object.prototype.hasOwnProperty.call(v,k)&&k.indexOf('--')===0){d.style.setProperty(k,String(v[k]))}}}}}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -122,13 +122,16 @@ export const metadata: Metadata = {
       "P-gEx1bD3snWJ2oWRbix2osmDSkfowduJykdC40fxpI",
   },
   icons: {
-    icon: [{ url: site.logo, type: "image/png" }],
-    apple: [{ url: "/brand/apple-touch-icon.png" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/brand/lightcore-mark.png", type: "image/png", sizes: "256x256" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png", sizes: "180x180" }],
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#030305",
+  themeColor: "#060504",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,

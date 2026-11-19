@@ -31,6 +31,7 @@ export default {
           800: "rgb(var(--brand-800) / <alpha-value>)",
           900: "rgb(var(--brand-900) / <alpha-value>)",
           950: "rgb(var(--brand-950) / <alpha-value>)",
+          ink: "rgb(var(--btn-ink) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -40,15 +41,15 @@ export default {
       },
       backgroundImage: {
         "grid-fade":
-          "linear-gradient(to right, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px), linear-gradient(to bottom, rgb(var(--brand-300) / var(--grid-opacity, 0.048)) 1px, transparent 1px)",
+          "linear-gradient(to right, rgb(var(--brand-200) / var(--grid-opacity, 0)) 1px, transparent 1px), linear-gradient(to bottom, rgb(var(--brand-200) / var(--grid-opacity, 0)) 1px, transparent 1px)",
         "brand-fade":
-          "radial-gradient(60% 60% at 50% 0%, rgb(var(--brand-500) / 0.22) 0%, rgb(var(--brand-500) / 0) 72%)",
+          "radial-gradient(64% 64% at 50% 0%, rgb(var(--brand-400) / 0.16) 0%, rgb(var(--brand-400) / 0) 76%)",
       },
       backgroundSize: {
-        grid: "64px 64px",
+        grid: "84px 84px",
       },
       transitionTimingFunction: {
-        smooth: "cubic-bezier(0.16, 1, 0.3, 1)",
+        smooth: "cubic-bezier(0.22, 1, 0.36, 1)",
       },
       keyframes: {
         marquee: {
@@ -120,11 +121,11 @@ export default {
         "fade-in": "fadeIn 0.2s ease-out both",
       },
       boxShadow: {
-        glow: "0 0 0 1px rgb(var(--brand-500) / 0.34), 0 20px 60px -18px rgb(var(--brand-600) / 0.58)",
+        glow: "0 0 0 1px rgb(var(--brand-400) / 0.22), 0 22px 64px -22px rgb(var(--brand-500) / 0.36)",
         "glow-lg":
-          "0 0 0 1px rgb(var(--brand-500) / 0.45), 0 28px 85px -20px rgb(var(--brand-600) / 0.65)",
+          "0 0 0 1px rgb(var(--brand-400) / 0.3), 0 30px 90px -24px rgb(var(--brand-500) / 0.44)",
         panel:
-          "inset 0 1px 0 0 rgba(255,255,255,0.06), 0 30px 80px -38px rgba(0,0,0,0.96)",
+          "inset 0 1px 0 0 rgba(255,250,235,0.055), 0 28px 80px -40px rgba(0,0,0,0.86)",
       },
     },
   },

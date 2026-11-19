@@ -1,12 +1,12 @@
-# LightCore — All-in-One Discord Security & Server Suite
+# LightCore — The bright side of automation.
 
-Launch website, interactive command reference, real-time system status, live demo sandbox, owner control panel, and full multi-module web dashboard for **LightCore** (Next.js 15 App Router · React 19 · TypeScript · Tailwind CSS).
+Official website, searchable command guide, real-time service status, interactive dashboard sandbox, owner studio, and full multi-module web dashboard for **LightCore** (Next.js 15 App Router · React 19 · TypeScript · Tailwind CSS), styled in LightCore&apos;s signature **Solar Gold & Velvet Black** design system.
 
 ---
 
 ## Key Features
 
-- **Flagship Marketing Experience** — Interactive live Hero Guard Console (real-time Anti-Nuke simulation, interactive `.command` terminal, live Shield Matrix), 32-module dual marquee, interactive Dashboard Preview studio, 4-stage sub-second Defense Protocol, VoiceMaster room controller, and 8 live color themes.
+- **Solar Gold & Velvet Black Marketing Experience** — Plush, butter-smooth landing page featuring the LightCore emblem, *"The bright side of automation."* tagline, one-tap live module preview, dual-lane capability marquee, interactive module explorer, one-click dashboard presets, and VoiceMaster room controller.
 - **Global `⌘K` Command Palette & Searchable Docs (`/docs`)** — 68+ documented commands across 12 categories with custom prefix preview, permission badges, and one-click copy.
 - **Interactive Demo Sandbox (`/dashboard/demo`)** — Full 12-module guild dashboard persisted locally in `localStorage` with zero sign-in required.
 - **Full Guild Control Plane (`/dashboard/[guildId]`)** — Security Posture Score (0–100), 1-click protection presets, Anti-Nuke, AutoMod, Anti-Raid, Verification Gate, Moderation, Logs, Welcome & AutoRole, Tickets (with live Discord preview), VoiceMaster, Custom Embed Studio, Giveaways, JSON Backup Export/Import, and CLI Setup Command Generator.
