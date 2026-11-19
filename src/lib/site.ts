@@ -304,7 +304,7 @@ export const setupSteps = [
     bullets: [
       "Official discord.com authorization screen",
       "Supports both prefix & slash commands",
-      "Zero passwords or external installs ever",
+      "Zero account credentials or software installs",
     ],
   },
   {
@@ -382,7 +382,7 @@ export const voiceCards = [
 export const modules = [
   "Anti-Nuke",
   "Anti-Raid",
-  "Anti-Token Spam",
+  "Anti-Raid Bot Filter",
   "Anti-Betray",
   "Vanity Guard",
   "AutoMod",
@@ -443,7 +443,7 @@ export const faqs = [
   },
   {
     q: "Is signing in with Discord on this website safe?",
-    a: `Yes. Authentication happens exclusively on Discord's official website (discord.com) using standard OAuth2 (identify, guilds, and guilds.join to show your servers and automatically welcome you into our official Discord server). ${site.name} never sees your password, email, DMs, or payment info, and you can also explore everything first in our no-login Demo Dashboard.`,
+    a: `Yes. Authorization runs directly on Discord's official OAuth 2.0 page (discord.com) using standard Discord bot scopes (identify, guilds, and optional guilds.join to welcome you into our community server). ${site.name} is an independent bot service, collects no login or billing data, and includes a full no-account Demo Dashboard.`,
   },
   {
     q: "Will Anti-Nuke accidentally punish my trusted moderators?",

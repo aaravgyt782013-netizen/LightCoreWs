@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, DiscordIcon } from "@/components/ui/Icons";
+import { ArrowRight, ShieldIcon } from "@/components/ui/Icons";
+import { site } from "@/lib/site";
 
 export function DiscordLoginButton() {
   const params = useSearchParams();
   const [connecting, setConnecting] = useState(false);
+  const [joinServer, setJoinServer] = useState(true);
   const [oauthReady, setOauthReady] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -35,43 +37,69 @@ export function DiscordLoginButton() {
       ? rawNext
       : null;
 
-  const href = safeNext
-    ? `/api/auth/discord?next=${encodeURIComponent(safeNext)}`
-    : "/api/auth/discord";
-
   return (
     <div className="mt-6 w-full space-y-3">
-      <a
-        href={href}
-        onClick={() => setConnecting(true)}
-        className="btn-primary btn-glow group relative flex h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-2xl text-[14.5px] font-semibold tracking-tight text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985]"
+      <form
+        method="POST"
+        action="/api/auth/discord"
+        onSubmit={() => setConnecting(true)}
+        className="space-y-3"
       >
-        {connecting ? (
-          <>
-            <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            <span>Redirecting to discord.com…</span>
-          </>
-        ) : (
-          <>
-            <DiscordIcon className="size-[19px] transition-transform duration-300 ease-smooth group-hover:scale-110" />
-            <span>Continue with Discord OAuth2</span>
-          </>
-        )}
-      </a>
+        <input type="hidden" name="consentForm" value="1" />
+        {safeNext && <input type="hidden" name="next" value={safeNext} />}
+
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/[0.09] bg-ink-950/75 px-3.5 py-2.5 text-left transition hover:border-brand-500/35">
+          <input
+            type="checkbox"
+            name="joinServer"
+            value="1"
+            checked={joinServer}
+            onChange={(e) => setJoinServer(e.target.checked)}
+            className="mt-0.5 size-4 shrink-0 rounded accent-brand-500"
+          />
+          <span className="text-[12px] leading-snug text-zinc-300">
+            Also add me to the official{" "}
+            <strong className="font-medium text-white">{site.name}</strong>{" "}
+            community Discord server on authorization (
+            <code className="font-mono text-[11px] text-brand-300">
+              guilds.join
+            </code>
+            )
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          disabled={connecting}
+          className="btn-primary btn-glow group relative flex h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14.5px] font-semibold tracking-tight text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] disabled:opacity-80"
+        >
+          {connecting ? (
+            <>
+              <span className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span>Opening Discord OAuth2…</span>
+            </>
+          ) : (
+            <>
+              <ShieldIcon className="size-[18px] transition-transform duration-300 ease-smooth group-hover:scale-105" />
+              <span>Authorize with Discord</span>
+              <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
+            </>
+          )}
+        </button>
+      </form>
 
       <Link
         href="/dashboard/demo"
         className="group flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.11] bg-ink-950/75 px-4 text-[13px] font-medium text-zinc-200 transition-all hover:border-brand-500/40 hover:bg-brand-950/30 hover:text-white"
       >
-        <span>Explore Interactive Demo (No Sign-In)</span>
+        <span>Try Interactive Demo (No Account Needed)</span>
         <ArrowRight className="size-3.5 text-brand-400 transition-transform group-hover:translate-x-0.5" />
       </Link>
 
       {oauthReady === false && (
         <p className="rounded-xl border border-amber-500/25 bg-amber-500/[0.08] px-3.5 py-2 text-left text-[11.5px] leading-relaxed text-amber-200">
-          <strong>Local / preview note:</strong>{" "}
-          <code className="font-mono text-[11px]">DISCORD_CLIENT_SECRET</code>{" "}
-          is not set in this environment yet. You can test all 12 server modules
+          <strong>Setup note:</strong> OAuth2 environment variables are not
+          configured on this preview yet. You can test all 12 server modules
           right now in the{" "}
           <Link
             href="/dashboard/demo"
@@ -95,25 +123,25 @@ export function LoginNotice() {
 
   const messages: Record<string, string> = {
     oauth_not_configured:
-      "Discord OAuth2 credentials are not configured on this instance yet. Set DISCORD_CLIENT_SECRET and SESSION_SECRET, or explore the Interactive Demo below.",
+      "Discord OAuth2 environment settings are not active on this instance yet. You can still explore the full Interactive Demo below.",
     access_denied:
-      "Discord authorization was cancelled — no account information was shared.",
+      "Authorization was cancelled on Discord — no account data was shared.",
     invalid_scope:
-      "Invalid Discord OAuth2 scope configuration. Verify DISCORD_OAUTH_SCOPES is set to 'identify guilds guilds.join'.",
+      "Invalid OAuth2 scope configuration. Check DISCORD_OAUTH_SCOPES in your environment settings.",
     invalid_state:
-      "The anti-CSRF handshake expired or mismatched. Click Continue with Discord OAuth2 to start a fresh session.",
+      "Your authorization request expired. Click Authorize with Discord to start a fresh session.",
     token_exchange_failed:
       reason === "invalid_client"
-        ? "Client secret mismatch — verify DISCORD_CLIENT_SECRET in your deployment settings."
+        ? "Application client configuration mismatch — check your deployment settings."
         : reason === "rate_limited"
-          ? "Discord temporarily rate-limited the request — wait a few seconds and try again."
-          : "Could not complete Discord sign-in. Confirm the OAuth2 Redirect URI in the Discord Developer Portal matches this domain.",
+          ? "Discord temporarily rate-limited the request — wait a few seconds and retry."
+          : "Could not complete OAuth2 callback. Ensure the Redirect URI in the Discord Developer Portal matches this domain.",
     user_fetch_failed:
-      "Could not fetch your public Discord profile. Please try again in a moment.",
-    oauth_failed: "The Discord OAuth2 connection was interrupted. Please retry.",
+      "Could not load your public Discord profile. Please try again in a moment.",
+    oauth_failed: "The OAuth2 connection was interrupted. Please try again.",
   };
 
-  const text = messages[code] ?? "Sign-in was interrupted. Please try again.";
+  const text = messages[code] ?? "Authorization was interrupted. Please retry.";
 
   return (
     <div

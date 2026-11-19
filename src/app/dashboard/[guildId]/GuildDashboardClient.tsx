@@ -776,13 +776,16 @@ export function GuildDashboardClient({
             {brandName} controls for server{" "}
             <code className="font-mono text-zinc-300">{guildId}</code>.
           </p>
-          <a
-            href={`/api/auth/discord?next=${encodeURIComponent(`/dashboard/${guildId}`)}`}
-            className="btn-primary btn-glow relative mt-6 inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
-          >
-            <DiscordIcon className="size-[18px]" />
-            Continue with Discord OAuth2
-          </a>
+          <form method="POST" action="/api/auth/discord" className="mt-6">
+            <input type="hidden" name="next" value={`/dashboard/${guildId}`} />
+            <button
+              type="submit"
+              className="btn-primary btn-glow relative inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
+            >
+              <ShieldIcon className="size-[18px]" />
+              Authorize with Discord
+            </button>
+          </form>
           <Link
             href="/dashboard/demo"
             className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.11] bg-ink-950/75 text-[13px] font-medium text-zinc-200 hover:border-brand-500/40 hover:text-white"
