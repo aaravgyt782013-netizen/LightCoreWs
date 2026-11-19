@@ -1,21 +1,51 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { Logo, Wordmark } from "@/components/ui/Logo";
 import { InviteButton } from "@/components/ui/InviteButton";
-import { CrownIcon } from "@/components/ui/Icons";
+import { openCommandPalette } from "@/components/ui/CommandPalette";
+import {
+  ChevronDownIcon,
+  CrownIcon,
+  SearchIcon,
+  ServerIcon,
+  ShieldIcon,
+  SparklesIcon,
+} from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { nav, site } from "@/lib/site";
 
-const SECTION_IDS = ["features", "setup", "protocol", "voicemaster", "faq"];
+const SECTION_IDS = [
+  "features",
+  "showcase",
+  "setup",
+  "protocol",
+  "voicemaster",
+  "faq",
+];
+
+type LiteUser = {
+  id: string;
+  username: string;
+  globalName: string | null;
+  avatarUrl: string;
+};
 
 export function Navbar() {
+  const pathname = usePathname() || "/";
+  const router = useRouter();
   const { config } = useSiteConfig();
   const [scrolled, setScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [activeSection, setActiveSection] = useState<string>("");
   const [open, setOpen] = useState(false);
+
+  const [authUser, setAuthUser] = useState<LiteUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let raf = 0;
@@ -40,7 +70,10 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") return;
+    if (pathname !== "/" || typeof IntersectionObserver === "undefined") {
+      setActiveSection("");
+      return;
+    }
     const elements = SECTION_IDS.map((id) => document.getElementById(id)).filter(
       (el): el is HTMLElement => Boolean(el),
     );
@@ -54,11 +87,50 @@ export function Navbar() {
           }
         }
       },
-      { rootMargin: "-32% 0px -55% 0px", threshold: 0 },
+      { rootMargin: "-30% 0px -55% 0px", threshold: 0 },
     );
     elements.forEach((el) => io.observe(el));
     return () => io.disconnect();
-  }, []);
+  }, [pathname]);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/auth/me?lite=1", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            authenticated?: boolean;
+            isAdmin?: boolean;
+            user?: LiteUser | null;
+          } | null,
+        ) => {
+          if (!active || !data) return;
+          if (data.authenticated && data.user) {
+            setAuthUser(data.user);
+            setIsAdmin(Boolean(data.isAdmin));
+          } else {
+            setAuthUser(null);
+            setIsAdmin(false);
+          }
+        },
+      )
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [menuOpen]);
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -66,6 +138,19 @@ export function Navbar() {
       document.body.style.overflow = "";
     };
   }, [open]);
+
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    setOpen(false);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore network hiccups
+    }
+    setAuthUser(null);
+    setIsAdmin(false);
+    router.refresh();
+  };
 
   return (
     <>
@@ -78,13 +163,13 @@ export function Navbar() {
         <div
           className={`relative mx-auto flex items-center justify-between transition-all duration-500 ease-smooth ${
             scrolled
-              ? "h-[60px] max-w-[1200px] overflow-hidden rounded-2xl border border-white/[0.1] bg-ink-950/82 px-4 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.96),0_0_40px_-24px_rgb(var(--brand-600)/0.5),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5"
+              ? "h-[60px] max-w-[1220px] rounded-2xl border border-white/[0.1] bg-ink-950/84 px-4 shadow-[0_24px_64px_-20px_rgba(0,0,0,0.96),0_0_40px_-24px_rgb(var(--brand-600)/0.5),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl sm:px-5"
               : "container-x h-[72px] border border-transparent bg-transparent"
           }`}
         >
           <Link
             href="/"
-            className="group flex items-center gap-3"
+            className="group flex shrink-0 items-center gap-3"
             aria-label={`${config.brandName} home`}
           >
             <Logo size={34} />
@@ -100,24 +185,35 @@ export function Navbar() {
             </span>
           </Link>
 
-          <nav className="hidden items-center gap-0.5 rounded-full border border-white/[0.07] bg-white/[0.025] p-1 backdrop-blur-xl lg:flex">
+          <nav className="hidden items-center gap-0.5 rounded-full border border-white/[0.075] bg-white/[0.025] p-1 backdrop-blur-xl lg:flex">
             {nav.map((item) => {
               if (item.href === "/premium") {
+                const active = pathname === "/premium";
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="ml-0.5 inline-flex items-center gap-1.5 rounded-full border border-brand-500/35 bg-brand-600/15 px-3.5 py-1.5 text-[12.5px] font-semibold text-brand-200 transition-all duration-300 ease-smooth hover:border-brand-400/65 hover:bg-brand-600/28 hover:text-white hover:shadow-[0_0_24px_-6px_rgb(var(--brand-500)/0.85)]"
+                    className={`ml-0.5 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold transition-all duration-300 ease-smooth ${
+                      active
+                        ? "border-brand-400/70 bg-brand-600/30 text-white shadow-[0_0_24px_-6px_rgb(var(--brand-500)/0.85)]"
+                        : "border-brand-500/35 bg-brand-600/15 text-brand-200 hover:border-brand-400/65 hover:bg-brand-600/28 hover:text-white hover:shadow-[0_0_24px_-6px_rgb(var(--brand-500)/0.85)]"
+                    }`}
                   >
                     <CrownIcon className="size-3.5 text-brand-400" />
                     {item.label}
                   </Link>
                 );
               }
-              const sectionKey = item.href.split("#")[1] || "";
-              const isCurrent = sectionKey && activeSection === sectionKey;
+
+              const hash = item.href.includes("#")
+                ? item.href.split("#")[1]
+                : "";
+              const isCurrent = hash
+                ? pathname === "/" && activeSection === hash
+                : pathname === item.href;
+
               return (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-all duration-300 ease-smooth ${
@@ -127,59 +223,143 @@ export function Navbar() {
                   }`}
                 >
                   {item.label}
-                </a>
+                </Link>
               );
             })}
           </nav>
 
-          <div className="hidden items-center gap-2.5 md:flex">
-            <a
-              href={config.supportUrl || site.discord}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-full px-3 py-1.5 text-[12.5px] font-medium text-zinc-400 transition-colors duration-200 hover:text-white"
+          <div className="hidden items-center gap-2 md:flex">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              aria-label="Open command search (Cmd+K)"
+              title="Search commands & pages (⌘K)"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-white/[0.09] bg-white/[0.025] px-3 text-[12px] text-zinc-400 transition-all duration-200 hover:border-brand-500/40 hover:bg-white/[0.05] hover:text-white"
             >
-              Support
-            </a>
-            <Link
-              href={site.dashboard}
-              className="rounded-full border border-white/[0.1] bg-white/[0.03] px-4 py-1.5 text-[12.5px] font-medium text-zinc-200 transition-all duration-300 ease-smooth hover:border-brand-500/45 hover:bg-brand-500/[0.1] hover:text-white active:scale-[0.98]"
-            >
-              Dashboard
-            </Link>
+              <SearchIcon className="size-3.5 text-brand-400" />
+              <kbd className="font-mono text-[10px] tracking-wider text-zinc-500">
+                ⌘K
+              </kbd>
+            </button>
+
+            {authUser ? (
+              <div ref={menuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen((v) => !v)}
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-white/[0.12] bg-ink-900/90 pl-1.5 pr-3 text-[12.5px] font-medium text-zinc-100 transition-all hover:border-brand-500/45"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={authUser.avatarUrl}
+                    alt=""
+                    className="size-6 rounded-full object-cover"
+                  />
+                  <span className="max-w-[96px] truncate">
+                    {authUser.globalName || authUser.username}
+                  </span>
+                  <ChevronDownIcon
+                    className={`size-3.5 text-zinc-400 transition-transform ${
+                      menuOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {menuOpen && (
+                  <div className="animate-pop-in absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-white/[0.12] bg-ink-900/98 p-1.5 shadow-[0_28px_70px_-16px_rgba(0,0,0,0.96)] backdrop-blur-2xl">
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12.5px] text-zinc-200 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      <ServerIcon className="size-4 text-brand-400" />
+                      My Servers
+                    </Link>
+                    <Link
+                      href="/dashboard/demo"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12.5px] text-zinc-200 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      <SparklesIcon className="size-4 text-brand-400" />
+                      Interactive Demo
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12.5px] text-brand-200 hover:bg-brand-500/15 hover:text-white"
+                      >
+                        <ShieldIcon className="size-4 text-brand-400" />
+                        Owner Control Panel
+                      </Link>
+                    )}
+                    <div className="my-1 h-px bg-white/[0.07]" />
+                    <button
+                      type="button"
+                      onClick={() => void handleLogout()}
+                      className="flex w-full items-center rounded-xl px-3 py-2 text-left text-[12px] text-zinc-400 hover:bg-white/[0.06] hover:text-white"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link
+                href={site.dashboard}
+                className={`inline-flex h-9 items-center rounded-full border px-4 text-[12.5px] font-medium transition-all duration-300 ease-smooth active:scale-[0.98] ${
+                  pathname.startsWith("/dashboard")
+                    ? "border-brand-500/50 bg-brand-500/15 text-white"
+                    : "border-white/[0.1] bg-white/[0.03] text-zinc-200 hover:border-brand-500/45 hover:bg-brand-500/[0.1] hover:text-white"
+                }`}
+              >
+                Dashboard
+              </Link>
+            )}
+
             <InviteButton size="sm" />
           </div>
 
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-label={open ? "Close menu" : "Open menu"}
-            aria-expanded={open}
-            className="relative z-50 flex size-10 items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] transition-all duration-300 ease-smooth hover:border-brand-500/45 active:scale-95 md:hidden"
-          >
-            <span className="relative block h-3 w-4">
-              <span
-                className={`absolute left-0 h-[1.5px] w-4 rounded bg-white transition-all duration-300 ease-smooth ${
-                  open ? "top-1/2 rotate-45 bg-brand-400" : "top-0"
-                }`}
-              />
-              <span
-                className={`absolute left-0 top-1/2 h-[1.5px] w-4 -translate-y-1/2 rounded bg-white transition-all duration-200 ${
-                  open ? "opacity-0" : "opacity-100"
-                }`}
-              />
-              <span
-                className={`absolute left-0 h-[1.5px] w-4 rounded bg-white transition-all duration-300 ease-smooth ${
-                  open ? "top-1/2 -rotate-45 bg-brand-400" : "top-full"
-                }`}
-              />
-            </span>
-          </button>
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              aria-label="Search commands"
+              className="flex size-10 items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] text-zinc-300 transition hover:border-brand-500/45 hover:text-white"
+            >
+              <SearchIcon className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              className="relative z-50 flex size-10 items-center justify-center rounded-xl border border-white/12 bg-white/[0.04] transition-all duration-300 ease-smooth hover:border-brand-500/45 active:scale-95"
+            >
+              <span className="relative block h-3 w-4">
+                <span
+                  className={`absolute left-0 h-[1.5px] w-4 rounded bg-white transition-all duration-300 ease-smooth ${
+                    open ? "top-1/2 rotate-45 bg-brand-400" : "top-0"
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 top-1/2 h-[1.5px] w-4 -translate-y-1/2 rounded bg-white transition-all duration-200 ${
+                    open ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+                <span
+                  className={`absolute left-0 h-[1.5px] w-4 rounded bg-white transition-all duration-300 ease-smooth ${
+                    open ? "top-1/2 -rotate-45 bg-brand-400" : "top-full"
+                  }`}
+                />
+              </span>
+            </button>
+          </div>
 
-          {/* live crimson laser scroll-progress filament */}
+          {/* live brand laser scroll-progress filament */}
           <div
             aria-hidden
-            className={`pointer-events-none absolute inset-x-0 bottom-0 h-[1.5px] origin-left bg-gradient-to-r from-brand-700 via-brand-500 to-brand-300 transition-opacity duration-300 ${
+            className={`pointer-events-none absolute inset-x-3 bottom-0 h-[1.5px] origin-left rounded-full bg-gradient-to-r from-brand-700 via-brand-500 to-brand-300 transition-opacity duration-300 ${
               scrolled && progress > 0.01 ? "opacity-95" : "opacity-0"
             }`}
             style={{ transform: `scaleX(${progress})` }}
@@ -212,17 +392,7 @@ export function Navbar() {
           />
           <div className="flex flex-col gap-1">
             {nav.map((item) =>
-              item.href.includes("#") ? (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white active:bg-white/[0.09]"
-                >
-                  {item.label}
-                  <span className="font-mono text-[10px] text-zinc-600">→</span>
-                </a>
-              ) : (
+              item.href === "/premium" ? (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -237,8 +407,28 @@ export function Navbar() {
                     plans
                   </span>
                 </Link>
+              ) : (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+                >
+                  {item.label}
+                  <span className="font-mono text-[10px] text-zinc-600">→</span>
+                </Link>
               ),
             )}
+            <Link
+              href="/dashboard/demo"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-between rounded-xl px-3.5 py-3 text-[15px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white"
+            >
+              Interactive Demo
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9.5px] uppercase text-emerald-300">
+                Live
+              </span>
+            </Link>
             <a
               href={config.supportUrl || site.discord}
               target="_blank"
@@ -257,7 +447,7 @@ export function Navbar() {
               onClick={() => setOpen(false)}
               className="inline-flex h-[50px] w-full items-center justify-center rounded-full border border-white/12 bg-white/[0.04] text-[14.5px] font-medium text-zinc-100 transition-colors hover:border-brand-500/45 hover:text-white"
             >
-              Open Dashboard
+              {authUser ? "My Server Dashboard" : "Open Dashboard"}
             </Link>
           </div>
         </div>

@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
-import { cleanEnvString } from "@/lib/discord-oauth";
+import {
+  cleanEnvString,
+  isAutoJoinDisabledByEnv,
+  resolveAutoJoinGuildId,
+  resolveAutoJoinRoleId,
+} from "@/lib/discord-oauth";
 
 export type DiscordGuild = {
   id: string;
@@ -81,56 +86,177 @@ export async function fetchAllUserGuilds(
 
 export type AutoJoinResult = {
   status: "joined" | "already_member" | "skipped" | "failed";
+  guildId?: string;
+  roleAssigned?: boolean;
   reason?: string;
 };
 
+async function putGuildMember(input: {
+  guildId: string;
+  userId: string;
+  botToken: string;
+  accessToken: string;
+  roleId?: string;
+}): Promise<Response> {
+  const payload: { access_token: string; roles?: string[] } = {
+    access_token: input.accessToken,
+  };
+  if (input.roleId) {
+    payload.roles = [input.roleId];
+  }
+
+  const endpoint = `https://discord.com/api/v10/guilds/${input.guildId}/members/${input.userId}`;
+  const reqInit: RequestInit = {
+    method: "PUT",
+    headers: {
+      Authorization: `Bot ${input.botToken}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
+    },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+    signal: AbortSignal.timeout(5500),
+  };
+
+  const first = await fetch(endpoint, reqInit);
+  if (first.status !== 429) return first;
+
+  // Respect short Discord rate-limit windows so back-to-back sign-ins still join.
+  try {
+    const body = (await first.json()) as { retry_after?: number };
+    const waitMs = Math.ceil((Number(body.retry_after) || 0.8) * 1000);
+    if (waitMs > 0 && waitMs <= 2500) {
+      await new Promise((r) => setTimeout(r, waitMs));
+      return await fetch(endpoint, {
+        ...reqInit,
+        signal: AbortSignal.timeout(5000),
+      });
+    }
+  } catch {
+    // Fall through to returning initial 429
+  }
+  return first;
+}
+
 /**
- * Adds a consenting OAuth user to the single community guild configured by the
- * owner. Discord requires the same application bot to be in that guild and to
- * have CREATE_INSTANT_INVITE. No arbitrary guild IDs are accepted from clients.
+ * Automatically adds an authorizing Discord user to the configured target server
+ * using Discord's official OAuth2 `guilds.join` endpoint:
+ *   PUT /api/v10/guilds/{guild.id}/members/{user.id}
+ * Requires:
+ *  1. The user approved the `guilds.join` OAuth2 scope.
+ *  2. The application's bot is inside the target server with `CREATE_INSTANT_INVITE`
+ *     (and `MANAGE_ROLES` above the role if an optional auto-role is set).
  */
 export async function addUserToConfiguredGuild(input: {
   userId: string;
   accessToken: string;
+  guildIdOverride?: string | null;
+  roleIdOverride?: string | null;
+  enabled?: boolean;
 }): Promise<AutoJoinResult> {
-  const guildId = cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID);
+  if (input.enabled === false || isAutoJoinDisabledByEnv()) {
+    return { status: "skipped", reason: "auto_join_disabled" };
+  }
+
+  const guildId = resolveAutoJoinGuildId(input.guildIdOverride);
   if (!/^\d{15,22}$/.test(guildId)) {
     return { status: "skipped", reason: "target_guild_not_configured" };
   }
   if (!/^\d{15,22}$/.test(input.userId)) {
-    return { status: "failed", reason: "invalid_user_id" };
+    return { status: "failed", guildId, reason: "invalid_user_id" };
   }
-  const token = cleanEnvString(process.env.DISCORD_BOT_TOKEN).replace(/^Bot\s+/i, "").trim();
-  if (!token) return { status: "skipped", reason: "bot_token_not_configured" };
+  const token = cleanEnvString(process.env.DISCORD_BOT_TOKEN)
+    .replace(/^Bot\s+/i, "")
+    .trim();
+  if (!token) {
+    return { status: "skipped", guildId, reason: "bot_token_not_configured" };
+  }
+
+  const roleId = resolveAutoJoinRoleId(input.roleIdOverride);
 
   try {
-    const res = await fetch(
-      `https://discord.com/api/v10/guilds/${guildId}/members/${input.userId}`,
-      {
-        method: "PUT",
-        headers: {
-          Authorization: `Bot ${token}`,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
-        },
-        body: JSON.stringify({ access_token: input.accessToken }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(5000),
-      },
-    );
-    if (res.status === 201) return { status: "joined" };
-    if (res.status === 204) return { status: "already_member" };
+    let usedRole = Boolean(roleId);
+    let res = await putGuildMember({
+      guildId,
+      userId: input.userId,
+      botToken: token,
+      accessToken: input.accessToken,
+      roleId: roleId || undefined,
+    });
+
+    // If role hierarchy blocked the PUT, retry cleanly without `roles` so the
+    // user is still automatically added to the server.
+    if (usedRole && (res.status === 403 || res.status === 400)) {
+      usedRole = false;
+      res = await putGuildMember({
+        guildId,
+        userId: input.userId,
+        botToken: token,
+        accessToken: input.accessToken,
+      });
+    }
+
+    if (res.status === 201) {
+      return { status: "joined", guildId, roleAssigned: usedRole };
+    }
+    if (res.status === 204) {
+      // User is already in the guild; if an auto-role is configured, best-effort assign it.
+      if (roleId) {
+        try {
+          const roleRes = await fetch(
+            `https://discord.com/api/v10/guilds/${guildId}/members/${input.userId}/roles/${roleId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bot ${token}`,
+                "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.0)",
+              },
+              cache: "no-store",
+              signal: AbortSignal.timeout(3500),
+            },
+          );
+          return {
+            status: "already_member",
+            guildId,
+            roleAssigned: roleRes.status === 204,
+          };
+        } catch {
+          return { status: "already_member", guildId, roleAssigned: false };
+        }
+      }
+      return { status: "already_member", guildId };
+    }
+    if (res.status === 401) {
+      return { status: "failed", guildId, reason: "invalid_bot_or_user_token" };
+    }
     if (res.status === 403) {
-      return { status: "failed", reason: "bot_missing_guild_or_create_invite_permission" };
+      return {
+        status: "failed",
+        guildId,
+        reason: "bot_missing_guild_or_create_invite_permission",
+      };
     }
     if (res.status === 404) {
-      return { status: "failed", reason: "target_guild_or_bot_not_found" };
+      return {
+        status: "failed",
+        guildId,
+        reason: "target_guild_or_bot_not_found",
+      };
     }
-    if (res.status === 429) return { status: "failed", reason: "discord_rate_limited" };
-    return { status: "failed", reason: `discord_api_http_${res.status}` };
+    if (res.status === 400) {
+      return {
+        status: "failed",
+        guildId,
+        reason: "max_guilds_reached_or_invalid_request",
+      };
+    }
+    if (res.status === 429) {
+      return { status: "failed", guildId, reason: "discord_rate_limited" };
+    }
+    return { status: "failed", guildId, reason: `discord_api_http_${res.status}` };
   } catch {
-    return { status: "failed", reason: "discord_api_unavailable" };
+    return { status: "failed", guildId, reason: "discord_api_unavailable" };
   }
 }
 
@@ -224,7 +350,9 @@ export type LiveGuildDetails = {
 export async function fetchLiveGuildDetails(
   guildId: string,
 ): Promise<LiveGuildDetails | null> {
-  const token = process.env.DISCORD_BOT_TOKEN?.trim();
+  const token = cleanEnvString(process.env.DISCORD_BOT_TOKEN)
+    .replace(/^Bot\s+/i, "")
+    .trim();
   if (!token) return null;
 
   const headers = { Authorization: `Bot ${token}` };

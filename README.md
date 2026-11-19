@@ -1,114 +1,64 @@
-<div align="center">
+# LightCore — All-in-One Discord Security & Server Suite
 
-# LightCore
-
-**LIGHT FOR YOU HEAVY FOR NUKERS**
-
-As your choice for an all in one bot.
-
-[**Live site**](https://lightcorews.wasmer.app/) · [**Add to Discord**](https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot) · [**Support Server**](https://discord.gg/np8M2TZgqa)
-
-</div>
+Launch website, interactive command reference, real-time system status, live demo sandbox, owner control panel, and full multi-module web dashboard for **LightCore** (Next.js 15 App Router · React 19 · TypeScript · Tailwind CSS).
 
 ---
 
-## Configuration
+## Key Features
 
-All public brand values live in [`src/lib/site.ts`](./src/lib/site.ts) (and can also be overridden via `NEXT_PUBLIC_*` environment variables — see [`.env.example`](./.env.example)):
-
-| Setting | Value |
-| --- | --- |
-| Name | `LightCore` |
-| Tagline | `LIGHT FOR YOU HEAVY FOR NUKERS` |
-| Description | `As your choice for an all in one bot` |
-| Command Prefix | `.` (e.g. `.antinuke enable`) |
-| Site URL | `https://lightcorews.wasmer.app` |
-| Discord Client ID | `1559607601115955210` |
-| Owner ID (`/admin`) | `1538907226671022111` |
-| OAuth2 Scopes | `identify email guilds guilds.join` |
-| Bot Invite | `https://discord.com/oauth2/authorize?client_id=1559607601115955210&permissions=8&integration_type=0&scope=bot` |
-| Support Server | `https://discord.gg/np8M2TZgqa` |
+- **Flagship Marketing Experience** — Interactive live Hero Guard Console (real-time Anti-Nuke simulation, interactive `.command` terminal, live Shield Matrix), 32-module dual marquee, interactive Dashboard Preview studio, 4-stage sub-second Defense Protocol, VoiceMaster room controller, and 8 live color themes.
+- **Global `⌘K` Command Palette & Searchable Docs (`/docs`)** — 68+ documented commands across 12 categories with custom prefix preview, permission badges, and one-click copy.
+- **Interactive Demo Sandbox (`/dashboard/demo`)** — Full 12-module guild dashboard persisted locally in `localStorage` with zero sign-in required.
+- **Full Guild Control Plane (`/dashboard/[guildId]`)** — Security Posture Score (0–100), 1-click protection presets, Anti-Nuke, AutoMod, Anti-Raid, Verification Gate, Moderation, Logs, Welcome & AutoRole, Tickets (with live Discord preview), VoiceMaster, Custom Embed Studio, Giveaways, JSON Backup Export/Import, and CLI Setup Command Generator.
+- **Real-Time Status (`/status`)** — Live web, API, KV datastore, OAuth2 readiness, and Discord Bot Gateway probes with latency sparkline & manual re-probe.
+- **Security, OAuth2 Auto-Join & Trust (`/security`)** — Official Discord OAuth2 (`identify guilds guilds.join`) with automatic community server join (`PUT /guilds/{id}/members/{uid}`) + optional auto-role configurable live in `/admin`, zero database OAuth token storage, HMAC-SHA256 `HttpOnly` session cookies, anti-CSRF state verification, strict CSP/HSTS headers, and `/.well-known/security.txt`.
 
 ---
 
-## Replace Logo, Favicon & Social Card
-
-Drop any square PNG logo anywhere and run:
-
-```bash
-npm run brand -- ./path/to/your-logo.png
-```
-
-This regenerates `public/brand/lightcore-512.png`, `public/brand/lightcore-mark.png`, `public/brand/apple-touch-icon.png`, `src/app/icon.png`, `src/app/favicon.ico`, and `public/brand/og.png` in one step.
-
----
-
-## Discord OAuth2 Login & Owner Admin Panel (`/admin`)
-
-The OAuth2 flow requests `identify email guilds guilds.join` (profile/username, email, server list, and permission to add the user to servers where the bot is installed).
-
-1. In [Discord Developer Portal](https://discord.com/developers/applications/1559607601115955210/oauth2), add your Redirect URI:
-   - Production: `https://lightcorews.wasmer.app/api/auth/callback/discord`
-   - Local dev: `http://localhost:3000/api/auth/callback/discord`
-2. Set these server environment variables (in `.env.local` locally or your Wasmer/Vercel dashboard):
-   - `DISCORD_CLIENT_SECRET` — from Discord Developer Portal → OAuth2
-   - `SESSION_SECRET` — random 32+ character string (e.g. `openssl rand -hex 32`)
-   - `DISCORD_BOT_TOKEN` — needed to list bot servers, power live `/status` latency, and add authorized `guilds.join` users into servers (the bot must be in the target server)
-   - `DISCORD_AUTO_JOIN_GUILD_ID` *(optional)* — automatically add every user who logs in to this server ID (e.g. your support server)
-   - `DISCORD_OWNER_ID` — defaults to `1538907226671022111` (comma-separated IDs supported)
-
-When you sign in with Discord account `1538907226671022111`, you are routed directly to `/admin` where you can inspect authorized users & their servers, add users to any server the bot is in, view all bot guilds, check integration health, and broadcast/test logs.
-
----
-
-## Connect Live Bot Logs & Discord Webhooks
-
-1. Set `LOG_INGEST_SECRET` (and optionally `DISCORD_LOG_WEBHOOK_URL`) in your environment.
-2. Push events from your bot:
-
-```js
-await fetch("https://lightcorews.wasmer.app/api/logs", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${process.env.LOG_INGEST_SECRET}`,
-  },
-  body: JSON.stringify({
-    t: "DENY",          // GUARD | SCAN | WARN | DENY | FIX | AUDIT
-    ok: false,          // true = green badge, false = red alert badge
-    msg: "mass channel delete blocked in 39ms",
-    guild: guild.name,  // optional
-    guildId: guild.id,  // optional — enables per-server filtering in /dashboard
-  }),
-});
-```
-
----
-
-## Routes
-
-| Route | Purpose |
-| --- | --- |
-| `/` | Landing page: hero, live guard-engine console, stats, partner marquee, features, setup, protocol, VoiceMaster, FAQ, CTA |
-| `/login` | Discord OAuth2 sign-in (`identify email guilds guilds.join`) |
-| `/dashboard` | User server viewer (manageable + all guilds) & live audit log stream |
-| `/admin` | Owner-only admin panel (locked to Discord ID `1538907226671022111`) |
-| `/docs` | Command reference (`.` prefix) & modules |
-| `/status` | Live health & heartbeat monitor |
-| `/privacy` `/terms` | Legal pages |
-| `/api/auth/*` | Discord OAuth2 login, callback, session & logout |
-| `/api/admin/*` | Owner-protected overview, `guilds.join` runner & log controls |
-| `/api/logs` `/api/status` | Live log stream/ingestion & bot health API |
-
----
-
-## Local Development
+## Quick Start
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-npm run build        # production build
-npm start            # serve production build
-npm run lint         # eslint
-npx tsc --noEmit     # type-check
+cp .env.example .env.local
+npm run dev
 ```
+
+Open `http://localhost:3000`. Even without Discord OAuth secrets configured, the entire landing page, `/docs`, `/status`, `/premium`, `/security`, and `/dashboard/demo` work out of the box.
+
+---
+
+## Required Environment Variables (Production)
+
+See [`.env.example`](.env.example) for the complete reference:
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SITE_URL` | Canonical HTTPS URL (e.g. `https://lightcore.yourdomain.com`) |
+| `NEXT_PUBLIC_DISCORD_CLIENT_ID` | Discord Application Client ID |
+| `DISCORD_CLIENT_SECRET` | Discord OAuth2 Client Secret |
+| `DISCORD_REDIRECT_URI` | Exact callback registered in Discord Developer Portal: `<SITE_URL>/api/auth/callback/discord` |
+| `DISCORD_OAUTH_SCOPES` | `identify guilds guilds.join` (default — profile, guild list, and auto-join) |
+| `SESSION_SECRET` | 32+ byte random secret (`openssl rand -hex 32`) |
+| `DISCORD_BOT_TOKEN` | Required for OAuth2 server auto-join + live dashboard channel/role lists |
+| `DISCORD_AUTO_JOIN_GUILD_ID` | Numeric Server ID users are automatically added to on authorize (can also be set live in `/admin` → Users; bot must be in the server with `Create Instant Invite`) |
+| `DISCORD_AUTO_JOIN_ROLE_ID` | Optional Role ID automatically assigned to newly joined users (also editable in `/admin`) |
+| `DISCORD_OWNER_ID` | Comma-separated Discord user IDs allowed to access `/admin` |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | Optional Google Search Console verification token |
+
+---
+
+## Setting Up Automatic Server Join (`guilds` + `guilds.join`)
+
+1. Invite your bot to your target Discord server and make sure it has the **Create Instant Invite** permission (and **Manage Roles** above the role if you configure an optional auto-role).
+2. Add your redirect URL `<YOUR_SITE_URL>/api/auth/callback/discord` in **Discord Developer Portal → OAuth2 → Redirects**.
+3. Set `DISCORD_CLIENT_SECRET`, `SESSION_SECRET`, `DISCORD_BOT_TOKEN`, and `DISCORD_AUTO_JOIN_GUILD_ID=<YOUR_SERVER_ID>` in your hosting environment — **or** sign in to `/admin` → **Users** tab and pick/paste your target Server ID (and optional Role ID) directly with zero redeploy needed.
+4. When any user authorizes via **Login / Continue with Discord**, Discord prompts for `identify`, `guilds`, and `guilds.join`, loads their server list, and automatically adds them to your configured server via Discord's official `PUT /api/v10/guilds/{guild.id}/members/{user.id}` API.
+
+---
+
+## Security & Google Safe Browsing Verification
+
+- **Transparent official OAuth2 consent** — `/login`, `/security`, and `/privacy` explicitly disclose the exact Discord scopes requested (`identify`, `guilds`, `guilds.join`) and redirect strictly to `https://discord.com/oauth2/authorize`.
+- **Zero database token persistence** — User OAuth2 access tokens are used solely during authorization and inside the user's encrypted/signed `HttpOnly` session cookie; raw access/refresh tokens are never persisted on disk or forwarded externally.
+- **Strict security headers** — CSP, HSTS, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `/.well-known/security.txt`, and `noindex`/`no-store` on `/api/auth/*`.
+- **Clearing a cached Chrome warning** — Verify your site in [Google Search Console](https://search.google.com/search-console) (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`) → **Security & Manual Actions → Security issues → Request Review**, and submit a false-positive report at `https://safebrowsing.google.com/safebrowsing/report_error/`. Attaching a custom domain is also recommended since shared `*.onrender.com` subdomains carry lower baseline reputation.

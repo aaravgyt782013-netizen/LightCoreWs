@@ -2,64 +2,84 @@
 
 import Link from "next/link";
 import { Logo, Wordmark } from "@/components/ui/Logo";
-import { DiscordIcon } from "@/components/ui/Icons";
+import { DiscordIcon, SearchIcon, ShieldIcon } from "@/components/ui/Icons";
+import { openCommandPalette } from "@/components/ui/CommandPalette";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
-import { nav, site } from "@/lib/site";
-
-const legal = [
-  { label: "Privacy", href: "/privacy" },
-  { label: "Terms", href: "/terms" },
-  { label: "Status", href: "/status" },
-];
+import { site } from "@/lib/site";
 
 export function Footer() {
   const { config } = useSiteConfig();
+  const statusText = config.footerStatusText || "All systems operational";
 
   return (
     <footer className="relative border-t border-white/[0.075] bg-ink-950/95">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/45 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-500/50 to-transparent"
       />
-      <div className="container-x py-14">
-        <div className="grid gap-10 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+      <div className="container-x py-16">
+        <div className="grid gap-10 md:grid-cols-[1.65fr_1fr_1fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-3">
-              <Logo size={32} />
-              <span className="font-display text-[15px] font-semibold tracking-[0.18em] text-white">
+            <Link href="/" className="inline-flex items-center gap-3">
+              <Logo size={34} />
+              <span className="font-display text-[15.5px] font-semibold tracking-[0.18em] text-white">
                 <Wordmark />
               </span>
             </Link>
-            <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.2em] text-brand-400/85">
+            <p className="mt-3 font-mono text-[9.5px] uppercase tracking-[0.22em] text-brand-400/90">
               {config.tagline}
             </p>
-            <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-zinc-500">
-              {config.description}.
+            <p className="mt-2.5 max-w-xs text-[13px] leading-relaxed text-zinc-400">
+              {config.description} Sub-second Anti-Nuke, AutoMod, VoiceMaster,
+              Tickets, Verification, and Embed Studio under prefix{" "}
+              <code className="rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11.5px] text-brand-300">
+                {config.prefix || site.prefix}
+              </code>
+              .
             </p>
-            <a
-              href={config.supportUrl || site.discord}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-5 inline-flex items-center gap-2 rounded-full border border-brand-500/25 bg-brand-950/35 px-4 py-2 text-[12px] font-medium text-zinc-200 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/55 hover:bg-brand-900/40 hover:text-white"
-            >
-              <DiscordIcon className="size-4 text-brand-400" />
-              Join the support server
-            </a>
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+              <a
+                href={config.supportUrl || site.discord}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-950/40 px-4 py-2 text-[12px] font-medium text-zinc-100 transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/60 hover:bg-brand-900/45 hover:text-white"
+              >
+                <DiscordIcon className="size-4 text-brand-400" />
+                Support Server
+              </a>
+              <button
+                type="button"
+                onClick={openCommandPalette}
+                className="inline-flex items-center gap-2 rounded-full border border-white/[0.09] bg-white/[0.025] px-3.5 py-2 text-[12px] text-zinc-400 transition hover:border-brand-500/35 hover:text-white"
+              >
+                <SearchIcon className="size-3.5 text-brand-400" />
+                <span>Commands</span>
+                <kbd className="font-mono text-[10px] text-zinc-500">⌘K</kbd>
+              </button>
+            </div>
           </div>
 
           <FooterCol
             title="Product"
-            links={nav.map((n) => ({ label: n.label, href: n.href }))}
+            links={[
+              { label: "Security Suite", href: "/#features" },
+              { label: "Dashboard Studio", href: "/#showcase" },
+              { label: "VoiceMaster", href: "/#voicemaster" },
+              { label: "Commands & Docs", href: "/docs" },
+              { label: "Premium Plans", href: site.premium },
+              { label: "FAQ", href: "/#faq" },
+            ]}
           />
           <FooterCol
-            title="Platform"
+            title="Control Plane"
             links={[
-              { label: "Dashboard", href: "/dashboard" },
-              { label: "Buy Premium", href: site.premium },
-              { label: "Owner panel", href: site.admin },
+              { label: "Server Dashboard", href: "/dashboard" },
+              { label: "Interactive Demo", href: "/dashboard/demo" },
+              { label: "System Status", href: "/status" },
+              { label: "Owner Panel", href: site.admin },
               {
-                label: "Invite bot",
+                label: "Invite LightCore",
                 href: sanitizeDiscordInviteUrl(
                   config.inviteUrl || site.invite,
                   site.clientId,
@@ -67,27 +87,42 @@ export function Footer() {
                 external: true,
               },
               {
-                label: "Support server",
+                label: "Discord Community",
                 href: config.supportUrl || site.discord,
                 external: true,
               },
-              { label: "Documentation", href: "/docs" },
             ]}
           />
-          <FooterCol title="Legal" links={legal} />
+          <FooterCol
+            title="Trust & Legal"
+            links={[
+              { label: "Security & OAuth2", href: "/security" },
+              { label: "Privacy Policy", href: "/privacy" },
+              { label: "Terms of Service", href: "/terms" },
+              { label: "security.txt", href: "/.well-known/security.txt" },
+            ]}
+          />
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.07] pt-6 sm:flex-row">
-          <p className="text-center font-mono text-[10.5px] tracking-wide text-zinc-500 sm:text-left">
-            © {new Date().getFullYear()}{" "}
-            {config.footerCopyright || config.brandName}. Independent Discord
-            bot — not affiliated with Discord Inc.
-          </p>
+          <div className="flex flex-col items-center gap-1 text-center sm:items-start sm:text-left">
+            <p className="font-mono text-[10.5px] tracking-wide text-zinc-400">
+              © {new Date().getFullYear()}{" "}
+              {config.footerCopyright || config.brandName}. Independent Discord
+              bot &amp; dashboard — not affiliated with Discord Inc.
+            </p>
+            <p className="inline-flex items-center gap-1.5 font-mono text-[10px] text-zinc-600">
+              <ShieldIcon className="size-3 text-emerald-400/80" />
+              Official Discord OAuth2 (identify · guilds · guilds.join) · Zero credential collection
+            </p>
+          </div>
+
           <Link
             href="/status"
-            className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500 transition-colors hover:text-zinc-200"
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.06] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-emerald-300 transition-colors hover:border-emerald-400/40 hover:text-emerald-200"
           >
-            View service status
+            <span className="size-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+            {statusText}
           </Link>
         </div>
       </div>
@@ -104,7 +139,7 @@ function FooterCol({
 }) {
   return (
     <div>
-      <p className="font-mono text-[9.5px] uppercase tracking-[0.26em] text-zinc-600">
+      <p className="font-mono text-[9.5px] uppercase tracking-[0.26em] text-zinc-500">
         {title}
       </p>
       <ul className="mt-4 space-y-2.5">
@@ -117,14 +152,7 @@ function FooterCol({
                 rel="noopener noreferrer"
                 className="text-[13px] text-zinc-400 transition-colors hover:text-white"
               >
-                {l.label}
-              </a>
-            ) : l.href.startsWith("#") ? (
-              <a
-                href={l.href}
-                className="text-[13px] text-zinc-400 transition-colors hover:text-white"
-              >
-                {l.label}
+                {l.label} ↗
               </a>
             ) : (
               <Link

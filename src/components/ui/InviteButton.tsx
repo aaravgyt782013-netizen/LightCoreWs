@@ -23,7 +23,7 @@ export function InviteButton({
   className = "",
 }: Props) {
   const { config } = useSiteConfig();
-  const finalLabel = label ?? "Add to Discord";
+  const finalLabel = label ?? (config.inviteButtonLabel || "Add to Discord");
   const href = sanitizeDiscordInviteUrl(
     config.inviteUrl || site.invite,
     site.clientId,

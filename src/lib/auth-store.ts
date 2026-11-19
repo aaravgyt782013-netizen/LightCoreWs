@@ -1,8 +1,5 @@
-import crypto from "node:crypto";
-import { site } from "@/lib/site";
 import { kvGet, kvListValues, kvSet } from "@/lib/kv-store";
 import type { SessionPayload } from "@/lib/session";
-import { getVaultCipherKey } from "@/lib/session";
 import {
   canManageGuild,
   type DiscordGuild,
@@ -32,69 +29,52 @@ export type PublicAuthorizedUser = {
   locale: string | null;
   scopes: string[];
   hasJoinScope: boolean;
+  autoJoinStatus?: "joined" | "already_member" | "skipped" | "failed" | null;
+  autoJoinGuildId?: string | null;
+  autoJoinReason?: string | null;
   guildCount: number;
   guilds: UserGuildSummary[];
   authorizedAt: string;
   lastSeenAt?: string;
 };
 
-type StoredAuthorizedUser = PublicAuthorizedUser & {
-  encryptedAccessToken: string | null;
-  encryptedRefreshToken: string | null;
-  tokenExpiresAt: number;
-};
+/**
+ * Privacy-first directory record: NEVER persists or forwards user OAuth access
+ * tokens, refresh tokens, or email addresses. User access tokens live solely in
+ * the user's own encrypted HttpOnly session cookie.
+ */
+type StoredAuthorizedUser = PublicAuthorizedUser;
 
 function userKey(userId: string): string {
   return `${USER_PREFIX}${userId}`;
 }
 
-function getCipherKey(): Buffer | null {
-  return getVaultCipherKey();
-}
-
-function encryptSecret(plain: string): string | null {
-  const key = getCipherKey();
-  if (!key) return null;
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const enc = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
-  const tag = cipher.getAuthTag();
-  return `${iv.toString("base64url")}.${tag.toString("base64url")}.${enc.toString("base64url")}`;
-}
-
-function decryptSecret(sealed: string | null): string | null {
-  if (!sealed) return null;
-  const key = getCipherKey();
-  if (!key) return null;
-  const parts = sealed.split(".");
-  if (parts.length !== 3) return null;
-  try {
-    const iv = Buffer.from(parts[0], "base64url");
-    const tag = Buffer.from(parts[1], "base64url");
-    const enc = Buffer.from(parts[2], "base64url");
-    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
-    decipher.setAuthTag(tag);
-    return Buffer.concat([decipher.update(enc), decipher.final()]).toString(
-      "utf8",
-    );
-  } catch {
-    return null;
-  }
+function sanitizeScopeList(scopes: string[] | undefined): string[] {
+  if (!Array.isArray(scopes)) return ["identify", "guilds"];
+  const allowed = scopes.filter(
+    (scope) =>
+      scope === "identify" || scope === "guilds" || scope === "guilds.join",
+  );
+  return allowed.length > 0 ? allowed : ["identify", "guilds"];
 }
 
 function toPublicUser(stored: StoredAuthorizedUser): PublicAuthorizedUser {
+  const scopes = sanitizeScopeList(stored.scopes);
   return {
     id: stored.id,
     username: stored.username,
     globalName: stored.globalName,
     avatarUrl: stored.avatarUrl,
     email: null,
-    verified: stored.verified,
-    locale: stored.locale,
-    scopes: stored.scopes.filter((scope) => scope === "identify" || scope === "guilds" || scope === "guilds.join"),
-    hasJoinScope: stored.scopes.includes("guilds.join"),
+    verified: stored.verified ?? null,
+    locale: stored.locale ?? null,
+    scopes,
+    hasJoinScope: scopes.includes("guilds.join"),
+    autoJoinStatus: stored.autoJoinStatus ?? null,
+    autoJoinGuildId: stored.autoJoinGuildId ?? null,
+    autoJoinReason: stored.autoJoinReason ?? null,
     guildCount: stored.guildCount,
-    guilds: stored.guilds,
+    guilds: Array.isArray(stored.guilds) ? stored.guilds : [],
     authorizedAt: stored.authorizedAt,
     lastSeenAt: stored.lastSeenAt || stored.authorizedAt,
   };
@@ -102,57 +82,41 @@ function toPublicUser(stored: StoredAuthorizedUser): PublicAuthorizedUser {
 
 export async function recordAuthorizedUser(input: {
   user: PublicAuthorizedUser;
-  accessToken: string;
-  refreshToken?: string | null;
-  expiresInSeconds: number;
 }): Promise<void> {
   const existing = await kvGet<StoredAuthorizedUser>(userKey(input.user.id));
-  const encryptedAccessToken =
-    encryptSecret(input.accessToken) ?? existing?.encryptedAccessToken ?? null;
-  const encryptedRefreshToken = input.refreshToken
-    ? encryptSecret(input.refreshToken)
-    : (existing?.encryptedRefreshToken ?? null);
-
   const nowIso = new Date().toISOString();
+  const scopes = sanitizeScopeList(input.user.scopes);
+
   const record: StoredAuthorizedUser = {
-    ...input.user,
+    id: input.user.id,
+    username: input.user.username,
+    globalName: input.user.globalName,
+    avatarUrl: input.user.avatarUrl,
+    email: null,
+    verified: input.user.verified ?? null,
+    locale: input.user.locale ?? null,
+    scopes,
+    hasJoinScope: scopes.includes("guilds.join"),
+    autoJoinStatus:
+      input.user.autoJoinStatus ?? existing?.autoJoinStatus ?? null,
+    autoJoinGuildId:
+      input.user.autoJoinGuildId ?? existing?.autoJoinGuildId ?? null,
+    autoJoinReason:
+      input.user.autoJoinStatus !== undefined
+        ? (input.user.autoJoinReason ?? null)
+        : (existing?.autoJoinReason ?? null),
+    guildCount: input.user.guildCount,
+    guilds: input.user.guilds.slice(0, 200),
     authorizedAt: existing?.authorizedAt || input.user.authorizedAt || nowIso,
     lastSeenAt: nowIso,
-    encryptedAccessToken,
-    encryptedRefreshToken,
-    tokenExpiresAt: Date.now() + input.expiresInSeconds * 1000,
   };
 
   await kvSet(userKey(input.user.id), record);
-
-  // Optional forwarding to the bot's own persistent API backend if configured.
-  const botApiUrl = process.env.BOT_API_URL?.replace(/\/+$/, "");
-  if (botApiUrl && process.env.BOT_API_KEY) {
-    try {
-      await fetch(`${botApiUrl}/oauth-users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.BOT_API_KEY}`,
-        },
-        body: JSON.stringify({
-          user: input.user,
-          accessToken: input.accessToken,
-          refreshToken: input.refreshToken ?? null,
-          expiresIn: input.expiresInSeconds,
-        }),
-        signal: AbortSignal.timeout(4000),
-      });
-    } catch {
-      // Non-fatal if bot API doesn't implement /oauth-users.
-    }
-  }
 }
 
 /**
- * Ensures any user with an active session cookie is persisted in the store
- * (even if they authenticated before persistent storage was active or on a
- * separate serverless instance).
+ * Keeps signed-in users listed in the owner admin directory without storing any
+ * OAuth credentials or private contact data.
  */
 export async function ensureSessionUserRecorded(
   session: SessionPayload,
@@ -161,9 +125,7 @@ export async function ensureSessionUserRecorded(
   try {
     const key = userKey(session.user.id);
     const existing = await kvGet<StoredAuthorizedUser>(key);
-    const lastMs = existing?.lastSeenAt
-      ? Date.parse(existing.lastSeenAt)
-      : 0;
+    const lastMs = existing?.lastSeenAt ? Date.parse(existing.lastSeenAt) : 0;
 
     if (
       existing &&
@@ -191,14 +153,8 @@ export async function ensureSessionUserRecorded(
         }))
       : (existing?.guilds ?? []);
 
-    const grantedScopes =
-      session.user.scopes && session.user.scopes.length > 0
-        ? session.user.scopes
-        : existing?.scopes?.length
-          ? existing.scopes
-          : site.oauthScopes.split(/\s+/).filter(Boolean);
-    const scopes = grantedScopes.filter(
-      (scope) => scope === "identify" || scope === "guilds" || scope === "guilds.join",
+    const scopes = sanitizeScopeList(
+      session.user.scopes?.length ? session.user.scopes : existing?.scopes,
     );
 
     const avatarUrl = session.user.avatar
@@ -206,12 +162,6 @@ export async function ensureSessionUserRecorded(
       : (existing?.avatarUrl ?? null);
 
     const nowIso = new Date().toISOString();
-    const ttlMs = Math.max(60_000, session.exp * 1000 - Date.now());
-    const encAccess =
-      encryptSecret(session.accessToken) ??
-      existing?.encryptedAccessToken ??
-      null;
-
     const merged: StoredAuthorizedUser = {
       id: session.user.id,
       username: session.user.username,
@@ -222,13 +172,12 @@ export async function ensureSessionUserRecorded(
       locale: existing?.locale ?? null,
       scopes,
       hasJoinScope: scopes.includes("guilds.join"),
-      guildCount: rawGuilds ? rawGuilds.length : (existing?.guildCount ?? guilds.length),
+      guildCount: rawGuilds
+        ? rawGuilds.length
+        : (existing?.guildCount ?? guilds.length),
       guilds,
       authorizedAt: existing?.authorizedAt || nowIso,
       lastSeenAt: nowIso,
-      encryptedAccessToken: encAccess,
-      encryptedRefreshToken: existing?.encryptedRefreshToken ?? null,
-      tokenExpiresAt: existing?.tokenExpiresAt || Date.now() + ttlMs,
     };
 
     await kvSet(key, merged);
@@ -238,7 +187,6 @@ export async function ensureSessionUserRecorded(
 }
 
 export async function listAuthorizedUsers(): Promise<PublicAuthorizedUser[]> {
-  // Prefer remote Bot API user store if explicitly configured and returns users.
   const stored = await kvListValues<StoredAuthorizedUser>(
     USER_PREFIX,
     MAX_AUTHORIZED_USERS,

@@ -1532,3 +1532,321 @@ export function NightModeModule({
     </div>
   );
 }
+
+export function VerificationModule({
+  config,
+  update,
+  channels,
+  roles,
+  guildName,
+  prefix,
+}: {
+  config: GuildConfig;
+  update: UpdateConfig;
+  channels: DiscordChannelOption[];
+  roles: DiscordRoleOption[];
+  guildName: string;
+  prefix: string;
+}) {
+  const { verification } = config;
+  const [tested, setTested] = useState(false);
+
+  const previewDesc = verification.panelDescription
+    .replaceAll("{server}", guildName)
+    .replaceAll("**", "");
+
+  return (
+    <div className="space-y-5">
+      <ModuleHeader
+        eyebrow="Security Setup · Member Gate"
+        title="Verification & Alt Firewall"
+        description="Gate newly joined accounts behind a one-click button, visual captcha, or ephemeral passcode challenge while blocking fresh burner accounts."
+        command={`${prefix}verify setup`}
+        enabled={verification.enabled}
+        onToggle={(enabled) =>
+          update((p) => ({
+            ...p,
+            verification: { ...p.verification, enabled },
+          }))
+        }
+      />
+
+      <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="panel panel-inner space-y-4 rounded-2xl p-5 sm:p-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                Challenge Mode
+              </span>
+              <div className="mt-1.5">
+                <CustomSelect
+                  title="Verification Challenge Mode"
+                  value={verification.mode}
+                  onChange={(val) =>
+                    update((p) => ({
+                      ...p,
+                      verification: {
+                        ...p.verification,
+                        mode: val as GuildConfig["verification"]["mode"],
+                      },
+                    }))
+                  }
+                  options={[
+                    {
+                      value: "button",
+                      label: "One-Click Button",
+                      badge: "Fastest",
+                      description: "Instant interaction verification + age check",
+                    },
+                    {
+                      value: "captcha",
+                      label: "Visual Image Captcha",
+                      badge: "Anti-Bot",
+                      description: "Distorted ephemeral captcha blocks automated raids",
+                    },
+                    {
+                      value: "code",
+                      label: "Ephemeral 6-Digit Code",
+                      description: "Modal code challenge with 3-attempt lock",
+                    },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                Min Account Age ({verification.minAccountAgeDays} days)
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={90}
+                value={verification.minAccountAgeDays}
+                onChange={(e) =>
+                  update((p) => ({
+                    ...p,
+                    verification: {
+                      ...p.verification,
+                      minAccountAgeDays: Number(e.target.value),
+                    },
+                  }))
+                }
+                className="mt-3.5 w-full accent-brand-600"
+              />
+              <p className="mt-1 font-mono text-[10px] text-zinc-500">
+                {verification.minAccountAgeDays === 0
+                  ? "Account age filter disabled"
+                  : `Quarantines accounts younger than ${verification.minAccountAgeDays} day(s)`}
+              </p>
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ChannelField
+              label="Verification Gate Channel"
+              value={verification.channel}
+              onChange={(channel) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, channel },
+                }))
+              }
+              channels={channels}
+              placeholder="#verify"
+            />
+            <ChannelField
+              label="Verification Log Channel"
+              value={verification.logChannel}
+              onChange={(logChannel) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, logChannel },
+                }))
+              }
+              channels={channels}
+              placeholder="#verify-logs"
+            />
+            <RoleField
+              label="Verified Member Role"
+              value={verification.verifiedRole}
+              onChange={(verifiedRole) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, verifiedRole },
+                }))
+              }
+              roles={roles}
+              placeholder="@Verified"
+            />
+            <RoleField
+              label="Unverified Hold Role (Optional)"
+              value={verification.unverifiedRole}
+              onChange={(unverifiedRole) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, unverifiedRole },
+                }))
+              }
+              roles={roles}
+              placeholder="@Unverified"
+            />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                Panel Embed Title
+              </span>
+              <input
+                type="text"
+                maxLength={100}
+                value={verification.panelTitle}
+                onChange={(e) =>
+                  update((p) => ({
+                    ...p,
+                    verification: {
+                      ...p.verification,
+                      panelTitle: e.target.value,
+                    },
+                  }))
+                }
+                className="input-aqua mt-1.5"
+              />
+            </label>
+            <label className="block">
+              <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                Button Label
+              </span>
+              <input
+                type="text"
+                maxLength={40}
+                value={verification.buttonLabel}
+                onChange={(e) =>
+                  update((p) => ({
+                    ...p,
+                    verification: {
+                      ...p.verification,
+                      buttonLabel: e.target.value,
+                    },
+                  }))
+                }
+                className="input-aqua mt-1.5"
+              />
+            </label>
+          </div>
+
+          <label className="block">
+            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+              Panel Description (supports {"{server}"})
+            </span>
+            <textarea
+              rows={2}
+              value={verification.panelDescription}
+              onChange={(e) =>
+                update((p) => ({
+                  ...p,
+                  verification: {
+                    ...p.verification,
+                    panelDescription: e.target.value,
+                  },
+                }))
+              }
+              className="mt-1.5 w-full rounded-xl border border-white/10 bg-ink-950/90 p-3 text-[13px] text-zinc-100 focus:border-brand-500/50 focus:outline-none"
+            />
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ToggleRow
+              title="Auto-Pause Verification on Raid"
+              description="Temporarily hold new grants if join velocity exceeds Anti-Raid gate"
+              checked={verification.autoRaidPause}
+              onChange={(autoRaidPause) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, autoRaidPause },
+                }))
+              }
+            />
+            <ToggleRow
+              title="Send Confirmation DM"
+              description="Message members a brief welcome confirmation after passing"
+              checked={verification.dmOnVerify}
+              onChange={(dmOnVerify) =>
+                update((p) => ({
+                  ...p,
+                  verification: { ...p.verification, dmOnVerify },
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        {/* Live Interactive Discord Gate Preview */}
+        <div className="panel panel-inner rounded-2xl p-5 sm:p-6">
+          <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-zinc-400">
+            Live Discord Gate Preview
+          </p>
+          <div className="mt-4 rounded-xl border border-white/[0.06] bg-[#1e1f22] p-4">
+            <div
+              className="rounded-md bg-[#2b2d31] p-4"
+              style={{ borderLeft: `4px solid ${config.general.embedColor}` }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[14px] font-semibold text-white">
+                  {verification.panelTitle || "Verify to Unlock Server"}
+                </p>
+                <span className="rounded bg-black/35 px-1.5 py-0.5 font-mono text-[9px] uppercase text-zinc-400">
+                  {verification.mode}
+                </span>
+              </div>
+              <p className="mt-2 text-[12.5px] leading-relaxed text-zinc-300">
+                {previewDesc}
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 font-mono text-[10px] text-zinc-400">
+                <span className="rounded bg-[#1e1f22] px-2 py-0.5">
+                  Min age: {verification.minAccountAgeDays}d
+                </span>
+                {verification.autoRaidPause && (
+                  <span className="rounded bg-[#1e1f22] px-2 py-0.5 text-emerald-300">
+                    Raid shield linked
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-2.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setTested(true);
+                  window.setTimeout(() => setTested(false), 2400);
+                }}
+                className="inline-flex h-8 items-center gap-1.5 rounded bg-[#248046] px-3.5 text-[12.5px] font-medium text-white transition hover:bg-[#1a6334]"
+              >
+                <span>✓</span>
+                <span>{verification.buttonLabel || "Verify Account"}</span>
+              </button>
+              <span className="font-mono text-[10px] text-zinc-500">
+                Click to test flow
+              </span>
+            </div>
+
+            {tested && (
+              <div className="mt-3 rounded-md border border-emerald-500/25 bg-[#2b2d31] px-3 py-2 text-[11.5px] text-emerald-300">
+                <span className="font-mono text-[9.5px] uppercase text-zinc-400">
+                  Only you can see this ·{" "}
+                </span>
+                {verification.mode === "captcha"
+                  ? "Captcha challenge spawned (X7K9M) → grants Verified role on match."
+                  : verification.mode === "code"
+                    ? "6-digit passcode modal opened → grants Verified role on submit."
+                    : `Verified! Access to ${guildName} unlocked.`}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

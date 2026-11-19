@@ -2,106 +2,46 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { site } from "@/lib/site";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
-import { LoadingScreen } from "./LoadingScreen";
 
-function sublabelForPath(pathname: string): string {
-  if (pathname.startsWith("/login")) {
-    return "Preparing Discord OAuth2 gateway";
-  }
-  if (pathname.startsWith("/api/auth/discord")) {
-    return "Redirecting to Discord authorization";
-  }
-  if (pathname.startsWith("/premium")) {
-    return `Loading ${site.name} Premium plans`;
-  }
-  if (pathname.startsWith("/admin")) {
-    return "Verifying owner clearance";
-  }
-  if (pathname.startsWith("/dashboard/")) {
-    return `Binding ${site.name} server modules`;
-  }
-  if (pathname.startsWith("/dashboard")) {
-    return "Syncing your Discord servers";
-  }
-  if (pathname.startsWith("/status")) {
-    return "Checking live gateway & shard telemetry";
-  }
-  if (pathname.startsWith("/docs")) {
-    return `Loading ${site.name} command reference`;
-  }
-  if (pathname.startsWith("/privacy") || pathname.startsWith("/terms")) {
-    return `Loading ${site.name} legal documentation`;
-  }
-  return `Initializing ${site.name} guard engine`;
-}
-
-function isSelfManagedAsyncRoute(pathname: string): boolean {
-  return pathname.startsWith("/dashboard") || pathname.startsWith("/admin");
-}
-
+/**
+ * Flicker-free global top laser route progress bar.
+ * Replaces blocking full-screen splash resets on every click so route
+ * navigations feel instantaneous, smooth, and zero-jitter on both mobile and
+ * desktop — never colliding with Next.js Suspense or dashboard skeletons.
+ */
 export function RouteLoader() {
   const { config } = useSiteConfig();
   const pathname = usePathname() || "/";
-  const [visible, setVisible] = useState(
-    () => !isSelfManagedAsyncRoute(pathname),
-  );
-  const [fading, setFading] = useState(false);
-  const [sublabel, setSublabel] = useState(() => sublabelForPath(pathname));
-  const lastPathRef = useRef<string | null>(null);
+  const prevPathRef = useRef(pathname);
 
-  // Trigger splash loader on initial entry & pathname changes for static/SSR pages
+  const [active, setActive] = useState(false);
+  const [pct, setPct] = useState(0);
+  const timersRef = useRef<number[]>([]);
+
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id));
+    timersRef.current = [];
+  };
+
+  // Complete and fade out progress bar as soon as pathname settles
   useEffect(() => {
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prevPathRef.current === pathname) return;
+    prevPathRef.current = pathname;
 
-    if (prefersReduced) {
-      setVisible(false);
-      setFading(false);
-      lastPathRef.current = pathname;
-      return;
-    }
+    clearTimers();
+    setPct(100);
+    const doneId = window.setTimeout(() => {
+      setActive(false);
+      setPct(0);
+    }, 240);
+    timersRef.current.push(doneId);
 
-    // Dashboard & Admin hold their own LoadingScreen until live API data arrives
-    if (isSelfManagedAsyncRoute(pathname)) {
-      setVisible(false);
-      setFading(false);
-      lastPathRef.current = pathname;
-      return;
-    }
-
-    const isInitial = lastPathRef.current === null;
-    lastPathRef.current = pathname;
-
-    setSublabel(sublabelForPath(pathname));
-    setVisible(true);
-    setFading(false);
-
-    const holdMs = isInitial ? 340 : 220;
-    const fadeTimer = window.setTimeout(() => setFading(true), holdMs);
-    const hideTimer = window.setTimeout(() => {
-      setVisible(false);
-      setFading(false);
-    }, holdMs + 240);
-
-    return () => {
-      window.clearTimeout(fadeTimer);
-      window.clearTimeout(hideTimer);
-    };
+    return () => clearTimers();
   }, [pathname]);
 
-  // Show loader immediately on internal link clicks & Discord OAuth redirects
+  // Start sleek top progress filament on genuine cross-route link clicks
   useEffect(() => {
-    let safetyTimer: number | null = null;
-    const clearSafety = () => {
-      if (safetyTimer !== null) {
-        window.clearTimeout(safetyTimer);
-        safetyTimer = null;
-      }
-    };
-
     const onClick = (e: MouseEvent) => {
       if (
         e.defaultPrevented ||
@@ -120,7 +60,12 @@ export function RouteLoader() {
       if (anchor.hasAttribute("download")) return;
 
       const rawHref = anchor.getAttribute("href");
-      if (!rawHref || rawHref.startsWith("#") || rawHref.startsWith("mailto:")) {
+      if (
+        !rawHref ||
+        rawHref.startsWith("#") ||
+        rawHref.startsWith("mailto:") ||
+        rawHref.startsWith("tel:")
+      ) {
         return;
       }
 
@@ -132,18 +77,7 @@ export function RouteLoader() {
       }
 
       if (url.origin !== window.location.origin) return;
-
-      // Same-page section anchor jump (e.g. /#features while on /) — skip loader
-      if (url.pathname === window.location.pathname && url.hash) return;
-      // Same exact URL — skip loader
-      if (
-        url.pathname === window.location.pathname &&
-        url.search === window.location.search
-      ) {
-        return;
-      }
-
-      // Skip other raw API links except OAuth redirect
+      if (url.pathname === window.location.pathname) return;
       if (
         url.pathname.startsWith("/api/") &&
         !url.pathname.startsWith("/api/auth/discord")
@@ -151,46 +85,46 @@ export function RouteLoader() {
         return;
       }
 
-      setSublabel(sublabelForPath(url.pathname));
-      setFading(false);
-      setVisible(true);
-      clearSafety();
-      safetyTimer = window.setTimeout(() => {
-        setVisible(false);
-        setFading(false);
-      }, 10_000);
+      clearTimers();
+      setActive(true);
+      setPct(24);
+      timersRef.current.push(
+        window.setTimeout(() => setPct(58), 140),
+        window.setTimeout(() => setPct(82), 420),
+        window.setTimeout(() => {
+          setActive(false);
+          setPct(0);
+        }, 6500),
+      );
     };
 
-    // Clear stuck overlay if user hits browser Back from Discord OAuth page (bfcache)
-    const onPageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        clearSafety();
-        setVisible(false);
-        setFading(false);
-      }
+    const onPageShow = () => {
+      clearTimers();
+      setActive(false);
+      setPct(0);
     };
 
     document.addEventListener("click", onClick, true);
     window.addEventListener("pageshow", onPageShow);
     return () => {
-      clearSafety();
+      clearTimers();
       document.removeEventListener("click", onClick, true);
       window.removeEventListener("pageshow", onPageShow);
     };
   }, []);
 
-  if (!visible || !config.enableRouteLoader) return null;
+  if (!active || !config.enableRouteLoader) return null;
 
   return (
     <div
-      className={`fixed inset-x-0 top-0 z-[110] h-[100svh] min-h-[100svh] w-full transition-opacity duration-300 ${
-        fading ? "pointer-events-none opacity-0" : "opacity-100"
-      }`}
+      aria-hidden
+      className="pointer-events-none fixed inset-x-0 top-0 z-[140] h-[2.5px] overflow-hidden"
     >
-      <LoadingScreen
-        label={config.loaderText || "Connection Establishing..."}
-        sublabel={sublabel}
-        fullScreen={false}
+      <div
+        className={`h-full origin-left bg-gradient-to-r from-brand-700 via-brand-500 to-brand-300 shadow-[0_0_14px_rgb(var(--brand-400))] transition-[width,opacity] duration-200 ease-out ${
+          pct >= 100 ? "opacity-0" : "opacity-100"
+        }`}
+        style={{ width: `${pct}%` }}
       />
     </div>
   );

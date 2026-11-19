@@ -1,4 +1,5 @@
-Contact: https://discord.gg/np8M2TZgqa
+Contact: https://discord.gg/vTPhtsncjH
 Preferred-Languages: en
-Policy: https://lightcorews.onrender.com/privacy
+Policy: https://lightcorews.onrender.com/security
+Canonical: https://lightcorews.onrender.com/.well-known/security.txt
 Expires: 2028-01-01T00:00:00.000Z

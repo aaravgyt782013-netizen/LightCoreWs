@@ -5,121 +5,159 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { InviteButton } from "@/components/ui/InviteButton";
 import { Wordmark } from "@/components/ui/Logo";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
+import { openCommandPalette } from "@/components/ui/CommandPalette";
 import {
-  featureIcons,
   ArrowRight,
   BoltIcon,
-  CrownIcon,
+  CheckIcon,
+  LockIcon,
+  SearchIcon,
   ShieldIcon,
+  SparklesIcon,
+  TerminalIcon,
 } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
-import { defaultLogs, features, site, type LogEntry } from "@/lib/site";
+import { BOT_COMMANDS } from "@/lib/commands";
+import { defaultLogs, site, type LogEntry } from "@/lib/site";
 
 const SIMULATED_RAID: LogEntry[] = [
-  { t: "ALERT", ok: false, msg: "rogue bot attempted 12 channel deletes" },
-  { t: "GATE", ok: false, msg: "rate threshold breached (12/2 per min)" },
-  { t: "BLOCK", ok: false, msg: "sample action blocked · actor quarantined" },
-  { t: "RESTORE", ok: true, msg: "sample recovery result · supported state restored" },
-  { t: "SEALED", ok: true, msg: "sample result · protection workflow completed" },
+  { t: "ALERT", ok: false, msg: "Unwhitelisted bot triggered 6 channel deletes in 1.4s" },
+  { t: "GATE", ok: false, msg: "Predicate channel_delete:2:60s tripped · locking actor" },
+  { t: "PUNISH", ok: false, msg: "Rogue integration banned & dangerous perms stripped (162ms)" },
+  { t: "ROLLBACK", ok: true, msg: "Restored 6 deleted channels, categories & role overwrites" },
+  { t: "SEALED", ok: true, msg: "Audit report posted to #antinuke-logs · zero data lost" },
 ];
 
-const TELEMETRY_LAYERS = [
-  { name: "Anti-Nuke Interceptor", metric: "Sample", pct: 78 },
-  { name: "AutoMod Firewall", metric: "Sample", pct: 72 },
-  { name: "State Rollback Engine", metric: "Sample", pct: 68 },
-  { name: "VoiceMaster & Tickets", metric: "Sample", pct: 84 },
-];
+const INITIAL_SHIELDS = [
+  { key: "antinuke", label: "14-Rule Anti-Nuke Engine", sub: "ban:3:60s · ch_del:2:60s", weight: 32, on: true },
+  { key: "rollback", label: "Automated State Rollback", sub: "Channels, roles & overwrites", weight: 18, on: true },
+  { key: "automod", label: "8-Layer AutoMod Firewall", sub: "Spam, invites, phishing, Zalgo", weight: 18, on: true },
+  { key: "verify", label: "Captcha & Age Verification", sub: "Holds fresh burner accounts", weight: 14, on: true },
+  { key: "vanity", label: "Vanity URL & Webhook Lock", sub: "Instant unauthorized revert", weight: 10, on: true },
+  { key: "betray", label: "Anti-Betray Burst Monitor", sub: "Flags abnormal staff spikes", weight: 8, on: false },
+] as const;
+
+const HERO_STATS = [
+  { value: "14", label: "Anti-Nuke Guards" },
+  { value: "68+", label: "Bot Commands" },
+  { value: "12", label: "Dashboard Modules" },
+  { value: "8", label: "AutoMod Filters" },
+] as const;
 
 export function Hero() {
   const { config } = useSiteConfig();
 
   return (
-    <section className="relative overflow-hidden pb-16 pt-[114px] sm:pb-20 sm:pt-[142px]">
+    <section className="relative overflow-hidden pb-14 pt-[112px] sm:pb-20 sm:pt-[138px]">
       <div className="container-x">
-        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,500px)] lg:gap-14">
-          {/* Staggered Hero Copy */}
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:gap-14">
+          {/* Left: Flagship Brand Headline & Actions */}
           <div className="relative">
             <div
-              className="animate-hero-in inline-flex items-center gap-2.5 rounded-full border border-brand-500/30 bg-brand-950/40 py-1.5 pl-1.5 pr-4 shadow-[0_0_36px_-10px_rgb(var(--brand-500)/0.65),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl"
+              className="animate-hero-in inline-flex items-center gap-2.5 rounded-full border border-brand-500/30 bg-brand-950/45 py-1.5 pl-1.5 pr-4 shadow-[0_0_36px_-10px_rgb(var(--brand-500)/0.65),inset_0_1px_0_rgb(255_255_255/0.08)] backdrop-blur-xl"
               style={{ animationDelay: "0ms" }}
             >
               <span className="relative flex size-6 items-center justify-center rounded-full bg-brand-500/20">
                 <span className="absolute size-full animate-pulse-ring rounded-full border border-brand-400/75" />
                 <span className="size-1.5 rounded-full bg-brand-400 shadow-[0_0_10px_rgb(var(--brand-400))]" />
               </span>
-              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.16em] text-zinc-100 sm:text-[10.5px] sm:tracking-[0.22em]">
+              <span className="font-mono text-[9.5px] font-medium uppercase tracking-[0.18em] text-zinc-100 sm:text-[10.5px] sm:tracking-[0.22em]">
                 {config.tagline}
               </span>
             </div>
 
             <h1
-              className="animate-hero-in mt-7 font-display text-[42px] font-bold leading-[0.92] tracking-[0.06em] text-white drop-shadow-[0_16px_50px_rgb(var(--brand-600)/0.28)] sm:text-[60px] lg:text-[72px]"
-              style={{ animationDelay: "70ms" }}
+              className="animate-hero-in mt-6 font-display text-[44px] font-bold leading-[0.94] tracking-[0.05em] text-white drop-shadow-[0_16px_50px_rgb(var(--brand-600)/0.3)] sm:text-[62px] lg:text-[72px]"
+              style={{ animationDelay: "65ms" }}
             >
               <Wordmark leadClassName="text-white" />
+              <span className="mt-3 block font-display text-[21px] font-semibold leading-[1.2] tracking-tight text-zinc-300 sm:text-[26px]">
+                Unbreakable Discord security &amp;{" "}
+                <span className="text-gradient-brand">server automation.</span>
+              </span>
             </h1>
 
             <p
-              className="animate-hero-in mt-6 max-w-[35rem] text-balance text-[15.5px] leading-[1.7] text-zinc-200 sm:text-[17px]"
-              style={{ animationDelay: "140ms" }}
+              className="animate-hero-in mt-5 max-w-[35.5rem] text-balance text-[15.5px] leading-[1.7] text-zinc-300 sm:text-[16.5px]"
+              style={{ animationDelay: "130ms" }}
             >
               {config.description}.{" "}
-              {config.heroSubtext && (
-                <span className="text-zinc-400">{config.heroSubtext}</span>
-              )}
+              <span className="text-zinc-400">
+                {config.heroSubtext ||
+                  "Replace six bloated bots with one precision guard engine, VoiceMaster hub, ticket desk, and real-time web control plane."}
+              </span>
             </p>
 
+            {/* Primary CTAs */}
             <div
-              className="animate-hero-in mt-9 flex flex-wrap items-center gap-3"
-              style={{ animationDelay: "210ms" }}
+              className="animate-hero-in mt-8 flex flex-wrap items-center gap-3"
+              style={{ animationDelay: "195ms" }}
             >
               <InviteButton size="lg" />
               <Link
-                href={site.dashboard}
-                className="group inline-flex h-[52px] items-center gap-2.5 rounded-full border border-white/[0.13] bg-white/[0.04] px-6 text-[14.5px] font-medium text-zinc-100 shadow-[inset_0_1px_0_rgb(255_255_255/0.09)] backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/50 hover:bg-brand-500/[0.1] hover:text-white hover:shadow-[0_18px_44px_-16px_rgb(var(--brand-600)/0.6)] active:translate-y-0 active:scale-[0.98]"
+                href={site.demo}
+                className="group inline-flex h-[52px] items-center gap-2.5 rounded-full border border-white/[0.14] bg-white/[0.045] px-6 text-[14.5px] font-semibold text-zinc-100 shadow-[inset_0_1px_0_rgb(255_255_255/0.1)] backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/55 hover:bg-brand-500/[0.12] hover:text-white hover:shadow-[0_18px_44px_-16px_rgb(var(--brand-600)/0.6)] active:scale-[0.98]"
               >
-                Open Dashboard
-                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-1" />
+                <SparklesIcon className="size-4 text-brand-400" />
+                Try Live Demo
+                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/premium"
-                className="group inline-flex h-[52px] items-center gap-2 rounded-full border border-brand-500/28 bg-brand-950/35 px-5 text-[14px] font-medium text-brand-200 backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-400/60 hover:bg-brand-900/40 hover:text-white active:scale-[0.98]"
+                href={site.dashboard}
+                className="inline-flex h-[52px] items-center gap-2 rounded-full border border-white/[0.09] bg-ink-900/75 px-5 text-[14px] font-medium text-zinc-300 backdrop-blur-xl transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-white/[0.22] hover:text-white active:scale-[0.98]"
               >
-                <CrownIcon className="size-4 text-brand-400 transition-transform duration-300 ease-smooth group-hover:scale-110" />
-                Premium
+                Dashboard
               </Link>
             </div>
 
-            {/* Interactive module quick-pills */}
+            {/* Trust & Quick Command Bar */}
             <div
-              className="animate-hero-in mt-10 flex flex-wrap items-center gap-2"
-              style={{ animationDelay: "280ms" }}
+              className="animate-hero-in mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono text-[10.5px] text-zinc-500"
+              style={{ animationDelay: "240ms" }}
             >
-              {features.map((f) => {
-                const Icon = featureIcons[f.icon];
-                return (
-                  <a
-                    key={f.key}
-                    href="#features"
-                    className="group inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-ink-900/80 px-3.5 py-2 text-[12px] font-medium text-zinc-300 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] backdrop-blur-md transition-all duration-300 ease-smooth hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-950/45 hover:text-white hover:shadow-[0_12px_30px_-14px_rgb(var(--brand-500)/0.7)] active:scale-[0.97]"
-                  >
-                    <Icon className="size-[14px] text-brand-400 transition-transform duration-300 ease-smooth group-hover:scale-110" />
-                    {f.key}
-                  </a>
-                );
-              })}
+              <Link
+                href="/security"
+                className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-emerald-300"
+              >
+                <LockIcon className="size-3.5 text-emerald-400" />
+                Official discord.com OAuth2 · Auto community onboarding
+              </Link>
+              <button
+                type="button"
+                onClick={openCommandPalette}
+                className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-brand-300"
+              >
+                <SearchIcon className="size-3.5 text-brand-400" />
+                Press <kbd className="rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[9.5px] text-zinc-300">⌘K</kbd> to search commands
+              </button>
+            </div>
+
+            {/* Crisp Capability Metrics */}
+            <div
+              className="animate-hero-in mt-9 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-4"
+              style={{ animationDelay: "290ms" }}
+            >
+              {HERO_STATS.map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-white/[0.075] bg-ink-900/70 px-3.5 py-3 shadow-[inset_0_1px_0_rgb(255_255_255/0.05)] backdrop-blur-md"
+                >
+                  <p className="font-display text-[22px] font-bold leading-none tracking-tight text-white">
+                    {item.value}
+                  </p>
+                  <p className="mt-1.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-500">
+                    {item.label}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Interactive Guard Command Console */}
-          <div
-            className="animate-hero-in"
-            style={{ animationDelay: "180ms" }}
-          >
+          {/* Right: 3-Tab Interactive Guard Console */}
+          <div className="animate-hero-in" style={{ animationDelay: "160ms" }}>
             <ConsolePanel />
           </div>
         </div>
-
       </div>
     </section>
   );
@@ -127,13 +165,38 @@ export function Hero() {
 
 function ConsolePanel() {
   const { config } = useSiteConfig();
-  const [tab, setTab] = useState<"stream" | "telemetry">("stream");
+  const prefix = config.prefix || site.prefix;
+  const [tab, setTab] = useState<"stream" | "terminal" | "shields">("stream");
+
+  // Feed tab state
   const [entries, setEntries] = useState<LogEntry[]>(defaultLogs);
   const [isLive, setIsLive] = useState(false);
   const [step, setStep] = useState(5);
   const [simulating, setSimulating] = useState(false);
   const [simLogs, setSimLogs] = useState<LogEntry[]>([]);
   const simTimers = useRef<number[]>([]);
+
+  // Terminal tab state
+  const [termInput, setTermInput] = useState("");
+  const [termHistory, setTermHistory] = useState<
+    { cmd: string; out: string; ok: boolean }[]
+  >([
+    {
+      cmd: `${site.prefix}antinuke enable`,
+      out: "Armed 14 Anti-Nuke guards · punishment: BAN · auto-rollback: ACTIVE",
+      ok: true,
+    },
+    {
+      cmd: `${site.prefix}voicemaster setup`,
+      out: "Created VoiceMaster category, ➕ Join to Create hub & button control deck",
+      ok: true,
+    },
+  ]);
+
+  // Shield matrix tab state
+  const [shields, setShields] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(INITIAL_SHIELDS.map((s) => [s.key, s.on])),
+  );
 
   useEffect(() => {
     return () => {
@@ -161,11 +224,11 @@ function ConsolePanel() {
           setIsLive(true);
         }
       } catch {
-        // Keep default animated stream when offline.
+        // Keep default preview stream when offline
       }
     };
     void load();
-    const poll = window.setInterval(() => void load(), 8000);
+    const poll = window.setInterval(() => void load(), 12000);
     return () => {
       active = false;
       window.clearInterval(poll);
@@ -173,20 +236,20 @@ function ConsolePanel() {
   }, []);
 
   useEffect(() => {
-    if (isLive || simulating) return;
+    if (isLive || simulating || tab !== "stream") return;
     const id = window.setInterval(() => {
       setStep((s) =>
         s + 1 > entries.length ? Math.min(4, entries.length) : s + 1,
       );
-    }, 1850);
+    }, 2400);
     return () => window.clearInterval(id);
-  }, [isLive, simulating, entries.length]);
+  }, [isLive, simulating, entries.length, tab]);
 
   const runSimulation = useCallback(() => {
     if (simulating) return;
     setTab("stream");
     setSimulating(true);
-    setSimLogs([SIMULATED_RAID[0]]);
+    setSimLogs([{ ...SIMULATED_RAID[0], id: `sim-0-${Date.now()}` }]);
     simTimers.current.forEach((t) => window.clearTimeout(t));
     simTimers.current = [];
 
@@ -198,27 +261,81 @@ function ConsolePanel() {
             { ...entry, id: `sim-${Date.now()}-${idx}` },
           ]);
         },
-        (idx + 1) * 560,
+        (idx + 1) * 520,
       );
       simTimers.current.push(id);
     });
 
     const endId = window.setTimeout(() => {
       setSimulating(false);
-    }, SIMULATED_RAID.length * 560 + 2600);
+    }, SIMULATED_RAID.length * 520 + 3400);
     simTimers.current.push(endId);
   }, [simulating]);
+
+  const executeTerminalCmd = (raw: string) => {
+    const cleaned = raw.trim();
+    if (!cleaned) return;
+    const withoutPrefix = cleaned.replace(/^[.!/&?$]+/, "").trim().toLowerCase();
+    const displayCmd = cleaned.startsWith(prefix) ? cleaned : `${prefix}${withoutPrefix}`;
+
+    if (withoutPrefix === "clear") {
+      setTermHistory([]);
+      setTermInput("");
+      return;
+    }
+    if (withoutPrefix === "help") {
+      setTermHistory((h) => [
+        ...h.slice(-3),
+        {
+          cmd: displayCmd,
+          out: `${BOT_COMMANDS.length} commands ready across 12 modules. Try ${prefix}antinuke, ${prefix}automod, ${prefix}verify, or ${prefix}ticket.`,
+          ok: true,
+        },
+      ]);
+      setTermInput("");
+      return;
+    }
+
+    const match = BOT_COMMANDS.find(
+      (c) =>
+        c.name.toLowerCase() === withoutPrefix ||
+        withoutPrefix.startsWith(c.name.toLowerCase().split(" ")[0]) ||
+        c.aliases?.some((a) => a.toLowerCase() === withoutPrefix.split(" ")[0]),
+    );
+
+    setTermHistory((h) => [
+      ...h.slice(-3),
+      match
+        ? {
+            cmd: displayCmd,
+            out: `[${match.category}] ${match.desc} (Requires: ${match.permission})`,
+            ok: true,
+          }
+        : {
+            cmd: displayCmd,
+            out: `Unknown command. Try ${prefix}help, ${prefix}antinuke enable, ${prefix}automod strict, or ${prefix}ticket setup.`,
+            ok: false,
+          },
+    ]);
+    setTermInput("");
+  };
+
+  const shieldScore = INITIAL_SHIELDS.reduce(
+    (sum, s) => sum + (shields[s.key] ? s.weight : 0),
+    0,
+  );
+  const shieldGrade =
+    shieldScore >= 90 ? "S+" : shieldScore >= 75 ? "A" : shieldScore >= 50 ? "B" : "C";
 
   const visible =
     simLogs.length > 0 && simulating
       ? simLogs
       : isLive
-        ? entries.slice(-6)
-        : entries.slice(Math.max(0, step - 6), step);
+        ? entries.slice(-5)
+        : entries.slice(Math.max(0, step - 5), step);
 
   return (
     <div className="relative">
-      {/* Multi-layer volumetric crimson aura behind console */}
       <div
         aria-hidden
         className="pointer-events-none absolute -inset-8 rounded-[2.4rem] blur-3xl"
@@ -228,44 +345,42 @@ function ConsolePanel() {
         }}
       />
 
-      <SpotlightCard className="overflow-hidden rounded-[24px] border-brand-500/25 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
-        {/* Top laser accent filament */}
+      <SpotlightCard className="overflow-hidden rounded-[26px] border-brand-500/30 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98),0_0_70px_-30px_rgb(var(--brand-600)/0.55)]">
         <div
           aria-hidden
           className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500 to-transparent"
         />
 
-        {/* Console header with interactive mode switcher */}
-        <div className="relative flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.075] bg-black/50 px-4 py-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5">
+        {/* Console Chrome Header */}
+        <div className="relative flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.075] bg-black/55 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 sm:flex">
               <span className="size-2.5 rounded-full bg-brand-500 shadow-[0_0_10px_rgb(var(--brand-500))]" />
               <span className="size-2.5 rounded-full bg-white/12" />
               <span className="size-2.5 rounded-full bg-white/12" />
             </span>
-            <div className="ml-1 inline-flex rounded-lg border border-white/[0.07] bg-white/[0.03] p-0.5 font-mono text-[9.5px] uppercase tracking-[0.16em]">
-              <button
-                type="button"
-                onClick={() => setTab("stream")}
-                className={`rounded-md px-2.5 py-1 transition-all duration-200 ${
-                  tab === "stream"
-                    ? "bg-brand-600/25 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.45)]"
-                    : "text-zinc-500 hover:text-zinc-200"
-                }`}
-              >
-                Feed
-              </button>
-              <button
-                type="button"
-                onClick={() => setTab("telemetry")}
-                className={`rounded-md px-2.5 py-1 transition-all duration-200 ${
-                  tab === "telemetry"
-                    ? "bg-brand-600/25 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.45)]"
-                    : "text-zinc-500 hover:text-zinc-200"
-                }`}
-              >
-                Radar
-              </button>
+
+            <div className="inline-flex rounded-xl border border-white/[0.08] bg-white/[0.03] p-0.5 font-mono text-[9.5px] uppercase tracking-[0.15em]">
+              {(
+                [
+                  { id: "stream", label: "Guard Feed" },
+                  { id: "terminal", label: "Terminal" },
+                  { id: "shields", label: "Shields" },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`rounded-lg px-2.5 py-1 transition-all duration-200 ${
+                    tab === t.id
+                      ? "bg-brand-600/28 text-white shadow-[inset_0_0_0_1px_rgb(var(--brand-500)/0.5)]"
+                      : "text-zinc-500 hover:text-zinc-200"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -273,41 +388,51 @@ function ConsolePanel() {
             type="button"
             onClick={runSimulation}
             disabled={simulating}
-            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9.5px] font-medium uppercase tracking-wider transition-all duration-300 ease-smooth active:scale-95 ${
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[9.5px] font-semibold uppercase tracking-wider transition-all duration-300 ease-smooth active:scale-95 ${
               simulating
-                ? "border-brand-400/60 bg-brand-500/25 text-white shadow-[0_0_20px_-4px_rgb(var(--brand-500))]"
-                : "border-brand-500/35 bg-brand-500/12 text-brand-200 hover:border-brand-400/70 hover:bg-brand-500/22 hover:text-white"
+                ? "border-brand-400/65 bg-brand-500/28 text-white shadow-[0_0_20px_-4px_rgb(var(--brand-500))]"
+                : "border-brand-500/40 bg-brand-500/14 text-brand-200 hover:border-brand-400/75 hover:bg-brand-500/25 hover:text-white"
             }`}
           >
             <BoltIcon className="size-3 text-brand-400" />
-            {simulating ? "running demo…" : "run demo"}
+            {simulating ? "Mitigating…" : "Simulate Nuke"}
           </button>
         </div>
 
-        <div className="border-b border-white/[0.06] bg-brand-950/20 px-4 py-2 font-mono text-[9px] uppercase tracking-[0.16em] text-zinc-400">
-          {isLive
-            ? "Live events from the connected bot"
-            : simulating
-              ? "Interactive simulation · sample events only"
-              : "Demo preview · sample events only, not a live security feed"}
+        {/* Sub-header status ribbon */}
+        <div className="flex items-center justify-between border-b border-white/[0.06] bg-brand-950/20 px-4 py-2 font-mono text-[9.5px] uppercase tracking-[0.16em] text-zinc-400">
+          <span>
+            {tab === "terminal"
+              ? `Interactive command runner · prefix "${prefix}"`
+              : tab === "shields"
+                ? "Toggle guards to calculate posture score"
+                : isLive
+                  ? "Connected guild security feed"
+                  : simulating
+                    ? "Nuke interception sequence"
+                    : "Guard engine preview · click Simulate Nuke"}
+          </span>
+          <span className="font-semibold text-emerald-300">
+            {shieldScore}/100 {shieldGrade}
+          </span>
         </div>
 
-        {/* Body */}
+        {/* Console Body — fixed height for zero layout shift */}
         <div className="relative p-4">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-scan bg-gradient-to-r from-transparent via-brand-500/60 to-transparent" />
 
-          {tab === "stream" ? (
-            <div className="flex h-[288px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto">
+          {tab === "stream" && (
+            <div className="flex h-[312px] flex-col gap-2 overflow-hidden font-mono text-[11.5px] leading-relaxed [&>*:first-child]:mt-auto">
               {visible.map((l, i) => (
                 <div
                   key={l.id ?? `${l.t}-${l.msg}-${i}`}
-                  className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.06] bg-black/55 px-3 py-2.5 transition-colors duration-200 hover:border-brand-500/30"
+                  className="animate-log-in flex items-start gap-2.5 rounded-xl border border-white/[0.065] bg-black/60 px-3 py-2.5 transition-colors duration-200 hover:border-brand-500/35"
                 >
                   <span
-                    className={`mt-px shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
+                    className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold tracking-wider ${
                       l.ok
-                        ? "border border-emerald-500/25 bg-emerald-500/12 text-emerald-300"
-                        : "border border-brand-500/40 bg-brand-600/22 text-brand-200"
+                        ? "border border-emerald-500/30 bg-emerald-500/12 text-emerald-300"
+                        : "border border-brand-500/45 bg-brand-600/25 text-brand-200"
                     }`}
                   >
                     {l.t}
@@ -316,76 +441,139 @@ function ConsolePanel() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="animate-fade-in flex h-[288px] flex-col justify-between py-1">
-              <div className="space-y-3">
-                {TELEMETRY_LAYERS.map((layer) => (
+          )}
+
+          {tab === "terminal" && (
+            <div className="flex h-[312px] flex-col justify-between">
+              <div className="space-y-2.5 overflow-y-auto pr-1 font-mono text-[11.5px]">
+                {termHistory.map((item, idx) => (
                   <div
-                    key={layer.name}
-                    className="rounded-xl border border-white/[0.06] bg-black/50 px-3.5 py-2.5"
+                    key={`${item.cmd}-${idx}`}
+                    className="rounded-xl border border-white/[0.065] bg-black/60 p-3"
                   >
-                    <div className="flex items-center justify-between text-[11.5px]">
-                      <span className="font-medium text-zinc-200">
-                        {layer.name}
-                      </span>
-                      <span className="font-mono text-[10px] font-semibold text-brand-300">
-                        {layer.metric}
-                      </span>
-                    </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-brand-700 via-brand-500 to-brand-300 shadow-[0_0_12px_rgb(var(--brand-500))]"
-                        style={{ width: `${layer.pct}%` }}
-                      />
-                    </div>
+                    <p className="text-brand-300">
+                      <span className="text-zinc-500">$ </span>
+                      {item.cmd}
+                    </p>
+                    <p
+                      className={`mt-1 leading-snug ${
+                        item.ok ? "text-zinc-200" : "text-amber-300"
+                      }`}
+                    >
+                      {item.out}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              <div className="grid grid-cols-8 gap-1.5 pt-2">
-                {[31, 36, 29, 41, 34, 38, 33, 37].map((ms, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col items-center rounded-lg border border-emerald-500/20 bg-emerald-500/[0.07] py-1.5 font-mono text-[8.5px]"
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {["automod strict", "verify setup", "ticket setup", "nightmode", "gstart"].map(
+                    (chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => executeTerminalCmd(`${prefix}${chip}`)}
+                        className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[9.5px] text-zinc-400 transition hover:border-brand-500/40 hover:text-brand-200"
+                      >
+                        {prefix}
+                        {chip}
+                      </button>
+                    ),
+                  )}
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    executeTerminalCmd(termInput);
+                  }}
+                  className="flex items-center gap-2 rounded-xl border border-brand-500/35 bg-black/80 px-3 py-2"
+                >
+                  <TerminalIcon className="size-3.5 shrink-0 text-brand-400" />
+                  <input
+                    type="text"
+                    value={termInput}
+                    onChange={(e) => setTermInput(e.target.value)}
+                    placeholder={`Type a command (e.g. ${prefix}lockdown, ${prefix}help)…`}
+                    className="flex-1 bg-transparent font-mono text-[12px] text-white placeholder:text-zinc-600 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-brand-600/30 px-2.5 py-1 font-mono text-[9.5px] uppercase text-brand-200 hover:bg-brand-600/50 hover:text-white"
                   >
-                    <span className="text-zinc-400">S{idx + 1}</span>
-                    <span className="font-semibold text-emerald-300">
-                      {ms}m
-                    </span>
-                  </div>
-                ))}
+                    Run
+                  </button>
+                </form>
               </div>
             </div>
           )}
 
+          {tab === "shields" && (
+            <div className="flex h-[312px] flex-col justify-between">
+              <div className="space-y-1.5 overflow-y-auto pr-0.5">
+                {INITIAL_SHIELDS.map((s) => {
+                  const active = Boolean(shields[s.key]);
+                  return (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() =>
+                        setShields((prev) => ({ ...prev, [s.key]: !prev[s.key] }))
+                      }
+                      className={`flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2 text-left transition-all ${
+                        active
+                          ? "border-brand-500/35 bg-brand-950/35 text-white"
+                          : "border-white/[0.06] bg-black/45 text-zinc-400 hover:border-white/[0.14]"
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[12px] font-medium">
+                          {s.label}
+                        </p>
+                        <p className="truncate font-mono text-[9.5px] text-zinc-500">
+                          {s.sub}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex size-5 shrink-0 items-center justify-center rounded-md border transition ${
+                          active
+                            ? "border-emerald-400/50 bg-emerald-500/20 text-emerald-300"
+                            : "border-white/15 bg-black/40 text-transparent"
+                        }`}
+                      >
+                        <CheckIcon className="size-3" />
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
+                <div
+                  style={{ width: `${shieldScore}%` }}
+                  className="h-full rounded-full bg-gradient-to-r from-brand-600 via-brand-400 to-emerald-400 transition-all duration-300"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Console Footer */}
           <div className="mt-3 flex items-center justify-between border-t border-white/[0.065] pt-3 font-mono text-[10px] text-zinc-500">
             <span>
-              prefix <span className="text-brand-400">{config.prefix}</span> ·{" "}
-              {isLive ? "live cluster" : "demo preview only"}
+              prefix <span className="text-brand-400">{prefix}</span> · slash{" "}
+              <span className="text-zinc-300">/antinuke</span>
             </span>
-            <span className="inline-flex items-center gap-1.5 text-emerald-400">
-              <span className="size-1.5 animate-ticker rounded-full bg-emerald-400" />
-              illustrative preview
-            </span>
+            <Link
+              href="/dashboard/demo"
+              className="inline-flex items-center gap-1.5 text-brand-300 transition hover:text-white"
+            >
+              <ShieldIcon className="size-3" />
+              Open Full Control Plane →
+            </Link>
           </div>
         </div>
       </SpotlightCard>
-
-      {/* Floating glass micro-card */}
-      <div className="absolute -bottom-5 -left-5 hidden animate-floaty items-center gap-3 rounded-2xl border border-brand-500/30 bg-ink-900/95 px-4 py-2.5 shadow-[0_22px_55px_-14px_rgba(0,0,0,0.98),0_0_34px_-12px_rgb(var(--brand-500)/0.65)] backdrop-blur-2xl sm:flex">
-        <span className="flex size-8 items-center justify-center rounded-xl border border-brand-500/35 bg-brand-600/20 text-brand-400">
-          <ShieldIcon className="size-4" />
-        </span>
-        <div className="leading-tight">
-          <p className="text-[12px] font-semibold text-white">
-            Rollback Preview
-          </p>
-          <p className="font-mono text-[9.5px] text-brand-300">
-            illustrative demo
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
-

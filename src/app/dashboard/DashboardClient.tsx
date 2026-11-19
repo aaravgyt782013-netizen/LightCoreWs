@@ -7,15 +7,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { site } from "@/lib/site";
 import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import {
   ArrowRight,
+  CheckIcon,
   CrownIcon,
   DiscordIcon,
+  LockIcon,
   PlusIcon,
   RefreshIcon,
   SearchIcon,
   ShieldIcon,
+  SparklesIcon,
 } from "@/components/ui/Icons";
 
 type DashboardUser = {
@@ -23,7 +25,6 @@ type DashboardUser = {
   username: string;
   globalName: string | null;
   avatarUrl: string | null;
-  email?: string | null;
   isOwner?: boolean;
 };
 
@@ -46,15 +47,25 @@ type UserPremium = {
   isLifetime?: boolean;
 };
 
+const DEMO_HIGHLIGHTS = [
+  { label: "14 Anti-Nuke Guards", tab: "antinuke" },
+  { label: "AutoMod Firewall", tab: "automod" },
+  { label: "Captcha Verification", tab: "verification" },
+  { label: "VoiceMaster Hub", tab: "voicemaster" },
+  { label: "Ticket Desk", tab: "tickets" },
+  { label: "Custom Embed Studio", tab: "utility" },
+] as const;
+
 export function DashboardClient() {
   const router = useRouter();
   const { config: siteCfg } = useSiteConfig();
+  const brandName = siteCfg.brandName || site.name;
+  const currency = siteCfg.currencySymbol || "₹";
   const safeInviteHref = sanitizeDiscordInviteUrl(
     siteCfg.inviteUrl || site.invite,
     site.clientId,
   );
   const [state, setState] = useState<"loading" | "guest" | "authed">("loading");
-  const [openingGuild, setOpeningGuild] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [user, setUser] = useState<DashboardUser | null>(null);
   const [premium, setPremium] = useState<UserPremium | null>(null);
@@ -121,64 +132,137 @@ export function DashboardClient() {
 
   const handleOpenGuild = (g: DashboardGuild) => {
     if (!g.canManage) return;
-    setOpeningGuild(g.name);
     router.push(`/dashboard/${g.id}`);
   };
 
   const handleLogout = async () => {
-    setOpeningGuild("Signing out");
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/";
   };
 
+  // Layout-locked skeleton inside PageShell — zero fullscreen loader flicker
   if (state === "loading") {
     return (
-      <LoadingScreen
-        label="Loading Dashboard..."
-        sublabel="Syncing your server workspace"
-      />
-    );
-  }
-
-  if (openingGuild) {
-    return (
-      <LoadingScreen
-        label="Opening Server..."
-        sublabel={`${openingGuild} · loading modules`}
-      />
+      <div className="space-y-5">
+        <div className="skeleton-shimmer h-20 rounded-2xl border border-white/[0.07]" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="skeleton-shimmer h-56 rounded-2xl border border-white/[0.07]"
+            />
+          ))}
+        </div>
+      </div>
     );
   }
 
   if (state === "guest" || !user) {
     return (
-      <div className="mx-auto max-w-md py-8">
-        <div className="glass-card relative overflow-hidden rounded-[26px] p-8 text-center sm:p-10">
+      <div className="grid gap-6 lg:grid-cols-12">
+        {/* Connect real Discord account */}
+        <div className="glass-card relative overflow-hidden rounded-[28px] p-7 sm:p-9 lg:col-span-6">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500 to-transparent"
           />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-24 left-1/2 size-64 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(var(--brand-500)/0.24),transparent)]"
-          />
-          <div className="relative">
-            <div className="mx-auto flex size-12 items-center justify-center rounded-2xl border border-brand-500/35 bg-brand-950/55 text-brand-400 shadow-[0_0_30px_-8px_rgb(var(--brand-500)/0.75)]">
-              <ShieldIcon className="size-5" />
-            </div>
-            <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
-              Select a server
-            </h2>
-            <p className="mt-2.5 text-[13.5px] leading-relaxed text-zinc-400">
-              Sign in with Discord to manage your servers.
-            </p>
-            <a
-              href="/api/auth/discord?next=/dashboard"
-              className="btn-primary btn-glow relative mt-7 flex h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
-            >
-              <DiscordIcon className="size-[19px]" />
-              Login with Discord
-            </a>
+          <div className="flex size-12 items-center justify-center rounded-2xl border border-brand-500/35 bg-brand-950/55 text-brand-400 shadow-[0_0_30px_-8px_rgb(var(--brand-500)/0.75)]">
+            <ShieldIcon className="size-5" />
           </div>
+          <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
+            Manage Your Discord Servers
+          </h2>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
+            Connect via official Discord OAuth2 (
+            <code className="font-mono text-[12px] text-brand-300">
+              identify
+            </code>
+            ,{" "}
+            <code className="font-mono text-[12px] text-brand-300">guilds</code>{" "}
+            &amp;{" "}
+            <code className="font-mono text-[12px] text-brand-300">
+              guilds.join
+            </code>
+            ) to manage your servers and join the official community server.
+          </p>
+
+          <ul className="mt-5 space-y-2 text-[12.5px] text-zinc-300">
+            {[
+              "Authenticates exclusively on discord.com",
+              "Loads your server list & auto-joins our official community server",
+              "Real-time channel, role, embed & security preset editor",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2.5">
+                <CheckIcon className="size-3.5 shrink-0 text-emerald-400" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <a
+            href="/api/auth/discord?next=/dashboard"
+            className="btn-primary btn-glow relative mt-7 flex h-[52px] w-full items-center justify-center gap-3 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
+          >
+            <DiscordIcon className="size-[19px]" />
+            Continue with Discord OAuth2
+          </a>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] text-zinc-500">
+            <span className="inline-flex items-center gap-1.5">
+              <LockIcon className="size-3 text-emerald-400" />
+              Zero password or token DB storage
+            </span>
+            <Link
+              href="/security"
+              className="text-brand-300 underline-offset-2 hover:text-white hover:underline"
+            >
+              OAuth2 Security →
+            </Link>
+          </div>
+        </div>
+
+        {/* Interactive Zero-Login Demo Sandbox */}
+        <div className="panel panel-inner relative flex flex-col justify-between overflow-hidden rounded-[28px] border-emerald-500/25 p-7 sm:p-9 lg:col-span-6">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-300">
+                <SparklesIcon className="size-5" />
+              </div>
+              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-emerald-300">
+                Zero Sign-In · Live
+              </span>
+            </div>
+
+            <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
+              Try the Interactive Sandbox
+            </h2>
+            <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
+              Test the entire 12-module {brandName} control plane right now on a
+              pre-loaded 18,400-member community — click any module to jump
+              straight in:
+            </p>
+
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              {DEMO_HIGHLIGHTS.map((m) => (
+                <Link
+                  key={m.label}
+                  href={`/dashboard/demo?tab=${m.tab}`}
+                  className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-ink-950/75 px-3.5 py-2.5 text-[12px] font-medium text-zinc-200 transition hover:border-brand-500/45 hover:text-white"
+                >
+                  <span className="truncate">{m.label}</span>
+                  <span className="font-mono text-[10px] text-brand-400">→</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <Link
+            href="/dashboard/demo"
+            className="group mt-7 flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 text-[14.5px] font-semibold text-emerald-100 transition-all hover:-translate-y-0.5 hover:border-emerald-300/65 hover:bg-emerald-500/25 hover:text-white"
+          >
+            <span>Open Full Demo Server</span>
+            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
     );
@@ -231,6 +315,14 @@ export function DashboardClient() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/dashboard/demo"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 text-[12.5px] font-medium text-zinc-200 transition hover:border-brand-500/40 hover:text-white"
+          >
+            <SparklesIcon className="size-3.5 text-brand-400" />
+            Demo Sandbox
+          </Link>
+
           <Link
             href="/premium"
             className="btn-glow relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-4 text-[12.5px] font-semibold text-white shadow-[0_8px_30px_-8px_rgb(var(--brand-500)/0.82)] transition-all duration-200 hover:-translate-y-0.5 hover:brightness-110"
@@ -286,12 +378,12 @@ export function DashboardClient() {
               <p className="font-display text-[15px] font-semibold text-white">
                 {premium
                   ? `${premium.tierName} Active on @${user.username}`
-                  : `Upgrade to ${site.name} Premium`}
+                  : `Upgrade to ${brandName} Premium`}
               </p>
               <p className="mt-0.5 text-[12.5px] text-zinc-400">
                 {premium
                   ? `${premium.expiresAt ? `Valid until ${new Date(premium.expiresAt).toLocaleDateString()}` : "Lifetime access"}${premium.guildName ? ` · Bound to ${premium.guildName}` : " · Assign a server slot anytime"}`
-                  : "Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Protection, No-Prefix & Custom Branded Bot — generate your invoice & activate via Support Ticket from ₹299/mo."}
+                  : `Unlock Limit System, Anti-Token Spam, Anti-Betray Mode, Vanity Guard, No-Prefix & Custom Branded Bot — from ${currency}299/mo.`}
               </p>
             </div>
           </div>
@@ -368,7 +460,7 @@ export function DashboardClient() {
         </div>
       </div>
 
-      {/* Server Grid (Xieron & Zynrax style) */}
+      {/* Server Grid */}
       {visibleGuilds.length === 0 ? (
         <div className="rounded-2xl border border-white/[0.07] bg-white/[0.018] p-12 text-center">
           <p className="font-display text-[17px] font-semibold text-white">
@@ -385,7 +477,7 @@ export function DashboardClient() {
             rel="noopener noreferrer"
             className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-brand-600 px-5 text-[13px] font-semibold text-white hover:bg-brand-500"
           >
-            Invite {site.name}
+            Invite {brandName}
           </a>
         </div>
       ) : (
@@ -408,7 +500,6 @@ export function DashboardClient() {
                   : "opacity-70"
               }`}
             >
-              {/* Banner */}
               <div className="relative h-24 overflow-hidden border-b border-white/[0.06] bg-gradient-to-br from-brand-950/70 via-ink-850 to-ink-950">
                 {g.iconUrl && (
                   <Image
@@ -421,8 +512,6 @@ export function DashboardClient() {
                   />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/40 to-transparent" />
-
-                {/* Top-right status badge */}
                 <div className="absolute right-3 top-3">
                   {g.botPresent === true ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-ink-950/80 px-2.5 py-1 font-mono text-[9px] uppercase tracking-wider text-emerald-400 backdrop-blur">
@@ -442,7 +531,6 @@ export function DashboardClient() {
                 </div>
               </div>
 
-              {/* Icon + Info */}
               <div className="relative flex flex-1 flex-col px-5 pb-5">
                 <div className="-mt-8 flex items-end justify-between">
                   {g.iconUrl ? (
@@ -484,16 +572,12 @@ export function DashboardClient() {
                   ID: {g.id}
                 </p>
 
-                {/* Action buttons */}
                 <div className="mt-5 flex items-center gap-2 pt-auto">
                   {g.canManage ? (
                     <>
                       <Link
                         href={`/dashboard/${g.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpeningGuild(g.name);
-                        }}
+                        onClick={(e) => e.stopPropagation()}
                         className="group/btn inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-brand-500"
                       >
                         {g.botPresent === true ? "Manage" : "Configure"}

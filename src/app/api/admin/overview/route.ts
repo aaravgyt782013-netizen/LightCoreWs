@@ -15,6 +15,9 @@ import { getSiteConfig } from "@/lib/site-config-server";
 import { getStorageEngineName } from "@/lib/kv-store";
 import {
   cleanEnvString,
+  isExplicitAutoJoinEnabled,
+  resolveAutoJoinGuildId,
+  resolveAutoJoinRoleId,
   resolveDiscordClientId,
   resolveOAuthScopes,
   sanitizeDiscordInviteUrl,
@@ -81,6 +84,7 @@ export async function GET(req: NextRequest) {
         prefix: siteConfig.prefix || site.prefix,
         oauthScopes: resolveOAuthScopes(
           process.env.DISCORD_OAUTH_SCOPES || site.oauthScopes,
+          { includeJoin: siteConfig.autoJoinEnabled !== false },
         ),
         redirectUri: getRedirectUri(req.url, req.headers),
         inviteUrl: sanitizeDiscordInviteUrl(
@@ -88,6 +92,13 @@ export async function GET(req: NextRequest) {
           site.clientId,
         ),
         storageEngine: getStorageEngineName(),
+        autoJoin: {
+          enabled: siteConfig.autoJoinEnabled !== false,
+          effectiveGuildId: resolveAutoJoinGuildId(siteConfig.autoJoinGuildId),
+          envGuildId: resolveAutoJoinGuildId(null),
+          effectiveRoleId: resolveAutoJoinRoleId(siteConfig.autoJoinRoleId),
+          envRoleId: resolveAutoJoinRoleId(null),
+        },
         integrations: {
           oauthConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_CLIENT_SECRET) &&
@@ -96,10 +107,10 @@ export async function GET(req: NextRequest) {
           botTokenConfigured: Boolean(
             cleanEnvString(process.env.DISCORD_BOT_TOKEN),
           ),
-          autoJoinConfigured: Boolean(
-            cleanEnvString(process.env.DISCORD_BOT_TOKEN) &&
-              /^\d{15,22}$/.test(cleanEnvString(process.env.DISCORD_AUTO_JOIN_GUILD_ID)),
-          ),
+          autoJoinConfigured: isExplicitAutoJoinEnabled({
+            enabled: siteConfig.autoJoinEnabled,
+            guildId: siteConfig.autoJoinGuildId,
+          }),
           logSecretConfigured: Boolean(
             cleanEnvString(process.env.LOG_INGEST_SECRET),
           ),

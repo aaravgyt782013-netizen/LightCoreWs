@@ -3,10 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { site, type LogEntry } from "@/lib/site";
 import {
   ANTINUKE_RULE_META,
+  SECURITY_PRESETS,
+  buildCliSetupCommands,
+  computeSecurityScore,
+  createDefaultGuildConfig,
   mergeGuildConfig,
   type GuildConfig,
 } from "@/lib/guild-config";
@@ -14,8 +18,9 @@ import type {
   DiscordChannelOption,
   DiscordRoleOption,
 } from "@/lib/discord-guilds";
+import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { Logo, Wordmark } from "@/components/ui/Logo";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
+import { openCommandPalette } from "@/components/ui/CommandPalette";
 import {
   ColorSwatchSelect,
   CustomSelect,
@@ -26,8 +31,10 @@ import {
   BotIcon,
   CheckIcon,
   ChevronLeftIcon,
+  CopyIcon,
   CrownIcon,
   DiscordIcon,
+  DownloadIcon,
   GiftIcon,
   GridIcon,
   LockIcon,
@@ -35,10 +42,15 @@ import {
   MoonIcon,
   PlusIcon,
   RefreshIcon,
+  SearchIcon,
   ShieldIcon,
   SlidersIcon,
+  SparklesIcon,
+  TerminalIcon,
   TicketIcon,
+  UploadIcon,
   UsersIcon,
+  VerifiedIcon,
   VoiceIcon,
 } from "@/components/ui/Icons";
 import { ModuleHeader, Toggle, ToggleRow } from "./Controls";
@@ -46,6 +58,7 @@ import {
   AntiNukeModule,
   AutoModModule,
   NightModeModule,
+  VerificationModule,
   WhitelistModule,
 } from "./SecurityModules";
 import {
@@ -57,11 +70,12 @@ import {
   WelcomerModule,
 } from "./ServerModules";
 
-type ModuleId =
+export type ModuleId =
   | "overview"
   | "antinuke"
   | "whitelist"
   | "automod"
+  | "verification"
   | "nightmode"
   | "moderation"
   | "welcomer"
@@ -69,6 +83,21 @@ type ModuleId =
   | "tickets"
   | "logging"
   | "utility";
+
+const ALL_MODULE_IDS = new Set<ModuleId>([
+  "overview",
+  "antinuke",
+  "whitelist",
+  "automod",
+  "verification",
+  "nightmode",
+  "moderation",
+  "welcomer",
+  "voicemaster",
+  "tickets",
+  "logging",
+  "utility",
+]);
 
 type GuildPayload = {
   user: {
@@ -114,19 +143,19 @@ const NAV_GROUPS: {
     id: ModuleId;
     label: string;
     icon: (props: React.SVGProps<SVGSVGElement>) => React.JSX.Element;
-    badge?: string;
   }[];
 }[] = [
   {
     heading: "General",
-    items: [{ id: "overview", label: "Overview", icon: GridIcon }],
+    items: [{ id: "overview", label: "Overview & Presets", icon: GridIcon }],
   },
   {
     heading: "Security Setup",
     items: [
       { id: "antinuke", label: "Anti-Nuke", icon: ShieldIcon },
       { id: "whitelist", label: "Whitelist & Owners", icon: UsersIcon },
-      { id: "automod", label: "AutoMod", icon: BotIcon },
+      { id: "automod", label: "AutoMod Firewall", icon: BotIcon },
+      { id: "verification", label: "Verification Gate", icon: LockIcon },
       { id: "nightmode", label: "Night Mode", icon: MoonIcon },
     ],
   },
@@ -134,32 +163,183 @@ const NAV_GROUPS: {
     heading: "Server Management",
     items: [
       { id: "moderation", label: "Moderation & Roles", icon: SlidersIcon },
-      { id: "welcomer", label: "Welcomer", icon: BellIcon },
+      { id: "welcomer", label: "Welcomer & Leave", icon: BellIcon },
       { id: "voicemaster", label: "VoiceMaster", icon: VoiceIcon },
-      { id: "tickets", label: "Tickets", icon: TicketIcon },
+      { id: "tickets", label: "Tickets Desk", icon: TicketIcon },
       { id: "logging", label: "Audit Logging", icon: LogListIcon },
-      {
-        id: "utility",
-        label: "AutoResponder & GWs",
-        icon: GiftIcon,
-      },
+      { id: "utility", label: "Embeds, AR & GWs", icon: GiftIcon },
     ],
   },
 ];
 
 const MODULE_LABELS: Record<ModuleId, string> = {
-  overview: "General Settings",
-  antinuke: "Anti-Nuke",
+  overview: "Overview & Security Posture",
+  antinuke: "Anti-Nuke Protection",
   whitelist: "Whitelist & Extra Owners",
-  automod: "AutoMod",
-  nightmode: "Night Mode",
+  automod: "AutoMod Firewall",
+  verification: "Verification Gate",
+  nightmode: "Night Mode & Lockdown",
   moderation: "Moderation & AutoRole",
-  welcomer: "Welcomer",
-  voicemaster: "VoiceMaster",
-  tickets: "Tickets",
+  welcomer: "Welcomer & Leave",
+  voicemaster: "VoiceMaster Hub",
+  tickets: "Ticketing System",
   logging: "Audit Logging",
-  utility: "AutoResponder & Giveaways",
+  utility: "Embed Studio, AutoResponder & Giveaways",
 };
+
+function createDemoPayload(): GuildPayload {
+  const cfg = createDefaultGuildConfig();
+  cfg.antinuke.logChannel = "ch-sec-logs";
+  cfg.antinuke.antiBetray = true;
+  cfg.antinuke.vanityGuard = true;
+  cfg.verification.enabled = true;
+  cfg.verification.mode = "captcha";
+  cfg.verification.channel = "ch-verify";
+  cfg.verification.verifiedRole = "rl-verified";
+  cfg.verification.logChannel = "ch-sec-logs";
+  cfg.welcomer.enabled = true;
+  cfg.welcomer.channel = "ch-welcome";
+  cfg.voicemaster.enabled = true;
+  cfg.voicemaster.category = "cat-voice";
+  cfg.voicemaster.joinChannel = "vc-j2c";
+  cfg.voicemaster.controlChannel = "ch-vc-panel";
+  cfg.tickets.enabled = true;
+  cfg.tickets.panelChannel = "ch-support";
+  cfg.tickets.category = "cat-support";
+  cfg.tickets.staffRole = "rl-staff";
+  cfg.tickets.transcriptChannel = "ch-transcripts";
+  cfg.logging.allChannel = "ch-all-logs";
+  cfg.logging.securityChannel = "ch-sec-logs";
+  cfg.logging.modChannel = "ch-mod-logs";
+  cfg.whitelist.users = [
+    { id: "984210394810293841", tag: "nyx (Head Admin)", scopes: ["Ban/Kick", "Roles"] },
+  ];
+  cfg.utility.autoResponders = [
+    {
+      id: "demo-ar-1",
+      trigger: "support",
+      response: "Open a private ticket in #open-a-ticket and staff will reply shortly!",
+      match: "exact",
+    },
+  ];
+  cfg.utility.embeds = [
+    {
+      id: "demo-emb-1",
+      name: "welcome-rules",
+      channel: "ch-rules",
+      author: "",
+      title: "LightCore Sanctuary · Official Rules",
+      description:
+        "1. Respect every member & staff decision.\n2. Zero phishing links, self-promo, or token spam.\n3. Open a ticket in #open-a-ticket for fast assistance.",
+      color: "#ef4444",
+      imageUrl: "",
+      thumbnailUrl: "",
+      footer: "Guarded 24/7 by LightCore",
+      timestamp: true,
+      fields: [],
+    },
+  ];
+
+  const now = Date.now();
+  return {
+    user: {
+      id: "100000000000000001",
+      username: "guest_admin",
+      globalName: "Demo Owner",
+      avatarUrl: site.logo,
+      isOwner: false,
+    },
+    guild: {
+      id: "demo",
+      name: "LightCore Sanctuary",
+      iconUrl: site.logo,
+      owner: true,
+      inviteUrl: site.invite,
+      botInGuild: true,
+      memberCount: 18420,
+      onlineCount: 3194,
+      boostCount: 42,
+      boostTier: 3,
+      channels: [
+        { id: "ch-verify", name: "verify", type: "text", position: 1 },
+        { id: "ch-rules", name: "rules", type: "text", position: 2 },
+        { id: "ch-welcome", name: "welcome", type: "text", position: 3 },
+        { id: "ch-announcements", name: "announcements", type: "text", position: 4 },
+        { id: "ch-general", name: "general-chat", type: "text", position: 5 },
+        { id: "ch-bot-spam", name: "bot-commands", type: "text", position: 6 },
+        { id: "ch-support", name: "open-a-ticket", type: "text", position: 7 },
+        { id: "ch-vc-panel", name: "vc-interface", type: "text", position: 8 },
+        { id: "ch-sec-logs", name: "antinuke-logs", type: "text", position: 9 },
+        { id: "ch-mod-logs", name: "mod-logs", type: "text", position: 10 },
+        { id: "ch-transcripts", name: "ticket-transcripts", type: "text", position: 11 },
+        { id: "ch-all-logs", name: "audit-stream", type: "text", position: 12 },
+        { id: "vc-j2c", name: "➕ Join to Create", type: "voice", position: 13 },
+        { id: "vc-lounge", name: "Main Lounge", type: "voice", position: 14 },
+        { id: "cat-voice", name: "VoiceMaster Rooms", type: "category", position: 15 },
+        { id: "cat-support", name: "Support Desk", type: "category", position: 16 },
+      ],
+      roles: [
+        { id: "rl-head", name: "Head Admin", color: "#ef4444", position: 9 },
+        { id: "rl-staff", name: "Support Staff", color: "#f43f5e", position: 8 },
+        { id: "rl-night", name: "Night Watch", color: "#8b5cf6", position: 7 },
+        { id: "rl-gw", name: "Giveaway Host", color: "#f59e0b", position: 6 },
+        { id: "rl-vip", name: "Server Booster", color: "#ec4899", position: 5 },
+        { id: "rl-verified", name: "Verified", color: "#10b981", position: 4 },
+        { id: "rl-unverified", name: "Unverified", color: "#71717a", position: 3 },
+        { id: "rl-muted", name: "Quarantined", color: "#dc2626", position: 2 },
+        { id: "rl-bots", name: "Bots", color: "#38bdf8", position: 1 },
+      ],
+    },
+    switcherGuilds: [
+      { id: "demo", name: "LightCore Sanctuary (Demo)", iconUrl: site.logo, owner: true },
+    ],
+    premium: {
+      activeTier: "pro",
+      userSubscription: { tierName: "LightCore Pro (Sandbox)", expiresAt: null },
+      guildSubscription: null,
+    },
+    config: cfg,
+    syncedWithBot: true,
+    logs: [
+      {
+        id: "dm-1",
+        t: "ANTINUKE",
+        ok: true,
+        msg: "Blocked rogue webhook creation in #announcements (actor stripped in 184ms)",
+        guild: "LightCore Sanctuary",
+        guildId: "demo",
+        ts: new Date(now - 90_000).toISOString(),
+      },
+      {
+        id: "dm-2",
+        t: "ROLLBACK",
+        ok: true,
+        msg: "Restored #general-chat overwrites + slowmode snapshot automatically",
+        guild: "LightCore Sanctuary",
+        guildId: "demo",
+        ts: new Date(now - 240_000).toISOString(),
+      },
+      {
+        id: "dm-3",
+        t: "AUTOMOD",
+        ok: true,
+        msg: "Intercepted phishing invite burst (6 msgs purged · 5m timeout applied)",
+        guild: "LightCore Sanctuary",
+        guildId: "demo",
+        ts: new Date(now - 620_000).toISOString(),
+      },
+      {
+        id: "dm-4",
+        t: "VERIFY",
+        ok: true,
+        msg: "Held 4 fresh burner accounts (<3d old) at Captcha Verification Gate",
+        guild: "LightCore Sanctuary",
+        guildId: "demo",
+        ts: new Date(now - 1_200_000).toISOString(),
+      },
+    ],
+  };
+}
 
 function stripMeta(cfg: GuildConfig): string {
   return JSON.stringify({ ...cfg, updatedAt: null, updatedBy: null });
@@ -169,27 +349,44 @@ function storageKey(guildId: string): string {
   return `lc_guild_cfg_${guildId}`;
 }
 
-export function GuildDashboardClient({ guildId }: { guildId: string }) {
+export function GuildDashboardClient({
+  guildId,
+  demoMode = false,
+}: {
+  guildId: string;
+  demoMode?: boolean;
+}) {
   const router = useRouter();
+  const { config: siteCfg } = useSiteConfig();
+  const brandName = siteCfg.brandName || site.name;
+  const currency = siteCfg.currencySymbol || "₹";
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [viewState, setViewState] = useState<
     "loading" | "guest" | "forbidden" | "error" | "ready"
-  >("loading");
+  >(demoMode ? "ready" : "loading");
   const [errorMsg, setErrorMsg] = useState<string>("");
-  const [transitionMsg, setTransitionMsg] = useState<string | null>(null);
 
-  const [data, setData] = useState<GuildPayload | null>(null);
-  const [savedConfig, setSavedConfig] = useState<GuildConfig | null>(null);
-  const [draft, setDraft] = useState<GuildConfig | null>(null);
+  const [data, setData] = useState<GuildPayload | null>(() =>
+    demoMode ? createDemoPayload() : null,
+  );
+  const [savedConfig, setSavedConfig] = useState<GuildConfig | null>(() =>
+    demoMode ? createDemoPayload().config : null,
+  );
+  const [draft, setDraft] = useState<GuildConfig | null>(() =>
+    demoMode ? createDemoPayload().config : null,
+  );
   const [activeTab, setActiveTab] = useState<ModuleId>("overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [cliOpen, setCliOpen] = useState(false);
+  const [cliCopied, setCliCopied] = useState(false);
   const [toast, setToast] = useState<{ ok: boolean; text: string } | null>(
     null,
   );
 
-  // Ignored channels/roles inputs for Overview tab
   const [ignChanInput, setIgnChanInput] = useState("");
   const [ignRoleInput, setIgnRoleInput] = useState("");
 
@@ -197,11 +394,46 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     setToast({ ok, text });
     window.setTimeout(() => {
       setToast((cur) => (cur?.text === text ? null : cur));
-    }, 3800);
+    }, 3600);
+  }, []);
+
+  // Read optional ?tab= query param on mount so landing-page deep links open the exact module
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const rawTab = sp.get("tab") as ModuleId | null;
+      if (rawTab && ALL_MODULE_IDS.has(rawTab)) {
+        setActiveTab(rawTab);
+      }
+    } catch {
+      // Ignore
+    }
   }, []);
 
   const loadGuild = useCallback(
     async (isRefresh = false) => {
+      if (demoMode) {
+        const base = createDemoPayload();
+        try {
+          const raw = window.localStorage.getItem(storageKey("demo"));
+          if (raw) {
+            const parsed = JSON.parse(raw) as GuildConfig;
+            const merged = mergeGuildConfig(base.config, parsed, "@guest_admin");
+            merged.updatedAt = parsed.updatedAt ?? null;
+            merged.updatedBy = parsed.updatedBy ?? "@guest_admin";
+            base.config = merged;
+          }
+        } catch {
+          // Ignore malformed sandbox state
+        }
+        setData(base);
+        setSavedConfig(structuredClone(base.config));
+        setDraft(structuredClone(base.config));
+        setViewState("ready");
+        if (isRefresh) showToast(true, "Sandbox state reloaded from browser.");
+        return;
+      }
+
       if (isRefresh) setRefreshing(true);
       try {
         const res = await fetch(
@@ -229,16 +461,21 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         }
 
         const payload = (await res.json()) as GuildPayload;
-        let resolvedConfig = payload.config;
+        let resolvedConfig = mergeGuildConfig(
+          createDefaultGuildConfig(),
+          payload.config,
+          payload.config.updatedBy || `@${payload.user.username}`,
+        );
+        resolvedConfig.updatedAt = payload.config.updatedAt ?? null;
+        resolvedConfig.updatedBy = payload.config.updatedBy ?? null;
 
-        // Recover browser backup if serverless instance cold-started without BOT_API_URL
         if (!payload.syncedWithBot && !payload.config.updatedAt) {
           try {
             const raw = window.localStorage.getItem(storageKey(guildId));
             if (raw) {
               const parsed = JSON.parse(raw) as GuildConfig;
               resolvedConfig = mergeGuildConfig(
-                payload.config,
+                resolvedConfig,
                 parsed,
                 parsed.updatedBy || `@${payload.user.username}`,
               );
@@ -264,13 +501,13 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         setDraft(structuredClone(resolvedConfig));
         setViewState("ready");
       } catch {
-        setErrorMsg("Network error while connecting to LightCore gateway.");
+        setErrorMsg(`Network error while connecting to ${brandName} gateway.`);
         setViewState("error");
       } finally {
         setRefreshing(false);
       }
     },
-    [guildId],
+    [brandName, demoMode, guildId, showToast],
   );
 
   useEffect(() => {
@@ -289,8 +526,47 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     [],
   );
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!draft || saving) return;
+
+    if (demoMode) {
+      setSaving(true);
+      const stamped: GuildConfig = {
+        ...structuredClone(draft),
+        updatedAt: new Date().toISOString(),
+        updatedBy: "@demo_owner",
+      };
+      try {
+        window.localStorage.setItem(storageKey("demo"), JSON.stringify(stamped));
+      } catch {
+        // Ignore quota limits
+      }
+      setSavedConfig(stamped);
+      setDraft(structuredClone(stamped));
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              logs: [
+                {
+                  id: `demo-${Date.now()}`,
+                  t: "CONFIG",
+                  ok: true,
+                  msg: `${MODULE_LABELS[activeTab]} saved in interactive sandbox`,
+                  guild: prev.guild.name,
+                  guildId: prev.guild.id,
+                  ts: new Date().toISOString(),
+                },
+                ...prev.logs,
+              ].slice(0, 30),
+            }
+          : prev,
+      );
+      setSaving(false);
+      showToast(true, `${MODULE_LABELS[activeTab]} saved to your Demo Sandbox!`);
+      return;
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/guilds/${encodeURIComponent(guildId)}`, {
@@ -323,30 +599,31 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         // Ignore storage quota issues.
       }
 
-      // Append fresh audit log item locally
-      if (data) {
-        setData({
-          ...data,
-          syncedWithBot: Boolean(json.syncedWithBot),
-          logs: [
-            {
-              id: `local-${Date.now()}`,
-              t: "CONFIG",
-              ok: true,
-              msg: `${MODULE_LABELS[activeTab]} updated by @${data.user.username}`,
-              guild: data.guild.name,
-              guildId: data.guild.id,
-              ts: new Date().toISOString(),
-            },
-            ...data.logs,
-          ].slice(0, 30),
-        });
-      }
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              syncedWithBot: Boolean(json.syncedWithBot),
+              logs: [
+                {
+                  id: `local-${Date.now()}`,
+                  t: "CONFIG",
+                  ok: true,
+                  msg: `${MODULE_LABELS[activeTab]} updated by @${prev.user.username}`,
+                  guild: prev.guild.name,
+                  guildId: prev.guild.id,
+                  ts: new Date().toISOString(),
+                },
+                ...prev.logs,
+              ].slice(0, 30),
+            }
+          : prev,
+      );
 
       showToast(
         true,
         json.syncedWithBot
-          ? `${MODULE_LABELS[activeTab]} saved & synced live with ${site.name}!`
+          ? `${MODULE_LABELS[activeTab]} saved & synced live with ${brandName}!`
           : `${MODULE_LABELS[activeTab]} saved successfully!`,
       );
     } catch {
@@ -354,7 +631,21 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     } finally {
       setSaving(false);
     }
-  };
+  }, [activeTab, brandName, demoMode, draft, guildId, saving, showToast]);
+
+  // Ctrl+S / Cmd+S keyboard shortcut
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        if (isDirty) {
+          e.preventDefault();
+          void handleSave();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSave, isDirty]);
 
   const handleReset = () => {
     if (!savedConfig) return;
@@ -362,36 +653,111 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     showToast(true, "Reverted unsaved changes.");
   };
 
+  const handleFactoryDefaults = () => {
+    const fresh = demoMode
+      ? createDemoPayload().config
+      : createDefaultGuildConfig();
+    if (demoMode) {
+      try {
+        window.localStorage.removeItem(storageKey("demo"));
+      } catch {
+        // Ignore
+      }
+    }
+    setDraft(structuredClone(fresh));
+    showToast(
+      true,
+      demoMode
+        ? "Restored clean sandbox profile — click Save to keep."
+        : "Loaded default profile — click Save Changes to apply.",
+    );
+  };
+
+  const handleExportJson = () => {
+    if (!draft || !data) return;
+    const blob = new Blob([JSON.stringify(draft, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `lightcore-${data.guild.id}-config.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast(true, "Exported server configuration JSON backup.");
+  };
+
+  const handleImportJson = async (file: File | null) => {
+    if (!file || !draft) return;
+    try {
+      const raw = await file.text();
+      const parsed = JSON.parse(raw) as Partial<GuildConfig>;
+      const merged = mergeGuildConfig(
+        createDefaultGuildConfig(),
+        parsed,
+        data?.user.username ? `@${data.user.username}` : "import",
+      );
+      setDraft(merged);
+      showToast(
+        true,
+        `Imported "${file.name}" — review & click Save Changes to commit.`,
+      );
+    } catch {
+      showToast(false, "Invalid JSON backup file.");
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSwitchGuild = (nextId: string) => {
     if (!nextId || nextId === guildId) return;
-    const target = data?.switcherGuilds.find((g) => g.id === nextId);
-    setTransitionMsg(
-      `Switching to ${target?.name || nextId} · loading configuration`,
-    );
     router.push(`/dashboard/${nextId}`);
   };
 
   const handleLogout = async () => {
-    setTransitionMsg("Closing session securely…");
+    if (demoMode) {
+      router.push("/dashboard");
+      return;
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     window.location.href = "/";
   };
 
+  // Layout-locked skeleton (zero fullscreen flash / zero layout shift)
   if (viewState === "loading") {
     return (
-      <LoadingScreen
-        label="Connection Establishing..."
-        sublabel={`Binding ${site.name} modules for server ${guildId}`}
-      />
-    );
-  }
-
-  if (transitionMsg) {
-    return (
-      <LoadingScreen
-        label="Connection Establishing..."
-        sublabel={transitionMsg}
-      />
+      <div className="flex min-h-screen bg-ink-950 text-zinc-100">
+        <aside className="hidden w-[274px] shrink-0 border-r border-white/[0.07] bg-ink-900/95 p-4 lg:block">
+          <div className="skeleton-shimmer h-10 rounded-xl" />
+          <div className="skeleton-shimmer mt-4 h-11 rounded-xl" />
+          <div className="mt-6 space-y-2">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="skeleton-shimmer h-9 rounded-xl" />
+            ))}
+          </div>
+        </aside>
+        <div className="flex-1">
+          <div className="flex h-16 items-center justify-between border-b border-white/[0.07] px-6">
+            <div className="skeleton-shimmer h-6 w-48 rounded-lg" />
+            <div className="skeleton-shimmer h-9 w-28 rounded-full" />
+          </div>
+          <div className="mx-auto max-w-[1120px] space-y-5 p-6">
+            <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="skeleton-shimmer h-28 rounded-2xl" />
+              ))}
+            </div>
+            <div className="skeleton-shimmer h-40 rounded-2xl" />
+            <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="skeleton-shimmer h-40 rounded-2xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -406,20 +772,23 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             Sign in to Manage Server
           </h1>
           <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
-            Authenticate with Discord to manage {site.name} features and
-            security controls for server{" "}
+            Authenticate via official Discord OAuth2 to manage{" "}
+            {brandName} controls for server{" "}
             <code className="font-mono text-zinc-300">{guildId}</code>.
           </p>
           <a
             href={`/api/auth/discord?next=${encodeURIComponent(`/dashboard/${guildId}`)}`}
-            onClick={() =>
-              setTransitionMsg("Redirecting to Discord OAuth2 gateway…")
-            }
             className="btn-primary btn-glow relative mt-6 inline-flex h-12 w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
           >
             <DiscordIcon className="size-[18px]" />
-            Continue with Discord
+            Continue with Discord OAuth2
           </a>
+          <Link
+            href="/dashboard/demo"
+            className="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.11] bg-ink-950/75 text-[13px] font-medium text-zinc-200 hover:border-brand-500/40 hover:text-white"
+          >
+            Try Interactive Demo Instead →
+          </Link>
           <Link
             href="/dashboard"
             className="mt-4 inline-block font-mono text-[10.5px] uppercase tracking-[0.2em] text-zinc-500 hover:text-zinc-200"
@@ -451,6 +820,12 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             >
               Choose Another Server
             </Link>
+            <Link
+              href="/dashboard/demo"
+              className="inline-flex h-10 items-center rounded-full border border-white/15 px-4 text-[13px] text-zinc-200 hover:text-white"
+            >
+              Open Demo
+            </Link>
             {viewState === "error" && (
               <button
                 type="button"
@@ -470,12 +845,16 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
   }
 
   const { user, guild, switcherGuilds } = data;
-  const activePrefix = draft.general.prefix || site.prefix;
-  const premiumHref = `/premium?guild=${encodeURIComponent(guild.id)}&name=${encodeURIComponent(guild.name)}`;
+  const activePrefix = draft.general.prefix || siteCfg.prefix || site.prefix;
+  const premiumHref = demoMode
+    ? "/premium"
+    : `/premium?guild=${encodeURIComponent(guild.id)}&name=${encodeURIComponent(guild.name)}`;
 
   const armedGuards = ANTINUKE_RULE_META.filter(
     (r) => draft.antinuke.rules[r.key].enabled,
   ).length;
+  const posture = computeSecurityScore(draft);
+  const cliCommands = buildCliSetupCommands(draft);
 
   const isModuleActive = (id: ModuleId): boolean | null => {
     switch (id) {
@@ -483,6 +862,8 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         return draft.antinuke.enabled;
       case "automod":
         return draft.automod.enabled;
+      case "verification":
+        return draft.verification.enabled;
       case "nightmode":
         return draft.nightmode.enabled || draft.nightmode.lockdownActive;
       case "welcomer":
@@ -496,7 +877,8 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
       case "utility":
         return (
           draft.utility.giveaways.enabled ||
-          draft.utility.autoResponders.length > 0
+          draft.utility.autoResponders.length > 0 ||
+          (draft.utility.embeds?.length ?? 0) > 0
         );
       default:
         return null;
@@ -515,7 +897,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     {
       id: "antinuke",
       title: "Anti-Nuke",
-      desc: "Sub-500ms protection across bans, channels, roles, webhooks & bots.",
+      desc: "Sub-500ms protection across bans, channels, roles, webhooks & rogue bots.",
       cmd: `${activePrefix}antinuke`,
       enabled: draft.antinuke.enabled,
       onToggle: (enabled) =>
@@ -525,14 +907,14 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     {
       id: "whitelist",
       title: "Whitelist & Extra Owners",
-      desc: "Trusted staff exemptions, extra owners, and bypass roles.",
+      desc: "Scoped staff exemptions, trusted co-owners, and bypass roles.",
       cmd: `${activePrefix}whitelist`,
       meta: `${draft.whitelist.users.length} users · ${draft.whitelist.extraOwners.length} extra owners`,
     },
     {
       id: "automod",
       title: "AutoMod Firewall",
-      desc: "Anti-Spam, Anti-Link, Anti-Invite, Token Spam, Caps & Bad Words.",
+      desc: "Anti-Spam, Phishing Links, Invites, Token Raids, Mentions & Zalgo.",
       cmd: `${activePrefix}automod`,
       enabled: draft.automod.enabled,
       onToggle: (enabled) =>
@@ -540,9 +922,22 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
       meta: `Action: ${draft.automod.punishment.replace("_", " ")}`,
     },
     {
+      id: "verification",
+      title: "Verification Gate",
+      desc: "Button, visual Captcha, or 6-digit code gate with burner-account age wall.",
+      cmd: `${activePrefix}verify`,
+      enabled: draft.verification.enabled,
+      onToggle: (enabled) =>
+        updateDraft((p) => ({
+          ...p,
+          verification: { ...p.verification, enabled },
+        })),
+      meta: `${draft.verification.mode} · min ${draft.verification.minAccountAgeDays}d age`,
+    },
+    {
       id: "nightmode",
       title: "Night Mode",
-      desc: "Scheduled overnight channel freeze & permission lockdown.",
+      desc: "Scheduled overnight channel freeze, emergency lockdown & dawn restore.",
       cmd: `${activePrefix}nightmode`,
       enabled: draft.nightmode.enabled,
       onToggle: (enabled) =>
@@ -552,14 +947,14 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     {
       id: "moderation",
       title: "Moderation & AutoRole",
-      desc: "Warning ladders, mute roles, human/bot join roles & sticky nicks.",
+      desc: "Warning ladders, quarantine role, human/bot join roles & sticky nicks.",
       cmd: `${activePrefix}autorole`,
       meta: `Mute @${draft.moderation.warnMuteThreshold}w · Ban @${draft.moderation.warnBanThreshold}w`,
     },
     {
       id: "welcomer",
       title: "Welcomer & Leave",
-      desc: "Custom join/leave messages, rich embeds, banners & DM greets.",
+      desc: "Rich greeting embeds with live Discord preview, banners & DM greets.",
       cmd: `${activePrefix}greet`,
       enabled: draft.welcomer.enabled,
       onToggle: (enabled) =>
@@ -569,7 +964,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     {
       id: "voicemaster",
       title: "VoiceMaster",
-      desc: "Join-to-Create temporary voice rooms with in-chat room controls.",
+      desc: "Join-to-Create temporary voice rooms with in-chat lock/claim buttons.",
       cmd: `${activePrefix}voicemaster`,
       enabled: draft.voicemaster.enabled,
       onToggle: (enabled) =>
@@ -581,8 +976,8 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     },
     {
       id: "tickets",
-      title: "Ticketing",
-      desc: "Category ticket panels, staff assignment & HTML transcripts.",
+      title: "Ticketing Desk",
+      desc: "Multi-category ticket panels, staff routing & HTML transcript archive.",
       cmd: `${activePrefix}ticket`,
       enabled: draft.tickets.enabled,
       onToggle: (enabled) =>
@@ -601,9 +996,9 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
     },
     {
       id: "utility",
-      title: "AutoResponder & Giveaways",
-      desc: "Custom trigger replies and role-gated community giveaways.",
-      cmd: `${activePrefix}gstart`,
+      title: "Embed Studio, AR & GWs",
+      desc: "Visual Discord embed designer, keyword auto-replies & role giveaways.",
+      cmd: `${activePrefix}embed`,
       enabled: draft.utility.giveaways.enabled,
       onToggle: (enabled) =>
         updateDraft((p) => ({
@@ -613,12 +1008,15 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             giveaways: { ...p.utility.giveaways, enabled },
           },
         })),
-      meta: `${draft.utility.autoResponders.length} triggers · ${draft.utility.giveaways.emoji} giveaways`,
+      meta: `${draft.utility.embeds?.length ?? 0} embeds · ${draft.utility.autoResponders.length} triggers`,
     },
   ];
 
   const enabledModulesCount = overviewModules.filter(
     (m) => m.enabled === true,
+  ).length;
+  const toggleableModulesCount = overviewModules.filter(
+    (m) => typeof m.enabled === "boolean",
   ).length;
 
   const resolveChannelLabel = (idOrName: string) => {
@@ -631,7 +1029,18 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
   };
 
   return (
-    <div className="relative flex min-h-screen bg-ink-950 text-zinc-100">
+    <div
+      style={{ paddingTop: "var(--top-banner-offset, 0px)" }}
+      className="relative flex min-h-screen bg-ink-950 text-zinc-100"
+    >
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(e) => void handleImportJson(e.target.files?.[0] ?? null)}
+      />
+
       {/* Mobile Sidebar Backdrop */}
       {sidebarOpen && (
         <div
@@ -640,13 +1049,12 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         />
       )}
 
-      {/* Left Control Sidebar (Xieron + Zynrax style) */}
+      {/* Left Control Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-[274px] flex-col border-r border-white/[0.07] bg-ink-900/95 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Brand + Back */}
         <div className="flex h-16 items-center justify-between border-b border-white/[0.07] px-4">
           <Link href="/" className="flex items-center gap-2.5">
             <Logo size={30} />
@@ -655,30 +1063,46 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             </span>
           </Link>
           <Link
-            href="/dashboard"
-            onClick={() => setTransitionMsg("Loading your server selector…")}
+            href={demoMode ? "/" : "/dashboard"}
             className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono text-[9.5px] uppercase tracking-wider text-zinc-400 hover:border-white/25 hover:text-white"
           >
             <ChevronLeftIcon className="size-3" />
-            Servers
+            {demoMode ? "Home" : "Servers"}
           </Link>
         </div>
 
-        {/* Quick Server Switcher (Custom In-Website Picker) */}
+        {/* Quick Server Switcher */}
         <div className="border-b border-brand-200/[0.08] p-3.5">
-          <CustomSelect
-            title="Switch Discord Server"
-            value={guild.id}
-            onChange={handleSwitchGuild}
-            searchable={switcherGuilds.length >= 5}
-            options={switcherGuilds.map((sg) => ({
-              value: sg.id,
-              label: sg.name,
-              iconUrl: sg.iconUrl,
-              badge: sg.owner ? "Owner" : "Admin",
-              description: `ID ${sg.id}`,
-            }))}
-          />
+          {demoMode ? (
+            <div className="flex items-center justify-between gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.07] px-3 py-2.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <Logo size={28} />
+                <div className="min-w-0">
+                  <p className="truncate text-[12.5px] font-semibold text-white">
+                    {guild.name}
+                  </p>
+                  <p className="font-mono text-[9.5px] uppercase tracking-wider text-emerald-300">
+                    Interactive Sandbox
+                  </p>
+                </div>
+              </div>
+              <VerifiedIcon className="size-4 shrink-0 text-emerald-400" />
+            </div>
+          ) : (
+            <CustomSelect
+              title="Switch Discord Server"
+              value={guild.id}
+              onChange={handleSwitchGuild}
+              searchable={switcherGuilds.length >= 5}
+              options={switcherGuilds.map((sg) => ({
+                value: sg.id,
+                label: sg.name,
+                iconUrl: sg.iconUrl,
+                badge: sg.owner ? "Owner" : "Admin",
+                description: `ID ${sg.id}`,
+              }))}
+            />
+          )}
         </div>
 
         {/* Module Navigation */}
@@ -739,62 +1163,76 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             <div className="flex items-center gap-2 text-brand-300">
               <CrownIcon className="size-4" />
               <span className="font-display text-[13px] font-semibold text-white">
-                {data.premium?.activeTier
-                  ? `${data.premium.activeTier.toUpperCase()} Active`
-                  : `Buy ${site.name} Premium`}
+                {demoMode
+                  ? `${brandName} Premium`
+                  : data.premium?.activeTier
+                    ? `${data.premium.activeTier.toUpperCase()} Active`
+                    : `Upgrade to Premium`}
               </span>
             </div>
             <p className="mt-1 text-[11px] leading-snug text-zinc-400">
-              {data.premium?.activeTier
+              {data.premium?.activeTier && !demoMode
                 ? "Premium security guards & account perks unlocked."
-                : "Generate instant invoice · Anti-Betray, Vanity Guard & No-Prefix from ₹299."}
+                : `Anti-Betray, Vanity Guard, No-Prefix & Custom Bot from ${currency}299/mo.`}
             </p>
           </Link>
         </nav>
 
         {/* User Profile Footer */}
         <div className="border-t border-white/[0.07] bg-ink-950/60 p-3.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
-              {user.avatarUrl ? (
-                <Image
-                  src={user.avatarUrl}
-                  alt=""
-                  width={34}
-                  height={34}
-                  unoptimized
-                  className="size-[34px] shrink-0 rounded-full ring-1 ring-brand-500/40"
-                />
-              ) : (
-                <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-brand-600/20 font-mono text-xs text-brand-300">
-                  {user.username.slice(0, 2).toUpperCase()}
-                </span>
-              )}
-              <div className="min-w-0">
-                <p className="truncate text-[12.5px] font-semibold text-white">
-                  {user.globalName || user.username}
-                </p>
-                <p className="truncate font-mono text-[9.5px] text-zinc-500">
-                  @{user.username}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 font-mono text-[9.5px] uppercase text-zinc-400 hover:border-brand-500/40 hover:text-white"
-            >
-              Exit
-            </button>
-          </div>
-          {user.isOwner && (
+          {demoMode ? (
             <Link
-              href="/admin"
-              className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-950/40 py-1.5 font-mono text-[9.5px] uppercase tracking-wider text-brand-300 hover:text-white"
+              href="/login?next=/dashboard"
+              className="btn-primary flex h-10 w-full items-center justify-center gap-2 rounded-xl text-[12.5px] font-semibold text-white"
             >
-              <ShieldIcon className="size-3" />
-              Owner Admin Panel
+              <DiscordIcon className="size-4" />
+              Connect Real Server
             </Link>
+          ) : (
+            <>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {user.avatarUrl ? (
+                    <Image
+                      src={user.avatarUrl}
+                      alt=""
+                      width={34}
+                      height={34}
+                      unoptimized
+                      className="size-[34px] shrink-0 rounded-full ring-1 ring-brand-500/40"
+                    />
+                  ) : (
+                    <span className="flex size-[34px] shrink-0 items-center justify-center rounded-full bg-brand-600/20 font-mono text-xs text-brand-300">
+                      {user.username.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-[12.5px] font-semibold text-white">
+                      {user.globalName || user.username}
+                    </p>
+                    <p className="truncate font-mono text-[9.5px] text-zinc-500">
+                      @{user.username}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void handleLogout()}
+                  className="shrink-0 rounded-lg border border-white/10 px-2.5 py-1 font-mono text-[9.5px] uppercase text-zinc-400 hover:border-brand-500/40 hover:text-white"
+                >
+                  Exit
+                </button>
+              </div>
+              {user.isOwner && (
+                <Link
+                  href="/admin"
+                  className="mt-2.5 flex items-center justify-center gap-1.5 rounded-lg border border-brand-500/30 bg-brand-950/40 py-1.5 font-mono text-[9.5px] uppercase tracking-wider text-brand-300 hover:text-white"
+                >
+                  <ShieldIcon className="size-3" />
+                  Owner Admin Panel
+                </Link>
+              )}
+            </>
           )}
         </div>
       </aside>
@@ -802,7 +1240,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
       {/* Main Content Workspace */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-white/[0.07] bg-ink-950/85 px-4 backdrop-blur-xl sm:px-7">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-white/[0.07] bg-ink-950/88 px-4 backdrop-blur-xl sm:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
@@ -824,41 +1262,60 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                 </h1>
                 <span
                   className={`hidden rounded-md border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider sm:inline-block ${
-                    guild.owner
-                      ? "border-amber-400/35 bg-amber-500/10 text-amber-300"
-                      : "border-brand-500/30 bg-brand-950/40 text-brand-300"
+                    demoMode
+                      ? "border-emerald-400/35 bg-emerald-500/10 text-emerald-300"
+                      : guild.owner
+                        ? "border-amber-400/35 bg-amber-500/10 text-amber-300"
+                        : "border-brand-500/30 bg-brand-950/40 text-brand-300"
                   }`}
                 >
-                  {guild.owner ? "Owner" : "Admin"}
+                  {demoMode ? "Live Demo" : guild.owner ? "Owner" : "Admin"}
                 </span>
-                {guild.botInGuild === true && (
-                  <span className="hidden items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] uppercase text-emerald-400 md:inline-flex">
-                    <span className="size-1.5 rounded-full bg-emerald-400" />
-                    Bot Active
-                  </span>
-                )}
+                <span className="hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-0.5 font-mono text-[9px] uppercase text-zinc-300 md:inline-flex">
+                  Score {posture.score}/100 ({posture.grade})
+                </span>
               </div>
               <p className="truncate font-mono text-[10px] text-zinc-500">
-                {MODULE_LABELS[activeTab]} · ID {guild.id}
+                {MODULE_LABELS[activeTab]} · Prefix {activePrefix}
               </p>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              title="Search commands (⌘K)"
+              className="hidden h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 text-[11.5px] text-zinc-400 hover:border-brand-500/40 hover:text-white md:inline-flex"
+            >
+              <SearchIcon className="size-3.5 text-brand-400" />
+              <span className="font-mono text-[10px]">⌘K</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCliOpen(true)}
+              title="Generate CLI setup commands"
+              className="hidden h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 text-[11.5px] font-medium text-zinc-300 hover:border-brand-500/40 hover:text-white sm:inline-flex"
+            >
+              <TerminalIcon className="size-3.5 text-brand-400" />
+              <span>CLI</span>
+            </button>
+
             <Link
               href={premiumHref}
               className="btn-glow relative inline-flex h-9 items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-r from-brand-600 via-brand-500 to-brand-500 px-3.5 text-[12px] font-semibold text-white shadow-[0_6px_24px_-6px_rgb(var(--brand-500)/0.82)] transition-all hover:-translate-y-0.5 hover:brightness-110"
             >
               <CrownIcon className="size-3.5" />
               <span className="hidden sm:inline">
-                {data.premium?.activeTier
+                {data.premium?.activeTier && !demoMode
                   ? `${data.premium.activeTier.toUpperCase()} Plan`
-                  : "Buy Premium"}
+                  : "Premium"}
               </span>
               <span className="sm:hidden">Pro</span>
             </Link>
 
-            {guild.botInGuild !== true && (
+            {!demoMode && guild.botInGuild !== true && (
               <a
                 href={guild.inviteUrl}
                 target="_blank"
@@ -874,7 +1331,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
               type="button"
               onClick={() => void loadGuild(true)}
               disabled={refreshing}
-              title="Reload server data"
+              title="Reload configuration"
               className="inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-300 hover:border-white/25 hover:text-white disabled:opacity-50"
             >
               <RefreshIcon
@@ -888,7 +1345,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
         {toast && (
           <div className="fixed right-5 top-20 z-50 max-w-sm">
             <div
-              className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[12.5px] font-medium shadow-panel backdrop-blur-xl ${
+              className={`animate-pop-in flex items-center gap-2.5 rounded-xl border px-4 py-3 text-[12.5px] font-medium shadow-panel backdrop-blur-xl ${
                 toast.ok
                   ? "border-emerald-500/35 bg-ink-900/95 text-emerald-300"
                   : "border-brand-500/45 bg-ink-900/95 text-brand-200"
@@ -900,17 +1357,106 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
           </div>
         )}
 
+        {/* CLI Setup Modal */}
+        {cliOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Generated CLI commands"
+            onClick={() => setCliOpen(false)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="animate-pop-in w-full max-w-xl rounded-3xl border border-brand-500/35 bg-ink-900 p-6 shadow-panel"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
+                    Equivalent Bot CLI Script
+                  </p>
+                  <h2 className="mt-1 font-display text-[18px] font-semibold text-white">
+                    Run in Discord ({cliCommands.length} commands)
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCliOpen(false)}
+                  className="rounded-lg border border-white/10 px-2.5 py-1 font-mono text-[11px] text-zinc-400 hover:text-white"
+                >
+                  ESC
+                </button>
+              </div>
+              <pre className="mt-4 max-h-72 overflow-auto rounded-2xl border border-white/[0.07] bg-ink-950 p-4 font-mono text-[12px] leading-relaxed text-brand-200">
+                {cliCommands.join("\n") || `${activePrefix}help`}
+              </pre>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <span className="font-mono text-[10.5px] text-zinc-500">
+                  Generated live from your current dashboard config
+                </span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(cliCommands.join("\n"));
+                      setCliCopied(true);
+                      window.setTimeout(() => setCliCopied(false), 1800);
+                    } catch {
+                      // Ignore
+                    }
+                  }}
+                  className="btn-primary inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold text-white"
+                >
+                  {cliCopied ? (
+                    <>
+                      <CheckIcon className="size-3.5" />
+                      Copied All Commands
+                    </>
+                  ) : (
+                    <>
+                      <CopyIcon className="size-3.5" />
+                      Copy Script
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Main Content Body */}
         <main className="mx-auto w-full max-w-[1120px] flex-1 space-y-6 px-4 pb-28 pt-6 sm:px-7">
+          {/* Interactive Sandbox Banner */}
+          {demoMode && (
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.08] via-ink-900/90 to-ink-950 px-5 py-3.5">
+              <div className="flex items-center gap-3">
+                <SparklesIcon className="size-4 shrink-0 text-emerald-300" />
+                <p className="text-[12.5px] text-zinc-200">
+                  <strong className="font-semibold text-white">
+                    Interactive Sandbox Mode:
+                  </strong>{" "}
+                  Toggle any guard, apply presets, design embeds, export JSON, or
+                  press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10.5px]">⌘S</kbd> to save locally — zero Discord login needed.
+                </p>
+              </div>
+              <Link
+                href="/login?next=/dashboard"
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-3 font-mono text-[10.5px] font-medium text-emerald-200 hover:bg-emerald-500/25 hover:text-white"
+              >
+                Connect Your Guild →
+              </Link>
+            </div>
+          )}
+
           {/* Invite CTA banner when bot is verified NOT in guild */}
-          {guild.botInGuild === false && (
+          {!demoMode && guild.botInGuild === false && (
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-500/35 bg-brand-950/35 px-5 py-4">
               <div>
                 <p className="font-display text-[15px] font-semibold text-white">
-                  {site.name} is not in {guild.name} yet
+                  {brandName} is not in {guild.name} yet
                 </p>
                 <p className="mt-0.5 text-[12.5px] text-zinc-400">
-                  Invite {site.name} now so your saved Anti-Nuke, AutoMod,
+                  Invite {brandName} now so your saved Anti-Nuke, AutoMod,
                   VoiceMaster, and Ticket settings activate immediately.
                 </p>
               </div>
@@ -932,6 +1478,14 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
               {/* Stat Row */}
               <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
                 <StatCard
+                  label="Security Posture"
+                  value={`${posture.score}/100`}
+                  badge={posture.grade}
+                  sub={posture.label}
+                  barPct={posture.score}
+                  accent
+                />
+                <StatCard
                   label="Anti-Nuke Shield"
                   value={
                     draft.antinuke.enabled
@@ -943,15 +1497,14 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                       ? `Punish: ${draft.antinuke.punishment} · rollback on`
                       : `Punish: ${draft.antinuke.punishment}`
                   }
-                  accent
                 />
                 <StatCard
                   label="Active Modules"
-                  value={`${enabledModulesCount}/8`}
-                  sub={`${draft.whitelist.users.length} whitelisted · ${draft.whitelist.extraOwners.length} extra owners`}
+                  value={`${enabledModulesCount}/${toggleableModulesCount}`}
+                  sub={`${draft.whitelist.users.length} whitelisted · ${draft.utility.embeds?.length ?? 0} embeds`}
                 />
                 <StatCard
-                  label="Server Members"
+                  label="Server Reach"
                   value={
                     guild.memberCount !== null
                       ? guild.memberCount.toLocaleString()
@@ -962,25 +1515,97 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                   sub={
                     guild.onlineCount !== null
                       ? `${guild.onlineCount.toLocaleString()} online${guild.boostCount ? ` · ${guild.boostCount} boosts` : ""}`
-                      : `Guild ${guild.id.slice(0, 10)}…`
+                      : `Prefix "${activePrefix}" active`
                   }
                 />
-                <StatCard
-                  label="Command Prefix"
-                  value={activePrefix}
-                  sub={
-                    savedConfig?.updatedAt
-                      ? `Saved by ${savedConfig.updatedBy || "staff"}`
-                      : "Default profile active"
-                  }
-                />
+              </div>
+
+              {/* 1-Click Security Presets + Config Backup Toolkit */}
+              <div className="panel panel-inner space-y-4 rounded-2xl p-5 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
+                      One-Click Protection Profiles
+                    </p>
+                    <p className="mt-0.5 text-[12.5px] text-zinc-400">
+                      Apply an engineered security profile instantly, or back up &amp; restore your server configuration as JSON.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleExportJson}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-ink-950/80 px-3 font-mono text-[10.5px] text-zinc-300 transition hover:border-brand-500/40 hover:text-white"
+                    >
+                      <DownloadIcon className="size-3.5 text-brand-400" />
+                      Export JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-ink-950/80 px-3 font-mono text-[10.5px] text-zinc-300 transition hover:border-brand-500/40 hover:text-white"
+                    >
+                      <UploadIcon className="size-3.5 text-brand-400" />
+                      Import JSON
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCliOpen(true)}
+                      className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-white/10 bg-ink-950/80 px-3 font-mono text-[10.5px] text-zinc-300 transition hover:border-brand-500/40 hover:text-white"
+                    >
+                      <TerminalIcon className="size-3.5 text-brand-400" />
+                      CLI Script
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleFactoryDefaults}
+                      className="inline-flex h-8 items-center rounded-lg border border-white/10 bg-ink-950/80 px-3 font-mono text-[10.5px] text-zinc-400 transition hover:border-white/25 hover:text-white"
+                    >
+                      Defaults
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  {SECURITY_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        updateDraft((prev) => preset.apply(prev));
+                        showToast(
+                          true,
+                          `Applied "${preset.name}" preset — click Save Changes to commit.`,
+                        );
+                      }}
+                      className="group flex flex-col justify-between rounded-xl border border-white/[0.08] bg-ink-950/75 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-brand-500/45 hover:bg-brand-950/25"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="rounded-md border border-brand-500/30 bg-brand-950/50 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-brand-300">
+                            {preset.badge}
+                          </span>
+                          <span className="font-mono text-[10px] text-zinc-600 transition group-hover:text-brand-300">
+                            Apply →
+                          </span>
+                        </div>
+                        <p className="mt-2.5 font-display text-[14.5px] font-semibold text-white">
+                          {preset.name}
+                        </p>
+                        <p className="mt-1 text-[11.5px] leading-relaxed text-zinc-400">
+                          {preset.summary}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* General Bot Settings */}
               <ModuleHeader
                 eyebrow="General Configuration"
                 title="Server Bot Settings"
-                description={`Customize how ${site.name} responds inside ${guild.name}, including prefix, embed theme color, command cleanup, and ignored channels.`}
+                description={`Customize how ${brandName} responds inside ${guild.name}, including prefix, embed theme color, command cleanup, and ignored channels.`}
                 command={`${activePrefix}help`}
               />
 
@@ -1230,7 +1855,7 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
                     All Server Modules ({overviewModules.length})
                   </p>
                   <span className="font-mono text-[10px] text-zinc-500">
-                    Click any module to configure
+                    Toggle directly or click Configure
                   </span>
                 </div>
                 <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -1310,6 +1935,17 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             />
           )}
 
+          {activeTab === "verification" && (
+            <VerificationModule
+              config={draft}
+              update={updateDraft}
+              channels={guild.channels}
+              roles={guild.roles}
+              guildName={guild.name}
+              prefix={activePrefix}
+            />
+          )}
+
           {activeTab === "nightmode" && (
             <NightModeModule
               config={draft}
@@ -1374,20 +2010,24 @@ export function GuildDashboardClient({ guildId }: { guildId: string }) {
             <UtilityModule
               config={draft}
               update={updateDraft}
+              channels={guild.channels}
               roles={guild.roles}
               prefix={activePrefix}
             />
           )}
         </main>
 
-        {/* Floating Unsaved Changes Save Bar (Discord / Xieron / Zynrax style) */}
+        {/* Floating Unsaved Changes Save Bar */}
         {isDirty && (
           <div className="pb-safe fixed inset-x-0 bottom-3 z-40 px-3 sm:bottom-4 sm:px-4 lg:left-[274px]">
             <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-400/45 bg-ink-900/95 px-4 py-3 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.92),0_0_34px_-8px_rgb(var(--brand-500)/0.45)] backdrop-blur-2xl sm:px-5 sm:py-3.5">
               <div className="flex items-center gap-2.5">
                 <span className="size-2 animate-ticker rounded-full bg-brand-400 shadow-[0_0_8px_rgb(var(--brand-400))]" />
                 <p className="text-[12.5px] font-medium text-white sm:text-[13px]">
-                  Unsaved changes ready
+                  Unsaved changes ready{" "}
+                  <span className="hidden font-mono text-[10px] text-zinc-500 sm:inline">
+                    (⌘S)
+                  </span>
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -1420,28 +2060,55 @@ function StatCard({
   label,
   value,
   sub,
+  badge,
+  barPct,
   accent,
 }: {
   label: string;
   value: string;
   sub: string;
+  badge?: string;
+  barPct?: number;
   accent?: boolean;
 }) {
   return (
     <div
       className={`rounded-2xl border p-4 sm:p-5 ${
         accent
-          ? "border-brand-500/30 bg-gradient-to-br from-brand-950/45 to-ink-900/80"
+          ? "border-brand-500/35 bg-gradient-to-br from-brand-950/50 to-ink-900/85"
           : "border-white/[0.07] bg-white/[0.02]"
       }`}
     >
-      <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
-        {label}
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-zinc-500">
+          {label}
+        </p>
+        {badge && (
+          <span className="rounded-md border border-emerald-500/35 bg-emerald-500/15 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold text-emerald-300">
+            {badge}
+          </span>
+        )}
+      </div>
       <p className="mt-2 font-display text-[25px] font-bold tracking-tight text-white">
         {value}
       </p>
-      <p className="mt-1 truncate font-mono text-[10px] text-zinc-500">{sub}</p>
+      {typeof barPct === "number" && (
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
+          <div
+            style={{ width: `${barPct}%` }}
+            className={`h-full rounded-full transition-all duration-500 ${
+              barPct >= 80
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-300"
+                : barPct >= 55
+                  ? "bg-gradient-to-r from-amber-500 to-amber-300"
+                  : "bg-gradient-to-r from-brand-600 to-brand-400"
+            }`}
+          />
+        </div>
+      )}
+      <p className="mt-1.5 truncate font-mono text-[10px] text-zinc-500">
+        {sub}
+      </p>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { site } from "@/lib/site";
+import { normalizeSupportUrl, site } from "@/lib/site";
 import {
   BILLING_CYCLES,
   PREMIUM_PLANS,
@@ -221,7 +221,7 @@ export function PremiumClient() {
   }, [siteCfg.pricing]);
 
   const curSym = siteCfg.currencySymbol || "₹";
-  const supportUrl = siteCfg.supportUrl || site.discord;
+  const supportUrl = normalizeSupportUrl(siteCfg.supportUrl || site.discord);
 
   const selectedGuildName = useMemo(() => {
     const found = guilds.find((g) => g.id === targetGuildId);
@@ -1056,7 +1056,9 @@ export function PremiumClient() {
                   </button>
 
                   <a
-                    href={activeInvoice.supportUrl || supportUrl}
+                    href={normalizeSupportUrl(
+                      activeInvoice.supportUrl || supportUrl,
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-primary btn-glow relative inline-flex h-12 items-center justify-center gap-2 overflow-hidden rounded-xl px-5 text-[13.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.98]"

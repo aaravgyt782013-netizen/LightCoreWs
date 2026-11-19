@@ -24,7 +24,7 @@ export function Setup() {
   };
 
   return (
-    <section id="setup" className="relative py-22 sm:py-28">
+    <section id="setup" className="relative py-20 sm:py-28">
       <div className="container-x">
         <Reveal className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-2xl">

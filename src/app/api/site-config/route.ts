@@ -4,7 +4,13 @@ import { getSiteConfig } from "@/lib/site-config-server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const config = await getSiteConfig();
+  const full = await getSiteConfig();
+  const config = {
+    ...full,
+    autoJoinGuildId: "",
+    autoJoinRoleId: "",
+    premiumRoleId: "",
+  };
   return NextResponse.json(
     { config },
     { headers: { "Cache-Control": "no-store, max-age=0" } },
