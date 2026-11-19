@@ -7,8 +7,6 @@ export async function GET() {
   const full = await getSiteConfig();
   const config = {
     ...full,
-    autoJoinGuildId: "",
-    autoJoinRoleId: "",
     premiumRoleId: "",
   };
   return NextResponse.json(

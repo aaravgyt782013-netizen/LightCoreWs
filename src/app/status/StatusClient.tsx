@@ -216,12 +216,12 @@ export function StatusClient() {
           value={
             data?.guilds !== null && data?.guilds !== undefined
               ? data.guilds.toLocaleString()
-              : data?.scopes || "identify guilds guilds.join"
+              : data?.scopes || "identify guilds"
           }
           sub={
             data?.users !== null && data?.users !== undefined
               ? `${data.users.toLocaleString()} cached members`
-              : "Official Discord OAuth2 + auto-join"
+              : "Read-only Discord OAuth 2.0"
           }
         />
       </div>

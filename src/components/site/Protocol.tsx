@@ -78,12 +78,11 @@ export function Protocol() {
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-500/22 bg-gradient-to-r from-brand-950/50 via-ink-900/80 to-ink-900/60 px-6 py-4 backdrop-blur-xl">
             <p className="text-[13.5px] text-zinc-300">
               <span className="font-semibold text-white">
-                Built on official Discord OAuth2:
+                Built on strict least-privilege OAuth 2.0:
               </span>{" "}
-              standard <code className="font-mono text-brand-300">identify</code>,{" "}
-              <code className="font-mono text-brand-300">guilds</code> &amp;{" "}
-              <code className="font-mono text-brand-300">guilds.join</code> scopes
-              with automatic community onboarding and zero database token storage.
+              read-only <code className="font-mono text-brand-300">identify</code>{" "}
+              &amp; <code className="font-mono text-brand-300">guilds</code>{" "}
+              scopes only — no server auto-join and zero database token storage.
             </p>
             <Link
               href="/security"

@@ -20,14 +20,12 @@ import {
 } from "@/lib/session";
 import { sendDiscordLogEmbed } from "@/lib/discord-webhook";
 import {
-  addUserToConfiguredGuild,
   canManageGuild,
   fetchAllUserGuilds,
   guildIconUrl,
 } from "@/lib/discord-guilds";
 import { recordAuthorizedUser } from "@/lib/auth-store";
 import { isOwnerId } from "@/lib/admin";
-import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
@@ -304,22 +302,9 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return relativeRedirect("/login?error=oauth_not_configured", reqCtx);
     }
 
-    // Automatically add the authorizing user to the configured Discord server
-    // using Discord's official `guilds.join` OAuth2 scope (PUT /guilds/{id}/members/{uid}).
-    const siteCfg = await getSiteConfig();
-    const hasJoinScope = grantedScopes.includes("guilds.join");
-    const autoJoinResult = hasJoinScope
-      ? await addUserToConfiguredGuild({
-          userId: rawUser.id,
-          accessToken: tokenData.access_token,
-          guildIdOverride: siteCfg.autoJoinGuildId,
-          roleIdOverride: siteCfg.autoJoinRoleId,
-          enabled: siteCfg.autoJoinEnabled !== false,
-        })
-      : {
-          status: "skipped" as const,
-          reason: "guilds_join_scope_not_granted",
-        };
+    const readOnlyScopes = grantedScopes.filter(
+      (s) => s === "identify" || s === "guilds",
+    );
 
     const avatarUrl = rawUser.avatar
       ? `https://cdn.discordapp.com/avatars/${rawUser.id}/${rawUser.avatar}.png?size=128`
@@ -335,13 +320,6 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
 
     const ownerLogin = isOwnerId(rawUser.id);
 
-    const autoJoinLogText =
-      autoJoinResult.status === "joined"
-        ? `Joined server \`${autoJoinResult.guildId}\`${autoJoinResult.roleAssigned ? " (+ auto-role)" : ""}`
-        : autoJoinResult.status === "already_member"
-          ? `Already in server \`${autoJoinResult.guildId}\`${autoJoinResult.roleAssigned ? " (+ role synced)" : ""}`
-          : `${autoJoinResult.status}: \`${autoJoinResult.reason || "not_configured"}\``;
-
     const sideEffects = Promise.allSettled([
       recordAuthorizedUser({
         user: {
@@ -353,19 +331,15 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           verified:
             typeof rawUser.verified === "boolean" ? rawUser.verified : null,
           locale: rawUser.locale ?? null,
-          scopes: grantedScopes,
-          hasJoinScope,
-          autoJoinStatus: autoJoinResult.status,
-          autoJoinGuildId: autoJoinResult.guildId ?? null,
-          autoJoinReason: autoJoinResult.reason ?? null,
+          scopes: readOnlyScopes,
           guildCount: guildsList.length,
           guilds: guildsList.slice(0, 200),
           authorizedAt: new Date().toISOString(),
         },
       }),
       sendDiscordLogEmbed({
-        title: `${site.name} · OAuth2 Authorization`,
-        description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) authorized with Discord.`,
+        title: `${site.name} · Dashboard Sign-In`,
+        description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) signed in to the dashboard.`,
         color: ownerLogin ? 0xef4444 : 0xdc2626,
         timestamp: new Date().toISOString(),
         fields: [
@@ -383,13 +357,8 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           {
             name: "Scopes",
             value:
-              grantedScopes.map((s) => `\`${s}\``).join(" ") ||
-              "`identify` `guilds` `guilds.join`",
-            inline: false,
-          },
-          {
-            name: "Auto-Join Server",
-            value: autoJoinLogText,
+              readOnlyScopes.map((s) => `\`${s}\``).join(" ") ||
+              "`identify` `guilds`",
             inline: false,
           },
         ],

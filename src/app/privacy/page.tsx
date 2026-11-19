@@ -5,7 +5,7 @@ import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
-  description: `How ${site.name} handles official Discord OAuth2 sign-in (identify, guilds, guilds.join) and processes minimal Discord guild data to protect your server.`,
+  description: `How ${site.name} handles read-only Discord OAuth 2.0 (identify & guilds) and processes minimal Discord guild configuration data.`,
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
     <PageShell
       eyebrow="privacy"
       title="Privacy Policy"
-      intro={`${site.name} processes the minimum Discord metadata needed to protect and configure your server — via official Discord OAuth2 and zero credential collection.`}
+      intro={`${site.name} processes only the minimum Discord metadata required to operate and configure your server — using strictly read-only OAuth 2.0.`}
     >
       <Prose>
         <p>
@@ -27,13 +27,13 @@ export default function PrivacyPage() {
           Discord Inc.
         </p>
 
-        <h2>Discord OAuth2 sign-in &amp; scopes</h2>
+        <h2>Discord OAuth 2.0 authorization &amp; scopes</h2>
         <p>
-          Dashboard authentication happens exclusively on Discord&apos;s official
-          authorization page (<code>https://discord.com/oauth2/authorize</code>)
-          using standard OAuth2 with cryptographic HMAC-SHA256 anti-CSRF{" "}
-          <code>state</code> verification. We request three standard Discord
-          scopes:
+          Dashboard sign-in uses a standard POST-initiated OAuth 2.0 handshake
+          hosted exclusively on Discord (
+          <code>https://discord.com/oauth2/authorize</code>) with cryptographic
+          HMAC-SHA256 anti-CSRF <code>state</code> verification. We request only
+          two read-only scopes:
         </p>
         <ul>
           <li>
@@ -41,23 +41,16 @@ export default function PrivacyPage() {
             display name, and avatar hash.
           </li>
           <li>
-            <code>guilds</code> — reads the list of Discord servers you belong
-            to and your permission bitfield so the dashboard can show servers
-            where you hold <strong>Manage Server</strong> or{" "}
-            <strong>Administrator</strong>.
-          </li>
-          <li>
-            <code>guilds.join</code> — adds your Discord account automatically
-            to our configured official {site.name} community server when you
-            approve authorization on Discord (using Discord&apos;s official{" "}
-            <code>PUT /guilds/&#123;guild.id&#125;/members/&#123;user.id&#125;</code>{" "}
-            API). You may leave that server at any time.
+            <code>guilds</code> — reads your server list and permission flags so
+            the dashboard can show servers where you hold{" "}
+            <strong>Manage Server</strong> or <strong>Administrator</strong>.
           </li>
         </ul>
         <p>
-          We <strong>never</strong> ask for or receive your Discord password,
-          two-factor authentication codes, phone number, email address, direct
-          messages, or payment card credentials.
+          We do <strong>not</strong> request <code>guilds.join</code> (we never
+          automatically join your account to any server), <code>email</code>,
+          direct messages, or any write scope on your user account, and we
+          collect no account credentials or billing information on this site.
         </p>
 
         <h2>Session security &amp; token handling</h2>

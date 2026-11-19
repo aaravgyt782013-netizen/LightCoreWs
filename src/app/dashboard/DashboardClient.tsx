@@ -172,23 +172,20 @@ export function DashboardClient() {
             Manage Your Discord Servers
           </h2>
           <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
-            Connect via official Discord OAuth2 (
+            Connect via read-only Discord OAuth 2.0 (
             <code className="font-mono text-[12px] text-brand-300">
               identify
-            </code>
-            ,{" "}
-            <code className="font-mono text-[12px] text-brand-300">guilds</code>{" "}
+            </code>{" "}
             &amp;{" "}
-            <code className="font-mono text-[12px] text-brand-300">
-              guilds.join
-            </code>
-            ) to manage your servers and join the official community server.
+            <code className="font-mono text-[12px] text-brand-300">guilds</code>
+            ) to configure every server where you hold Administrator or Manage
+            Server.
           </p>
 
           <ul className="mt-5 space-y-2 text-[12.5px] text-zinc-300">
             {[
-              "Authenticates exclusively on discord.com",
-              "Loads your server list & auto-joins our official community server",
+              "Standard OAuth 2.0 hosted directly on discord.com",
+              "Strictly read-only — never auto-joins your account to any server",
               "Real-time channel, role, embed & security preset editor",
             ].map((item) => (
               <li key={item} className="flex items-center gap-2.5">

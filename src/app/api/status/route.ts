@@ -4,7 +4,6 @@ import { getStorageEngineName, kvGet } from "@/lib/kv-store";
 import { getSiteConfig } from "@/lib/site-config-server";
 import {
   cleanEnvString,
-  isExplicitAutoJoinEnabled,
   resolveDiscordClientId,
   resolveOAuthScopes,
 } from "@/lib/discord-oauth";
@@ -72,7 +71,6 @@ export async function GET() {
   const scopes = resolveOAuthScopes(
     process.env.DISCORD_OAUTH_SCOPES ||
       process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES,
-    siteCfg?.autoJoinEnabled === false ? { includeJoin: false } : undefined,
   );
 
   // 4. Web Control Plane & Edge API (self-measured)
@@ -106,13 +104,9 @@ export async function GET() {
     state: cfgState,
   });
 
-  const autoJoinActive = isExplicitAutoJoinEnabled({
-    enabled: siteCfg?.autoJoinEnabled,
-    guildId: siteCfg?.autoJoinGuildId,
-  });
   services.push({
     name: "Discord OAuth2 Handshake",
-    region: `Scopes: ${scopes} · Auto-join: ${autoJoinActive ? "active" : siteCfg?.autoJoinEnabled === false ? "off" : "awaiting server/token"}`,
+    region: `Read-only scopes: ${scopes}`,
     p99: "<1ms",
     detail: oauthConfigured ? "Ready" : "Env pending",
     state: oauthConfigured ? "operational" : "standby",

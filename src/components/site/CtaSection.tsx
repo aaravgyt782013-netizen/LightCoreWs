@@ -79,7 +79,7 @@ export function CtaSection() {
                 </Link>
                 <span className="text-zinc-700">·</span>
                 <Link href="/security" className="hover:text-white">
-                  Official Discord OAuth2
+                  Read-Only OAuth 2.0
                 </Link>
                 <span className="text-zinc-700">·</span>
                 <Link href="/status" className="hover:text-white">

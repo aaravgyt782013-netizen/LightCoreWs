@@ -120,7 +120,7 @@ export function Hero() {
                 className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-emerald-300"
               >
                 <LockIcon className="size-3.5 text-emerald-400" />
-                Official discord.com OAuth2 · Auto community onboarding
+                Read-only Discord OAuth 2.0 · Zero auto-join
               </Link>
               <button
                 type="button"

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   cleanEnvString,
-  isAutoJoinDisabledByEnv,
   resolveDiscordClientId,
   resolveOAuthScopes,
   sanitizeOriginUrl,
@@ -15,7 +14,6 @@ import {
   relativeRedirect,
   sanitizeInternalNextPath,
 } from "@/lib/session";
-import { getSiteConfig } from "@/lib/site-config-server";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +32,9 @@ function isSameOriginPost(req: NextRequest): boolean {
   if (!origin) return true;
 
   try {
-    const originHost = new URL(origin).host.toLowerCase().replace(/:(443|80)$/, "");
+    const originHost = new URL(origin).host
+      .toLowerCase()
+      .replace(/:(443|80)$/, "");
     const expectedHost = (
       req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
       req.headers.get("host")?.trim() ||
@@ -49,9 +49,8 @@ function isSameOriginPost(req: NextRequest): boolean {
 }
 
 /**
- * Direct GET visits (including search/security crawlers, link previewers, or old
- * bookmarks) land cleanly on the first-party `/login` consent screen instead of
- * triggering an unsolicited off-origin OAuth2 redirect chain.
+ * Direct GET visits (including crawlers, prefetchers, or legacy bookmarks) land
+ * cleanly on `/login` instead of starting an unprompted off-origin OAuth redirect.
  */
 export async function GET(req: NextRequest) {
   const reqUrl = new URL(req.url);
@@ -69,10 +68,8 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * RFC 9700 / OWASP standard POST-initiated Discord OAuth2 authorization handshake.
- * Requests `identify guilds guilds.join` by default (automatically adding the
- * authorizing user to the configured community server on callback) unless the user
- * explicitly unchecked the community server option on `/login` or the owner paused it.
+ * RFC 9700 / OWASP POST-initiated read-only Discord OAuth2 handshake.
+ * Strictly requests `identify guilds` only (zero write or contact scopes).
  */
 export async function POST(req: NextRequest) {
   if (!isSameOriginPost(req)) {
@@ -94,8 +91,6 @@ export async function POST(req: NextRequest) {
 
   const reqUrl = new URL(req.url);
   let formNext: string | null = null;
-  let consentForm = false;
-  let joinChecked = true;
 
   try {
     const contentType = req.headers.get("content-type") || "";
@@ -106,14 +101,9 @@ export async function POST(req: NextRequest) {
       const fd = await req.formData();
       const rawNext = fd.get("next");
       if (typeof rawNext === "string") formNext = rawNext;
-      if (fd.get("consentForm") === "1") {
-        consentForm = true;
-        const jv = fd.get("joinServer");
-        joinChecked = jv === "1" || jv === "on" || jv === "true";
-      }
     }
   } catch {
-    // Fall back to query defaults if body parsing fails
+    // Fall back to query param
   }
 
   const nextPath = sanitizeInternalNextPath(
@@ -121,7 +111,6 @@ export async function POST(req: NextRequest) {
   );
 
   // Hop Netlify commit-permalink subdomains (`*--site.netlify.app`) to primary site
-  // so cookies and registered OAuth2 redirect_uri always match the canonical domain.
   const reqHost = (
     req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
     req.headers.get("host")?.trim() ||
@@ -146,17 +135,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const siteCfg = await getSiteConfig();
-  const serverAllowsJoin =
-    siteCfg.autoJoinEnabled !== false && !isAutoJoinDisabledByEnv();
-  const includeJoin = serverAllowsJoin && (!consentForm || joinChecked);
-
   const clientId = resolveDiscordClientId();
   const redirectUri = getRedirectUri(req.url, req.headers);
   const scopes = resolveOAuthScopes(
     process.env.DISCORD_OAUTH_SCOPES ||
       process.env.NEXT_PUBLIC_DISCORD_OAUTH_SCOPES,
-    { includeJoin },
   );
 
   const state = createSignedOAuthState({

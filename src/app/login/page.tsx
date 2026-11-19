@@ -17,26 +17,21 @@ export const metadata: Metadata = {
 const REQUESTED_SCOPES = [
   {
     scope: "identify",
-    mode: "Profile ID",
+    mode: "Read-only",
     desc: "Reads your public Discord user ID, display name, and avatar to identify your dashboard session.",
   },
   {
     scope: "guilds",
-    mode: "Server List",
-    desc: "Lists your Discord servers and checks Manage Server / Administrator permissions so you can configure LightCore.",
-  },
-  {
-    scope: "guilds.join",
-    mode: "Optional Join",
-    desc: "Adds your account to our official LightCore community Discord server when the checkbox is kept enabled.",
+    mode: "Read-only",
+    desc: "Lists your Discord servers and permission flags so you can manage communities where you are an Administrator or Manager.",
   },
 ];
 
 const SAFEGUARDS = [
-  "Standard OAuth 2.0 redirect hosted directly by Discord (https://discord.com/oauth2/authorize)",
-  "No login forms, personal contact fields, or billing fields anywhere on this website",
-  "Does not request email address, direct messages, or friends list access",
-  "Signed HttpOnly session cookie — revoke access anytime in Discord Authorized Apps",
+  "Strictly read-only OAuth 2.0 hosted directly by Discord (https://discord.com/oauth2/authorize)",
+  "Never automatically joins your account to any Discord server (no guilds.join scope)",
+  "No login inputs, personal contact fields, billing forms, or software downloads",
+  "Stateless signed HttpOnly session cookie — revoke access anytime in Discord Authorized Apps",
 ];
 
 export default function LoginPage() {
@@ -179,7 +174,7 @@ export default function LoginPage() {
                       OAuth 2.0 Scope Disclosure
                     </h2>
                     <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-                      Transparent consent · Revocable anytime
+                      Read-only only · 2 scopes · Revocable anytime
                     </p>
                   </div>
                 </div>

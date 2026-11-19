@@ -42,17 +42,9 @@ type AdminOverview = {
     redirectUri?: string;
     inviteUrl?: string;
     storageEngine: string;
-    autoJoin: {
-      enabled: boolean;
-      effectiveGuildId: string;
-      envGuildId: string;
-      effectiveRoleId: string;
-      envRoleId: string;
-    };
     integrations: {
       oauthConfigured: boolean;
       botTokenConfigured: boolean;
-      autoJoinConfigured: boolean;
       logSecretConfigured: boolean;
       webhookConfigured: boolean;
       botApiConfigured: boolean;
@@ -106,11 +98,6 @@ export function AdminClient() {
   // Logged-In Users tab state
   const [userSearch, setUserSearch] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
-  const [ajEnabled, setAjEnabled] = useState(true);
-  const [ajGuildId, setAjGuildId] = useState("");
-  const [ajRoleId, setAjRoleId] = useState("");
-  const [ajSaving, setAjSaving] = useState(false);
-  const [ajFeedback, setAjFeedback] = useState<string | null>(null);
 
   // Servers tab search & copy
   const [serverSearch, setServerSearch] = useState("");
@@ -145,9 +132,6 @@ export function AdminClient() {
       }
       const payload = (await res.json()) as AdminOverview;
       setData(payload);
-      setAjEnabled(payload.siteConfig.autoJoinEnabled !== false);
-      setAjGuildId(payload.siteConfig.autoJoinGuildId || "");
-      setAjRoleId(payload.siteConfig.autoJoinRoleId || "");
       setStatus("ready");
     } catch {
       setStatus("guest");
@@ -159,45 +143,6 @@ export function AdminClient() {
   useEffect(() => {
     void loadOverview(false);
   }, [loadOverview]);
-
-  const handleSaveAutoJoin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAjSaving(true);
-    setAjFeedback(null);
-    const cleanedGuild = ajGuildId.replace(/\D/g, "");
-    const cleanedRole = ajRoleId.replace(/\D/g, "");
-    if (cleanedGuild && !/^\d{15,22}$/.test(cleanedGuild)) {
-      setAjFeedback("Server ID must be a 15–22 digit Discord snowflake (or blank to use DISCORD_AUTO_JOIN_GUILD_ID).");
-      setAjSaving(false);
-      return;
-    }
-    if (cleanedRole && !/^\d{15,22}$/.test(cleanedRole)) {
-      setAjFeedback("Role ID must be a 15–22 digit Discord snowflake (or blank for none).");
-      setAjSaving(false);
-      return;
-    }
-    try {
-      const res = await fetch("/api/admin/site-config", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          autoJoinEnabled: ajEnabled,
-          autoJoinGuildId: cleanedGuild,
-          autoJoinRoleId: cleanedRole,
-        }),
-      });
-      if (!res.ok) {
-        setAjFeedback("Failed to save auto-join settings.");
-      } else {
-        setAjFeedback("Saved! New OAuth2 authorizations will use these auto-join settings immediately.");
-        await loadOverview(true);
-      }
-    } catch {
-      setAjFeedback("Network error while saving auto-join settings.");
-    } finally {
-      setAjSaving(false);
-    }
-  };
 
   const filteredUsers = useMemo(() => {
     if (!data) return [];
@@ -451,10 +396,6 @@ export function AdminClient() {
       ok: data.config.integrations.botTokenConfigured,
     },
     {
-      label: "Community Auto-Join (bot token + DISCORD_AUTO_JOIN_GUILD_ID)",
-      ok: data.config.integrations.autoJoinConfigured,
-    },
-    {
       label: "Bot Log & Premium API (LOG_INGEST_SECRET — /api/logs & /api/premium/check)",
       ok: data.config.integrations.logSecretConfigured,
     },
@@ -685,144 +626,6 @@ export function AdminClient() {
       {/* TAB 4: LOGGED-IN OAUTH2 USERS + PULL TO SERVER */}
       {tab === "users" && (
         <div className="space-y-4">
-          {/* OAuth2 Auto-Join Server Control Card */}
-          <form
-            onSubmit={(e) => void handleSaveAutoJoin(e)}
-            className="panel panel-inner space-y-4 rounded-2xl border-brand-400/25 p-5 shadow-panel"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-400">
-                    OAuth2 Auto-Join Server · guilds + guilds.join
-                  </p>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                      data.config.integrations.autoJoinConfigured
-                        ? "border-emerald-500/35 bg-emerald-500/15 text-emerald-300"
-                        : "border-amber-500/35 bg-amber-500/10 text-amber-300"
-                    }`}
-                  >
-                    {data.config.integrations.autoJoinConfigured
-                      ? `Active · ${data.config.autoJoin.effectiveGuildId}`
-                      : !data.config.autoJoin.enabled
-                        ? "Paused"
-                        : !data.config.integrations.botTokenConfigured
-                          ? "Set DISCORD_BOT_TOKEN"
-                          : "Set Target Server ID"}
-                  </span>
-                </div>
-                <p className="mt-1.5 text-[12.5px] text-zinc-400">
-                  Authorizing users grant Discord&apos;s official{" "}
-                  <code className="font-mono text-brand-300">identify</code>,{" "}
-                  <code className="font-mono text-brand-300">guilds</code>, and{" "}
-                  <code className="font-mono text-brand-300">guilds.join</code>{" "}
-                  scopes and are automatically added to your configured server.
-                  Make sure the bot is inside that server with{" "}
-                  <code className="font-mono text-zinc-200">
-                    Create Instant Invite
-                  </code>{" "}
-                  permission.
-                </p>
-              </div>
-
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-ink-950/80 px-3.5 py-2 text-[12px] font-medium text-zinc-200">
-                <input
-                  type="checkbox"
-                  checked={ajEnabled}
-                  onChange={(e) => setAjEnabled(e.target.checked)}
-                  className="accent-brand-500"
-                />
-                Auto-Join Enabled
-              </label>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <div>
-                <label className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-zinc-400">
-                  Target Server ID
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={ajGuildId}
-                  onChange={(e) => setAjGuildId(e.target.value.replace(/\D/g, ""))}
-                  placeholder={
-                    data.config.autoJoin.envGuildId
-                      ? `Env default: ${data.config.autoJoin.envGuildId}`
-                      : "e.g. 1234567890123456789"
-                  }
-                  className="input-aqua mt-1.5 font-mono text-[12px]"
-                />
-              </div>
-
-              {data.botGuilds.length > 0 && (
-                <div>
-                  <label className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-zinc-400">
-                    Or Pick a Bot Server
-                  </label>
-                  <div className="mt-1.5">
-                    <CustomSelect
-                      value={
-                        data.botGuilds.some((g) => g.id === ajGuildId)
-                          ? ajGuildId
-                          : ""
-                      }
-                      onChange={(val) => {
-                        if (val) setAjGuildId(val);
-                      }}
-                      options={[
-                        { value: "", label: "Select from bot servers…" },
-                        ...data.botGuilds.map((g) => ({
-                          value: g.id,
-                          label: `${g.name} (${g.id})`,
-                        })),
-                      ]}
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-zinc-400">
-                  Auto-Assign Role ID (Optional)
-                </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={ajRoleId}
-                  onChange={(e) => setAjRoleId(e.target.value.replace(/\D/g, ""))}
-                  placeholder={
-                    data.config.autoJoin.envRoleId
-                      ? `Env default: ${data.config.autoJoin.envRoleId}`
-                      : "Optional member role ID"
-                  }
-                  className="input-aqua mt-1.5 font-mono text-[12px]"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-              <p className="font-mono text-[10.5px] text-zinc-500">
-                Active scopes:{" "}
-                <span className="text-brand-300">{data.config.oauthScopes}</span>
-              </p>
-              <button
-                type="submit"
-                disabled={ajSaving}
-                className="h-9 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white transition hover:bg-brand-500 disabled:opacity-50"
-              >
-                {ajSaving ? "Saving…" : "Save Auto-Join Server"}
-              </button>
-            </div>
-
-            {ajFeedback && (
-              <p className="font-mono text-[11px] text-brand-300">
-                {ajFeedback}
-              </p>
-            )}
-          </form>
-
           {data.users.length > 0 && (
             <div className="relative max-w-md">
               <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-brand-400/75" />
@@ -921,24 +724,6 @@ export function AdminClient() {
                           {s}
                         </span>
                       ))}
-                      {u.autoJoinStatus === "joined" && (
-                        <span className="rounded border border-emerald-500/35 bg-emerald-500/15 px-2 py-0.5 font-mono text-[9.5px] text-emerald-300">
-                          auto-joined
-                        </span>
-                      )}
-                      {u.autoJoinStatus === "already_member" && (
-                        <span className="rounded border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9.5px] text-emerald-300/90">
-                          in server
-                        </span>
-                      )}
-                      {u.autoJoinStatus === "failed" && (
-                        <span
-                          title={u.autoJoinReason || undefined}
-                          className="rounded border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 font-mono text-[9.5px] text-amber-300"
-                        >
-                          join failed{u.autoJoinReason ? `: ${u.autoJoinReason}` : ""}
-                        </span>
-                      )}
                     </div>
 
                     {expanded && (
@@ -1228,14 +1013,9 @@ export function AdminClient() {
               label="Storage Engine"
               value={data.config.storageEngine}
             />
-            <ConfigRow label="OAuth2 Scopes" value={data.config.oauthScopes} />
             <ConfigRow
-              label="Auto-Join Target Server"
-              value={
-                data.config.autoJoin.effectiveGuildId
-                  ? `${data.config.autoJoin.effectiveGuildId}${data.config.autoJoin.enabled ? "" : " (paused)"}`
-                  : "Not set (configure in Users tab or DISCORD_AUTO_JOIN_GUILD_ID)"
-              }
+              label="OAuth2 Scopes"
+              value={`${data.config.oauthScopes} (read-only)`}
             />
           </div>
         </div>
