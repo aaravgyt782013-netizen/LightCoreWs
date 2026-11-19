@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
   await sendDiscordLogEmbed({
     title: `${inv.brandName} · New Premium Order Summary`,
     description: `\`@${inv.username}\` (\`${inv.userId}\`) created an order summary and was directed to contact the Support Server.`,
-    color: 0xef4444,
+    color: 0xfacc15,
     timestamp: inv.createdAt,
     fields: [
       { name: "Order Reference", value: `\`${inv.invoiceId}\``, inline: true },

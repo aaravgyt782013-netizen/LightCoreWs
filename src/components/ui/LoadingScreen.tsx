@@ -20,8 +20,9 @@ export function LoadingScreen({
   const { config } = useSiteConfig();
   const gradId = useId();
 
-  const activeStatus = label || config.loaderText || "Initializing LightCore";
-  const logoSrc = config.logoUrl || site.logo;
+  const activeStatus = label || config.loaderText || "Warming things up...";
+  const rawLogo = config.logoUrl || site.logo;
+  const logoSrc = rawLogo === "/brand/logo.png" ? "/brand/lightcore-mark.png" : rawLogo;
 
   return (
     <div
@@ -106,19 +107,19 @@ export function LoadingScreen({
             <circle cx="56" cy="6" r="2.8" fill="rgb(var(--brand-300))" />
           </svg>
 
-          <div className="relative flex size-[64px] items-center justify-center rounded-2xl border border-brand-500/40 bg-ink-900 p-1 shadow-[0_0_36px_-4px_rgb(var(--brand-500)/0.55)]">
+          <div className="relative flex size-[68px] items-center justify-center rounded-[22px] border border-brand-300/30 bg-black p-1 shadow-[0_0_44px_-6px_rgb(var(--brand-400)/0.5)]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={logoSrc}
               alt={`${config.brandName || site.name} logo`}
-              width={56}
-              height={56}
+              width={60}
+              height={60}
               className={`size-full object-cover ${
                 config.logoShape === "circle"
                   ? "rounded-full"
                   : config.logoShape === "rounded"
-                    ? "rounded-lg"
-                    : "rounded-[12px]"
+                    ? "rounded-xl"
+                    : "rounded-[18px]"
               }`}
             />
           </div>

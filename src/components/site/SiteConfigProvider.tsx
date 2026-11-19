@@ -29,8 +29,8 @@ const SiteConfigContext = createContext<SiteConfigContextValue>({
   refreshConfig: async () => {},
 });
 
-const LOCAL_CACHE_KEY = "lightcore_site_config_v2";
-const LOCAL_VARS_KEY = "lightcore_site_config_vars_v2";
+const LOCAL_CACHE_KEY = "lightcore_site_config_v3";
+const LOCAL_VARS_KEY = "lightcore_site_config_vars_v3";
 
 export function applySiteThemeToDom(cfg: SiteConfig) {
   if (typeof document === "undefined") return;
@@ -104,6 +104,8 @@ export function SiteConfigProvider({
     // Hydrate cached theme instantaneously before network resolves
     try {
       window.localStorage.removeItem("lightcore_site_config_v1");
+      window.localStorage.removeItem("lightcore_site_config_v2");
+      window.localStorage.removeItem("lightcore_site_config_vars_v2");
       const raw = window.localStorage.getItem(LOCAL_CACHE_KEY);
       if (raw) {
         const cached = JSON.parse(raw) as SiteConfig;

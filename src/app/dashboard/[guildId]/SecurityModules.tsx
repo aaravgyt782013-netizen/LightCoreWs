@@ -478,7 +478,7 @@ export function WhitelistModule({
           <button
             type="button"
             onClick={addWhitelistUser}
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+            className="btn-primary inline-flex h-11 items-center justify-center gap-1.5 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
           >
             <PlusIcon className="size-3.5" />
             Add User
@@ -599,7 +599,7 @@ export function WhitelistModule({
               <button
                 type="button"
                 onClick={addExtraOwner}
-                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand-600 px-4 text-[12.5px] font-semibold text-white hover:bg-brand-500"
+                className="btn-primary inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[12.5px] font-semibold active:scale-[0.985]"
               >
                 <PlusIcon className="size-3.5" />
                 Add
@@ -676,7 +676,7 @@ export function WhitelistModule({
                 options={roles.map((r) => ({
                   value: r.id,
                   label: `@${r.name}`,
-                  colorDot: r.color || "#ef4444",
+                  colorDot: r.color || "#facc15",
                 }))}
               />
             ) : (
@@ -1397,7 +1397,7 @@ export function NightModeModule({
           className={`h-11 rounded-xl px-5 text-[13px] font-semibold transition-colors ${
             nightmode.lockdownActive
               ? "border border-emerald-500/40 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/25"
-              : "bg-brand-600 text-white hover:bg-brand-500"
+              : "btn-primary"
           }`}
         >
           {nightmode.lockdownActive ? "Lift Lockdown" : "Engage Lockdown Now"}

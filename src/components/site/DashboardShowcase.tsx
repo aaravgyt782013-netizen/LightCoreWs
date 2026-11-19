@@ -4,27 +4,38 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import {
   SECURITY_PRESETS,
-  computeSecurityScore,
   createDefaultGuildConfig,
   type SecurityPresetId,
 } from "@/lib/guild-config";
-import { THEME_PRESETS, type ThemePresetId } from "@/lib/site-config";
-import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { Reveal } from "@/components/ui/Reveal";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
-import {
-  ArrowRight,
-  CheckIcon,
-  DownloadIcon,
-  PaletteIcon,
-  ShieldIcon,
-  SparklesIcon,
-  TerminalIcon,
-} from "@/components/ui/Icons";
+import { ArrowRight, CheckIcon, SparklesIcon } from "@/components/ui/Icons";
+import { site } from "@/lib/site";
+
+const PUNISHMENT_FRIENDLY: Record<string, string> = {
+  ban: "Auto-ban rogue actor",
+  kick: "Remove from server",
+  strip_roles: "Remove staff permissions",
+  quarantine: "Move to safe quarantine",
+};
+
+const AUTOMOD_FRIENDLY: Record<string, string> = {
+  warn: "Gentle warning",
+  delete: "Delete message",
+  timeout_5m: "5-minute timeout",
+  timeout_1h: "1-hour timeout",
+  kick: "Remove spammer",
+  ban: "Ban spammer",
+};
+
+const VERIFY_FRIENDLY: Record<string, string> = {
+  button: "One-click button",
+  captcha: "Simple image check",
+  reaction: "Emoji tap",
+};
 
 export function DashboardShowcase() {
-  const { config, setLiveConfig } = useSiteConfig();
-  const [presetId, setPresetId] = useState<SecurityPresetId>("fortress");
+  const [presetId, setPresetId] = useState<SecurityPresetId>("balanced");
 
   const activePreset =
     SECURITY_PRESETS.find((p) => p.id === presetId) ?? SECURITY_PRESETS[0];
@@ -33,108 +44,111 @@ export function DashboardShowcase() {
     () => activePreset.apply(createDefaultGuildConfig()),
     [activePreset],
   );
-  const posture = useMemo(() => computeSecurityScore(simulated), [simulated]);
 
-  const themeSwatches = THEME_PRESETS.slice(0, 7);
+  const activeRules = Object.values(simulated.antinuke.rules).filter(
+    (r) => r.enabled,
+  ).length;
 
-  const handlePreviewTheme = (themePreset: ThemePresetId) => {
-    setLiveConfig({
-      ...config,
-      themePreset,
-    });
-  };
+  const summaryRows = [
+    {
+      label: "Server Protection",
+      value: `${activeRules} of 14 guards on · ${
+        PUNISHMENT_FRIENDLY[simulated.antinuke.punishment] || "Active"
+      }`,
+      active: simulated.antinuke.enabled,
+    },
+    {
+      label: "Chat Auto-Mod",
+      value: simulated.automod.enabled
+        ? `Spam & scam filter · ${
+            AUTOMOD_FRIENDLY[simulated.automod.punishment] || "Active"
+          }`
+        : "Off",
+      active: simulated.automod.enabled,
+    },
+    {
+      label: "New Member Check",
+      value: simulated.verification.enabled
+        ? `${VERIFY_FRIENDLY[simulated.verification.mode] || "Button"} · ${
+            simulated.verification.minAccountAgeDays
+          }+ day accounts`
+        : "Optional",
+      active: simulated.verification.enabled,
+    },
+    {
+      label: "Channel & Role Recovery",
+      value: simulated.antinuke.autoRollback
+        ? "Automatic instant restore"
+        : "Manual only",
+      active: simulated.antinuke.autoRollback,
+    },
+    {
+      label: "Community Extras",
+      value: [
+        simulated.voicemaster.enabled && "VoiceMaster",
+        simulated.tickets.enabled && "Tickets",
+        simulated.welcomer.enabled && "Welcomes",
+        simulated.logging.enabled && "Activity Logs",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      active: true,
+    },
+  ];
 
   return (
-    <section id="showcase" className="relative py-20 sm:py-28">
+    <section id="showcase" className="relative py-24 sm:py-32">
       <div className="container-x">
-        <Reveal className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <div className="max-w-2xl">
-            <p className="eyebrow">Web Control Plane</p>
-            <h2 className="mt-5 font-display text-[32px] font-bold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-              Switch security posture{" "}
-              <span className="text-gradient-brand">in a single click.</span>
-            </h2>
-            <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-zinc-400">
-              Select a profile below to preview how the LightCore dashboard
-              tunes Anti-Nuke rate gates, AutoMod sanctions, Verification, and
-              audit streams in real time — or open the full interactive sandbox.
-            </p>
-          </div>
-
-          {/* Live Theme Accent Switcher */}
-          <div className="inline-flex flex-wrap items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-ink-900/80 px-4 py-2.5 backdrop-blur-xl">
-            <PaletteIcon className="size-4 text-brand-400" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-              Live Accent
-            </span>
-            <div className="flex items-center gap-1.5 pl-1">
-              {themeSwatches.map((t) => {
-                const selected = config.themePreset === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    title={`Switch accent: ${t.name}`}
-                    aria-label={`Switch theme to ${t.name}`}
-                    onClick={() => handlePreviewTheme(t.id)}
-                    style={{ backgroundColor: t.swatch }}
-                    className={`size-5 rounded-full transition-transform duration-200 hover:scale-110 ${
-                      selected
-                        ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-ink-950"
-                        : "opacity-75 hover:opacity-100"
-                    }`}
-                  />
-                );
-              })}
-            </div>
-          </div>
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <p className="eyebrow">Effortless Dashboard</p>
+          <h2 className="mt-5 font-display text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white sm:text-[46px]">
+            Pick your vibe.{" "}
+            <span className="text-gradient-brand">Done in one click.</span>
+          </h2>
+          <p className="mt-4 text-balance text-[15.5px] leading-relaxed text-zinc-400">
+            No complicated forms or confusing commands. Choose a ready-made
+            server preset or fine-tune any toggle cleanly from your browser.
+          </p>
         </Reveal>
 
-        <Reveal delay={90} className="mt-10">
-          <SpotlightCard className="overflow-hidden rounded-[28px] border-brand-500/28 shadow-[0_36px_100px_-34px_rgba(0,0,0,0.98)]">
+        <Reveal delay={90} className="mt-12">
+          <SpotlightCard className="overflow-hidden rounded-[32px]">
             <div
               aria-hidden
-              className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500 to-transparent"
+              className="h-px w-full bg-gradient-to-r from-transparent via-brand-300/60 to-transparent"
             />
 
-            {/* Mock Browser / Control Plane Top Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.075] bg-black/55 px-5 py-3.5">
+            {/* Soft Plush Window Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] bg-black/40 px-6 py-4">
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1.5">
-                  <span className="size-2.5 rounded-full bg-brand-500" />
-                  <span className="size-2.5 rounded-full bg-white/12" />
-                  <span className="size-2.5 rounded-full bg-white/12" />
+                  <span className="size-2.5 rounded-full bg-brand-400" />
+                  <span className="size-2.5 rounded-full bg-white/[0.12]" />
+                  <span className="size-2.5 rounded-full bg-white/[0.12]" />
                 </span>
-                <span className="font-mono text-[11px] text-zinc-400">
-                  lightcore / dashboard /{" "}
-                  <strong className="text-white">sanctuary-hq</strong>
+                <span className="text-[12.5px] text-zinc-400">
+                  LightCore Dashboard ·{" "}
+                  <strong className="font-medium text-zinc-100">
+                    Your Community
+                  </strong>
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 font-mono text-[10px]">
-                <span className="hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-zinc-400 sm:inline-flex">
-                  <DownloadIcon className="size-3 text-brand-400" />
-                  JSON Backup
-                </span>
-                <span className="hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 text-zinc-400 sm:inline-flex">
-                  <TerminalIcon className="size-3 text-brand-400" />
-                  CLI Sync
-                </span>
-                <Link
-                  href="/dashboard/demo"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-brand-500/45 bg-brand-600/20 px-3 py-1 font-semibold text-brand-200 transition hover:bg-brand-600/35 hover:text-white"
-                >
-                  <SparklesIcon className="size-3 text-brand-300" />
-                  Launch Full Demo →
-                </Link>
-              </div>
+              <Link
+                href={site.demo}
+                className="group inline-flex items-center gap-1.5 rounded-full border border-brand-400/25 bg-brand-400/[0.09] px-3.5 py-1.5 text-[12px] font-medium text-brand-200 transition-all duration-300 ease-smooth hover:border-brand-300/45 hover:bg-brand-400/[0.16] hover:text-brand-50"
+              >
+                <SparklesIcon className="size-3.5 text-brand-300" />
+                Try Full Demo
+                <ArrowRight className="size-3 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
+              </Link>
             </div>
 
-            <div className="grid gap-6 p-5 sm:p-8 lg:grid-cols-12">
-              {/* Preset Selector Cards */}
+            <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-12 lg:gap-8">
+              {/* Left: Preset Cards */}
               <div className="space-y-2.5 lg:col-span-5">
-                <p className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-zinc-500">
-                  Choose Protection Profile
+                <p className="px-1 text-[11.5px] font-medium text-zinc-400">
+                  One-click server presets
                 </p>
                 {SECURITY_PRESETS.map((preset) => {
                   const active = preset.id === presetId;
@@ -143,27 +157,28 @@ export function DashboardShowcase() {
                       key={preset.id}
                       type="button"
                       onClick={() => setPresetId(preset.id)}
-                      className={`w-full rounded-2xl border p-4 text-left transition-all duration-200 ${
+                      aria-pressed={active}
+                      className={`group w-full rounded-[22px] border p-4 text-left transition-all duration-300 ease-smooth active:scale-[0.99] ${
                         active
-                          ? "border-brand-500/55 bg-gradient-to-r from-brand-950/75 to-ink-900 text-white shadow-[0_14px_38px_-20px_rgb(var(--brand-500)/0.8)]"
-                          : "border-white/[0.07] bg-black/45 text-zinc-300 hover:border-white/[0.16] hover:text-white"
+                          ? "border-brand-400/35 bg-gradient-to-br from-brand-400/[0.12] via-ink-900/90 to-ink-950 shadow-[0_20px_50px_-28px_rgb(var(--brand-400)/0.45)]"
+                          : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.035]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-display text-[15px] font-semibold">
+                        <span className="font-display text-[15px] font-semibold text-white">
                           {preset.name}
                         </span>
                         <span
-                          className={`rounded-full border px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
+                          className={`rounded-full px-2.5 py-0.5 text-[10.5px] font-medium ${
                             active
-                              ? "border-brand-400/50 bg-brand-500/20 text-brand-200"
-                              : "border-white/10 bg-white/[0.03] text-zinc-500"
+                              ? "bg-brand-400 text-brand-ink"
+                              : "bg-white/[0.06] text-zinc-400"
                           }`}
                         >
                           {preset.badge}
                         </span>
                       </div>
-                      <p className="mt-1.5 text-[12px] leading-relaxed text-zinc-400">
+                      <p className="mt-1.5 text-[12.5px] leading-relaxed text-zinc-400">
                         {preset.summary}
                       </p>
                     </button>
@@ -171,110 +186,64 @@ export function DashboardShowcase() {
                 })}
               </div>
 
-              {/* Live Resulting Server State */}
-              <div className="flex flex-col justify-between rounded-2xl border border-white/[0.08] bg-black/55 p-5 sm:p-6 lg:col-span-7">
+              {/* Right: Clean, Plain-English Summary */}
+              <div
+                key={activePreset.id}
+                className="animate-log-in flex flex-col justify-between rounded-[26px] border border-white/[0.065] bg-black/40 p-5 sm:p-6 lg:col-span-7"
+              >
                 <div>
-                  {/* Score Header */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/[0.07] pb-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="font-mono text-[9.5px] uppercase tracking-[0.24em] text-brand-400">
-                        Computed Security Posture
+                      <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-brand-300">
+                        What&apos;s Included
                       </p>
-                      <div className="mt-1.5 flex items-baseline gap-3">
-                        <span className="font-display text-[40px] font-bold leading-none text-white">
-                          {posture.score}
-                          <span className="text-[18px] font-medium text-zinc-500">
-                            /100
-                          </span>
-                        </span>
-                        <span className="rounded-lg border border-emerald-500/35 bg-emerald-500/15 px-2.5 py-1 font-mono text-[11px] font-bold text-emerald-300">
-                          Grade {posture.grade} · {posture.label}
-                        </span>
-                      </div>
+                      <h3 className="mt-1 font-display text-[22px] font-bold text-white">
+                        {activePreset.name}
+                      </h3>
                     </div>
-                    <ShieldIcon className="size-9 text-brand-400 opacity-85" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11.5px] font-medium text-emerald-300">
+                      <CheckIcon className="size-3.5" />
+                      Saves instantly
+                    </span>
                   </div>
 
-                  {/* Animated Score Bar */}
-                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/[0.07]">
-                    <div
-                      style={{ width: `${posture.score}%` }}
-                      className="h-full rounded-full bg-gradient-to-r from-brand-600 via-brand-400 to-emerald-400 transition-all duration-500"
-                    />
-                  </div>
-
-                  {/* Live Resulting Config Matrix */}
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {[
-                      {
-                        k: "Anti-Nuke Sanction",
-                        v: `${simulated.antinuke.punishment.replace("_", " ").toUpperCase()} + Rollback`,
-                        sub: `Limit ${simulated.antinuke.rules.antiChannelDelete.limit} ch_del / ${simulated.antinuke.rules.antiChannelDelete.windowSec}s`,
-                      },
-                      {
-                        k: "AutoMod Firewall",
-                        v: simulated.automod.punishment
-                          .replace("_", " ")
-                          .toUpperCase(),
-                        sub: `Spam ${simulated.automod.antiSpam.maxMessages}/${simulated.automod.antiSpam.windowSec}s · Token ≤${simulated.automod.antiTokenSpam.joinRateLimit}/10s`,
-                      },
-                      {
-                        k: "Member Verification",
-                        v: simulated.verification.enabled
-                          ? `${simulated.verification.mode.toUpperCase()} GATE`
-                          : "OPEN ENTRY",
-                        sub: simulated.verification.enabled
-                          ? `Min account age: ${simulated.verification.minAccountAgeDays} days`
-                          : "Zero-friction hangout access",
-                      },
-                      {
-                        k: "Overnight & Suites",
-                        v: simulated.nightmode.enabled
-                          ? `NIGHT LOCK ${simulated.nightmode.startTime}–${simulated.nightmode.endTime}`
-                          : simulated.voicemaster.enabled
-                            ? "VOICEMASTER + GREETS"
-                            : "6-STREAM AUDIT LOGS",
-                        sub: simulated.antinuke.vanityGuard
-                          ? "Vanity Guard & Anti-Betray ON"
-                          : "Scoped staff whitelists active",
-                      },
-                    ].map((row) => (
+                  <div className="mt-5 space-y-2.5">
+                    {summaryRows.map((row) => (
                       <div
-                        key={row.k}
-                        className="rounded-xl border border-white/[0.07] bg-ink-900/75 p-3.5"
+                        key={row.label}
+                        className="flex flex-col justify-between gap-1 rounded-2xl border border-white/[0.055] bg-white/[0.025] px-4 py-3 sm:flex-row sm:items-center"
                       >
-                        <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-zinc-500">
-                          {row.k}
-                        </p>
-                        <p className="mt-1 font-display text-[14px] font-semibold text-white">
-                          {row.v}
-                        </p>
-                        <p className="mt-0.5 font-mono text-[10px] text-zinc-400">
-                          {row.sub}
-                        </p>
+                        <span className="flex items-center gap-2.5 text-[13px] font-medium text-zinc-200">
+                          <span
+                            className={`size-2 rounded-full ${
+                              row.active
+                                ? "bg-brand-400 shadow-[0_0_8px_rgb(var(--brand-300))]"
+                                : "bg-zinc-600"
+                            }`}
+                          />
+                          {row.label}
+                        </span>
+                        <span className="text-[12.5px] text-zinc-400 sm:text-right">
+                          {row.value}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Bottom Action Row */}
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-4">
-                  <div className="flex flex-wrap items-center gap-3 text-[12px] text-zinc-400">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckIcon className="size-3.5 text-emerald-400" />
-                      Embed Studio included
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckIcon className="size-3.5 text-emerald-400" />
-                      No sign-in needed to test
-                    </span>
-                  </div>
+                <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-white/[0.06] pt-5">
                   <Link
-                    href="/dashboard/demo"
-                    className="btn-primary group inline-flex h-10 items-center gap-2 rounded-xl px-4 text-[12.5px] font-semibold text-white"
+                    href={site.dashboard}
+                    className="btn-primary btn-glow relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full px-6 text-[13.5px] font-semibold hover:-translate-y-0.5 active:scale-[0.985]"
                   >
-                    Open 12-Module Demo
-                    <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                    <span className="relative z-10">Manage My Server</span>
+                    <ArrowRight className="relative z-10 size-3.5" />
+                  </Link>
+                  <Link
+                    href={site.demo}
+                    className="btn-soft inline-flex h-11 items-center gap-2 px-5 text-[13px] font-medium active:scale-[0.985]"
+                  >
+                    Explore Sandbox
                   </Link>
                 </div>
               </div>

@@ -1,4 +1,4 @@
-import { normalizeSupportUrl, site } from "@/lib/site";
+import { normalizeSupportUrl, normalizeTagline, site } from "@/lib/site";
 import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 
 export type ThemePresetId =
@@ -48,9 +48,28 @@ export const THEME_PRESETS: {
   palette: BrandPaletteHex;
 }[] = [
   {
+    id: "gold",
+    name: "Solar Gold",
+    subtitle: "Signature LightCore yellow & black (Default)",
+    swatch: "#facc15",
+    palette: {
+      50: "#fffdf0",
+      100: "#fef9c3",
+      200: "#fef08a",
+      300: "#fde047",
+      400: "#facc15",
+      500: "#eab308",
+      600: "#ca8a04",
+      700: "#a16207",
+      800: "#854d0e",
+      900: "#713f12",
+      950: "#2e1a05",
+    },
+  },
+  {
     id: "crimson",
     name: "Crimson Core",
-    subtitle: "Signature LightCore red & black (Default)",
+    subtitle: "Bold ruby accent on dark",
     swatch: "#ef4444",
     palette: {
       50: "#fef2f2",
@@ -162,25 +181,6 @@ export const THEME_PRESETS: {
     },
   },
   {
-    id: "gold",
-    name: "Cyber Gold",
-    subtitle: "Luxury prestige amber",
-    swatch: "#f59e0b",
-    palette: {
-      50: "#fffbeb",
-      100: "#fef3c7",
-      200: "#fde68a",
-      300: "#fcd34d",
-      400: "#fbbf24",
-      500: "#f59e0b",
-      600: "#d97706",
-      700: "#b45309",
-      800: "#92400e",
-      900: "#78350f",
-      950: "#3b1a06",
-    },
-  },
-  {
     id: "rose",
     name: "Sakura Neon",
     subtitle: "Vibrant magenta pulse",
@@ -209,30 +209,30 @@ export const SURFACE_PRESETS: {
 }[] = [
   {
     id: "void",
-    name: "Obsidian Black",
-    subtitle: "Pure pitch carbon-black OLED (Default)",
+    name: "Velvet Black",
+    subtitle: "Warm pitch-black with golden depth (Default)",
     palette: {
-      950: "#030305",
-      900: "#09090d",
-      850: "#0f0f15",
-      800: "#16161e",
-      700: "#22222d",
-      600: "#323241",
-      500: "#48485c",
+      950: "#060504",
+      900: "#0d0b08",
+      850: "#14110c",
+      800: "#1c1811",
+      700: "#2b251b",
+      600: "#3f3627",
+      500: "#594d38",
     },
   },
   {
     id: "obsidian",
-    name: "Crimson Nocturne",
-    subtitle: "Deep onyx with warm ruby undertone",
+    name: "Gilded Onyx",
+    subtitle: "Deep espresso-onyx with warm amber undertone",
     palette: {
-      950: "#070406",
-      900: "#0e080b",
-      850: "#160d11",
-      800: "#1f1318",
-      700: "#2e1c23",
-      600: "#422932",
-      500: "#5c3b47",
+      950: "#080603",
+      900: "#110d07",
+      850: "#19130b",
+      800: "#231b10",
+      700: "#342818",
+      600: "#4a3922",
+      500: "#665031",
     },
   },
   {
@@ -334,20 +334,20 @@ export function createDefaultSiteConfig(): SiteConfig {
     tagline: site.tagline,
     description: site.description,
     heroSubtext:
-      "Real-time raid prevention, auto-moderation, tickets, VoiceMaster, and nuke blocking around the clock.",
+      "Smart security, gentle auto-moderation, temporary voice rooms, support tickets, and welcomes — all managed from one calm, effortless dashboard.",
     prefix: site.prefix,
     logoUrl: site.logo,
-    faviconUrl: site.logo,
+    faviconUrl: "/brand/lightcore-mark.png",
     logoShape: "squircle",
     logoGlow: true,
 
-    themePreset: "crimson",
-    customAccentHex: "#ef4444",
+    themePreset: "gold",
+    customAccentHex: "#facc15",
     surfacePreset: "void",
     glowIntensity: "balanced",
-    showGrid: true,
+    showGrid: false,
     enableRouteLoader: true,
-    loaderText: "Connection Establishing...",
+    loaderText: "Warming things up...",
 
     supportUrl: site.discord,
     inviteUrl: site.invite,
@@ -385,7 +385,7 @@ export function createDefaultSiteConfig(): SiteConfig {
 
 function hexToRgbTuple(hex: string): [number, number, number] {
   const clean = hex.replace("#", "").trim();
-  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [239, 68, 68];
+  if (!/^[0-9a-fA-F]{6}$/.test(clean)) return [250, 204, 21];
   return [
     parseInt(clean.slice(0, 2), 16),
     parseInt(clean.slice(2, 4), 16),
@@ -458,11 +458,30 @@ export function buildThemeCssVariables(cfg: SiteConfig): Record<string, string> 
   vars["--background"] = surface.palette[950];
   vars["--glow-scale"] =
     cfg.glowIntensity === "subtle"
-      ? "0.55"
+      ? "0.58"
       : cfg.glowIntensity === "vibrant"
-        ? "1.45"
+        ? "1.35"
         : "1";
-  vars["--grid-opacity"] = cfg.showGrid ? "0.048" : "0";
+  vars["--grid-opacity"] = cfg.showGrid ? "0.026" : "0";
+
+  // Automatic luminance-aware button contrast:
+  // Luminous presets (Solar Gold, Aqua) render silky sunlit buttons with velvet-black ink;
+  // deeper jewel presets (Violet, Cobalt, Crimson, Rose) keep crisp white ink.
+  const b400 = (vars["--brand-400"] || "250 204 21").split(" ").map(Number);
+  const lum = (0.299 * b400[0] + 0.587 * b400[1] + 0.114 * b400[2]) / 255;
+  if (lum >= 0.62) {
+    vars["--btn-from"] = vars["--brand-300"];
+    vars["--btn-via"] = vars["--brand-400"];
+    vars["--btn-to"] = vars["--brand-500"];
+    vars["--btn-ink"] = "12 9 3";
+    vars["--btn-shine"] = "rgb(255 255 255 / 0.52)";
+  } else {
+    vars["--btn-from"] = vars["--brand-500"];
+    vars["--btn-via"] = vars["--brand-600"];
+    vars["--btn-to"] = vars["--brand-700"];
+    vars["--btn-ink"] = "255 255 255";
+    vars["--btn-shine"] = "rgb(255 255 255 / 0.28)";
+  }
 
   return vars;
 }
@@ -548,7 +567,7 @@ export function mergeSiteConfig(
     wordmarkLead: cleanStr(p.wordmarkLead, base.wordmarkLead, 24),
     wordmarkAccent: cleanStr(p.wordmarkAccent, base.wordmarkAccent, 24, true),
     navBadge: cleanStr(p.navBadge, base.navBadge, 24, true),
-    tagline: cleanStr(p.tagline, base.tagline, 90),
+    tagline: normalizeTagline(cleanStr(p.tagline, base.tagline, 90)),
     description: cleanStr(p.description, base.description, 220),
     heroSubtext: cleanStr(p.heroSubtext, base.heroSubtext, 260, true),
     prefix: cleanStr(p.prefix, base.prefix, 6),

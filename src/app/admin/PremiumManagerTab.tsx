@@ -385,7 +385,7 @@ export function PremiumManagerTab({
           className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-xl px-4 text-[13px] font-semibold transition-all ${
             showAddForm
               ? "border border-brand-200/20 bg-ink-950 text-zinc-200 hover:text-white"
-              : "bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-[0_8px_24px_-6px_rgb(var(--brand-400)/0.75)] hover:brightness-110"
+              : "btn-primary hover:brightness-105"
           }`}
         >
           <PlusIcon
@@ -836,7 +836,7 @@ export function PremiumManagerTab({
             <button
               type="submit"
               disabled={busyKey !== null}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-6 text-[13px] font-semibold text-white hover:brightness-110 disabled:opacity-50"
+              className="btn-primary inline-flex h-10 items-center gap-2 rounded-full px-6 text-[13px] font-semibold disabled:opacity-50"
             >
               <CrownIcon className="size-4" />
               {busyKey === "grant" ? "Activating…" : "Activate Premium Now"}

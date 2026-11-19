@@ -22,15 +22,17 @@ export function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border transition-all duration-300 ease-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
         checked
-          ? "border-brand-400/80 bg-gradient-to-r from-brand-600 to-brand-500 shadow-[0_0_18px_-2px_rgb(var(--brand-500)/0.75)]"
-          : "border-brand-200/15 bg-ink-800"
+          ? "border-brand-300/60 bg-brand-400 shadow-[0_0_18px_-3px_rgb(var(--brand-400)/0.75)]"
+          : "border-white/[0.1] bg-ink-800"
       }`}
     >
       <span
-        className={`pointer-events-none inline-block size-4 rounded-full bg-white shadow transition-transform duration-200 ease-smooth ${
-          checked ? "translate-x-[22px]" : "translate-x-1"
+        className={`pointer-events-none inline-block size-4 rounded-full shadow transition-transform duration-300 ease-smooth ${
+          checked
+            ? "translate-x-[22px] bg-brand-ink"
+            : "translate-x-1 bg-zinc-300"
         }`}
       />
     </button>
@@ -53,7 +55,7 @@ export function ModuleHeader({
   onToggle?: (next: boolean) => void;
 }) {
   return (
-    <div className="panel panel-inner flex flex-col justify-between gap-4 rounded-2xl p-5 shadow-panel sm:flex-row sm:items-start sm:p-6">
+    <div className="panel panel-inner flex flex-col justify-between gap-4 rounded-3xl p-5 shadow-panel sm:flex-row sm:items-start sm:p-6">
       <div className="max-w-2xl">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="font-mono text-[10px] uppercase tracking-[0.26em] text-brand-400">
@@ -177,7 +179,7 @@ export function RoleField({
               ...roles.map((r) => ({
                 value: r.id,
                 label: `@${r.name}`,
-                colorDot: r.color || "#ef4444",
+                colorDot: r.color || "#facc15",
                 description: `ID ${r.id}`,
               })),
             ]}

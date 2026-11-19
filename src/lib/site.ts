@@ -22,6 +22,7 @@ const resolvedInviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL
     : buildCanonicalBotInviteUrl(clientId);
 
 export const DEFAULT_SUPPORT_URL = "https://discord.gg/vTPhtsncjH";
+export const DEFAULT_TAGLINE = "The bright side of automation.";
 
 export function normalizeSupportUrl(url?: string | null): string {
   const cleaned = cleanEnvString(url);
@@ -32,18 +33,25 @@ export function normalizeSupportUrl(url?: string | null): string {
   return cleaned;
 }
 
+export function normalizeTagline(raw?: string | null): string {
+  const cleaned = cleanEnvString(raw);
+  if (!cleaned) return DEFAULT_TAGLINE;
+  if (/^light\s+for\s+you\s+heavy\s+for\s+nukers\.?$/i.test(cleaned)) {
+    return DEFAULT_TAGLINE;
+  }
+  return cleaned;
+}
+
 export const site = {
   name: cleanEnvString(process.env.NEXT_PUBLIC_SITE_NAME) || "LightCore",
   wordmark: {
     lead: cleanEnvString(process.env.NEXT_PUBLIC_WORDMARK_LEAD) || "LIGHT",
     accent: cleanEnvString(process.env.NEXT_PUBLIC_WORDMARK_ACCENT) || "CORE",
   },
-  tagline:
-    cleanEnvString(process.env.NEXT_PUBLIC_SITE_TAGLINE) ||
-    "LIGHT FOR YOU HEAVY FOR NUKERS",
+  tagline: normalizeTagline(process.env.NEXT_PUBLIC_SITE_TAGLINE),
   description:
     cleanEnvString(process.env.NEXT_PUBLIC_SITE_DESCRIPTION) ||
-    "The all-in-one Discord security, moderation, voice, ticket & automation bot",
+    "The bright side of automation — effortless Discord security, moderation, temporary voice rooms, tickets, and community tools in one smooth bot.",
   url:
     sanitizeOriginUrl(process.env.NEXT_PUBLIC_SITE_URL) ||
     sanitizeOriginUrl(process.env.RENDER_EXTERNAL_URL) ||

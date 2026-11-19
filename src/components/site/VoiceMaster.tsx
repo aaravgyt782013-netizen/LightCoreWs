@@ -26,128 +26,108 @@ function InteractiveVoiceDeck() {
   const [bitrateIdx, setBitrateIdx] = useState(1);
   const limit = LIMITS[limitIdx];
   const bitrate = BITRATES[bitrateIdx];
-  const logoSrc = config.logoUrl || site.logo;
-  const prefix = config.prefix || site.prefix;
+  const rawLogo = config.logoUrl || site.logo;
+  const avatarSrc =
+    rawLogo === "/brand/logo.png" ? "/brand/lightcore-mark.png" : rawLogo;
 
   return (
-    <div className="relative space-y-3.5">
-      <SpotlightCard className="overflow-hidden rounded-[24px] border-brand-500/25">
-        <div
-          aria-hidden
-          className="h-[1.5px] w-full bg-gradient-to-r from-transparent via-brand-500/80 to-transparent"
-        />
-        <div className="relative flex items-center justify-between border-b border-white/[0.07] bg-black/50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <VoiceIcon className="size-3.5 text-brand-400" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-zinc-300">
-              VoiceMaster · Interactive Deck
+    <SpotlightCard className="overflow-hidden rounded-[32px] p-5 sm:p-6">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent"
+      />
+
+      <div className="relative flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <span className="flex size-8 items-center justify-center rounded-xl border border-brand-400/25 bg-brand-400/[0.1] text-brand-300">
+            <VoiceIcon className="size-4" />
+          </span>
+          <span className="text-[13px] font-semibold text-zinc-100">
+            VoiceMaster Preview
+          </span>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
+          {bitrate} kbps
+        </span>
+      </div>
+
+      <div className="relative mt-4 rounded-[22px] border border-white/[0.06] bg-black/45 p-4">
+        <div className="flex items-center gap-2 rounded-2xl border border-white/[0.05] bg-white/[0.025] px-3.5 py-2.5 text-[12.5px] text-zinc-400">
+          <PlusIcon className="size-3.5 text-brand-300" />
+          <span>Join to Create</span>
+        </div>
+
+        <div className="mt-2.5 flex items-center gap-2 rounded-2xl border border-brand-400/30 bg-brand-400/[0.08] px-3.5 py-3 transition-all duration-300 ease-smooth">
+          {locked ? (
+            <LockIcon className="size-4 shrink-0 text-brand-300" />
+          ) : (
+            <VoiceIcon className="size-4 shrink-0 text-emerald-400" />
+          )}
+          <FancyName height={12} />
+          <span className="truncate text-[13px] font-medium text-white">
+            &apos;s lounge
+          </span>
+          {hidden && (
+            <span className="rounded-full bg-brand-400/20 px-2 py-0.5 text-[10px] font-medium text-brand-200">
+              Hidden
             </span>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-emerald-300">
-            {bitrate} kbps
+          )}
+          <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-0.5 text-[11px] font-medium text-zinc-200">
+            <span className="size-1.5 rounded-full bg-emerald-400" />
+            3 / {limit === 0 ? "∞" : limit}
           </span>
         </div>
 
-        <div className="relative p-4 sm:p-5">
-          <p className="font-mono text-[9px] uppercase tracking-[0.26em] text-zinc-500">
-            Dynamic Voice Category
-          </p>
-
-          <div className="mt-2.5 space-y-2">
-            <div className="flex items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[12px] text-zinc-400">
-              <PlusIcon className="size-3.5 text-brand-400" />
-              <span>Join to Create</span>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-xl border border-brand-500/40 bg-brand-950/45 px-3 py-2.5 transition-all duration-300">
-              {locked ? (
-                <LockIcon className="size-3.5 shrink-0 text-brand-400" />
-              ) : (
-                <VoiceIcon className="size-3.5 shrink-0 text-emerald-400" />
-              )}
-              <FancyName height={12} />
-              <span className="truncate text-[12px] font-medium text-white">
-                &apos;s room
+        <div className="mt-3 space-y-1.5 pl-3">
+          {[
+            { name: "aarav", tag: "Host · speaking", active: true },
+            { name: "nyx", tag: "Listening", active: true },
+            { name: "kira", tag: "Chilling", active: false },
+          ].map((m) => (
+            <div key={m.name} className="flex items-center gap-2.5 py-1">
+              <span
+                className={`relative size-5 shrink-0 overflow-hidden rounded-full ring-1 ${
+                  m.active ? "ring-brand-300/55" : "ring-white/10"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarSrc}
+                  alt=""
+                  width={20}
+                  height={20}
+                  className="size-full bg-black object-cover"
+                />
               </span>
-              {hidden && (
-                <span className="rounded border border-brand-500/35 bg-brand-500/15 px-1.5 py-0.5 font-mono text-[8.5px] uppercase text-brand-200">
-                  ghost
-                </span>
-              )}
-              <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-black/55 px-2 py-0.5 font-mono text-[9.5px] text-zinc-300">
-                <span className="size-1.5 rounded-full bg-emerald-400" />
-                3/{limit === 0 ? "∞" : limit}
-              </span>
+              <span className="text-[12.5px] text-zinc-200">{m.name}</span>
+              <span className="ml-auto text-[11px] text-zinc-500">{m.tag}</span>
             </div>
-
-            <div className="space-y-1 pl-3">
-              {[
-                { name: "aarav", tag: "host · speaking", active: true },
-                { name: "nyx", tag: "connected", active: true },
-                { name: "kira", tag: "deafened", active: false },
-              ].map((m) => (
-                <div key={m.name} className="flex items-center gap-2.5 py-1">
-                  <span
-                    className={`relative size-5 shrink-0 overflow-hidden rounded-full ring-1 ${
-                      m.active ? "ring-emerald-400/60" : "ring-white/10"
-                    }`}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={logoSrc}
-                      alt=""
-                      width={20}
-                      height={20}
-                      className="size-full object-cover opacity-85"
-                    />
-                  </span>
-                  <span className="text-[11.5px] text-zinc-200">{m.name}</span>
-                  <span className="ml-auto font-mono text-[9px] text-zinc-500">
-                    {m.tag}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 rounded-xl border border-white/[0.07] bg-black/65 p-3 font-mono text-[10.5px] leading-relaxed">
-            <p className="text-zinc-400">
-              <span className="text-brand-400">{prefix}voicemaster</span> setup
-            </p>
-            <p className="mt-1 flex items-center gap-1.5 text-emerald-400">
-              <CheckIcon className="size-3" />{" "}
-              {locked
-                ? "Channel locked to permitted members"
-                : hidden
-                  ? "Room hidden from server channel list"
-                  : "Auto-cleanup & owner permissions synced"}
-            </p>
-          </div>
+          ))}
         </div>
-      </SpotlightCard>
+      </div>
 
-      {/* Interactive 4-Button Owner Deck */}
-      <SpotlightCard className="rounded-[22px] p-4">
-        <div className="relative flex items-center justify-between gap-3">
-          <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-brand-300">
-            Owner Controls · Click to Test
-          </p>
-          <Link
-            href="/dashboard/demo?tab=voicemaster"
-            className="font-mono text-[9.5px] text-zinc-400 hover:text-white"
-          >
-            Edit Template →
-          </Link>
-        </div>
+      {/* Tap-to-test room controls */}
+      <div className="relative mt-4">
+        <p className="mb-2.5 flex items-center justify-between px-1 text-[11.5px] text-zinc-400">
+          <span>Tap to try room controls</span>
+          <span className="inline-flex items-center gap-1 text-emerald-300">
+            <CheckIcon className="size-3" />
+            {locked
+              ? "Invite-only"
+              : hidden
+                ? "Hidden room"
+                : "Auto-deletes when empty"}
+          </span>
+        </p>
 
-        <div className="relative mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <button
             type="button"
             onClick={() => setLocked((v) => !v)}
-            className={`rounded-xl border py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 ${
+            className={`rounded-full border py-2.5 text-center text-[12px] font-medium transition-all duration-300 ease-smooth active:scale-95 ${
               locked
-                ? "border-brand-500/60 bg-brand-600/25 text-white shadow-[0_0_20px_-6px_rgb(var(--brand-500))]"
-                : "border-white/[0.08] bg-black/50 text-zinc-400 hover:border-brand-500/35 hover:text-white"
+                ? "border-brand-300/60 bg-brand-400 font-semibold text-brand-ink shadow-[0_8px_24px_-8px_rgb(var(--brand-400)/0.75)]"
+                : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-brand-400/30 hover:text-white"
             }`}
           >
             {locked ? "Locked" : "Lock"}
@@ -155,69 +135,69 @@ function InteractiveVoiceDeck() {
           <button
             type="button"
             onClick={() => setHidden((v) => !v)}
-            className={`rounded-xl border py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 ${
+            className={`rounded-full border py-2.5 text-center text-[12px] font-medium transition-all duration-300 ease-smooth active:scale-95 ${
               hidden
-                ? "border-brand-500/60 bg-brand-600/25 text-white shadow-[0_0_20px_-6px_rgb(var(--brand-500))]"
-                : "border-white/[0.08] bg-black/50 text-zinc-400 hover:border-brand-500/35 hover:text-white"
+                ? "border-brand-300/60 bg-brand-400 font-semibold text-brand-ink shadow-[0_8px_24px_-8px_rgb(var(--brand-400)/0.75)]"
+                : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-brand-400/30 hover:text-white"
             }`}
           >
-            {hidden ? "Ghost On" : "Ghost"}
+            {hidden ? "Hidden" : "Hide"}
           </button>
           <button
             type="button"
             onClick={() => setLimitIdx((i) => (i + 1) % LIMITS.length)}
-            className={`rounded-xl border py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider transition-all duration-200 active:scale-95 ${
+            className={`rounded-full border py-2.5 text-center text-[12px] font-medium transition-all duration-300 ease-smooth active:scale-95 ${
               limit > 0
-                ? "border-brand-500/60 bg-brand-600/25 text-white shadow-[0_0_20px_-6px_rgb(var(--brand-500))]"
-                : "border-white/[0.08] bg-black/50 text-zinc-400 hover:border-brand-500/35 hover:text-white"
+                ? "border-brand-300/60 bg-brand-400 font-semibold text-brand-ink shadow-[0_8px_24px_-8px_rgb(var(--brand-400)/0.75)]"
+                : "border-white/[0.08] bg-white/[0.03] text-zinc-300 hover:border-brand-400/30 hover:text-white"
             }`}
           >
-            Cap {limit === 0 ? "∞" : limit}
+            Limit {limit === 0 ? "∞" : limit}
           </button>
           <button
             type="button"
             onClick={() => setBitrateIdx((i) => (i + 1) % BITRATES.length)}
-            className="rounded-xl border border-white/[0.08] bg-black/50 py-2 text-center font-mono text-[10px] font-medium uppercase tracking-wider text-zinc-300 transition-all duration-200 hover:border-brand-500/35 hover:text-white active:scale-95"
+            className="rounded-full border border-white/[0.08] bg-white/[0.03] py-2.5 text-center text-[12px] font-medium text-zinc-200 transition-all duration-300 ease-smooth hover:border-brand-400/30 hover:text-white active:scale-95"
           >
-            {bitrate}k
+            {bitrate}k Audio
           </button>
         </div>
-      </SpotlightCard>
-    </div>
+      </div>
+    </SpotlightCard>
   );
 }
 
 export function VoiceMaster() {
   return (
-    <section id="voicemaster" className="relative py-20 sm:py-28">
+    <section id="voicemaster" className="relative py-24 sm:py-32">
       <div className="container-x">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,448px)] lg:items-center">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,456px)] lg:items-center lg:gap-16">
           <div>
             <Reveal>
-              <p className="eyebrow">Dynamic Voice</p>
-              <h2 className="mt-5 max-w-xl font-display text-[32px] font-bold leading-[1.05] tracking-tight text-white sm:text-[48px]">
-                Personal rooms with{" "}
-                <span className="text-gradient-brand">VoiceMaster</span>
+              <p className="eyebrow">Temporary Voice</p>
+              <h2 className="mt-5 max-w-xl font-display text-[32px] font-bold leading-[1.08] tracking-[-0.02em] text-white sm:text-[46px]">
+                Cozy personal rooms with{" "}
+                <span className="text-gradient-brand">VoiceMaster.</span>
               </h2>
-              <p className="mt-4 max-w-lg text-[15px] leading-relaxed text-zinc-400">
-                Instant Join-to-Create temporary voice channels with up to
-                384 kbps studio audio, full host controls built directly into
-                chat, and zero empty-channel clutter.
+              <p className="mt-4 max-w-lg text-[15.5px] leading-relaxed text-zinc-400">
+                Members hop into one channel and instantly get their own room to
+                lock, rename, or share with friends — then it cleans itself up
+                the moment everyone leaves.
               </p>
             </Reveal>
 
             <div className="mt-8 space-y-3">
               {voiceCards.map((c, i) => (
                 <Reveal key={c.kicker} delay={i * 75}>
-                  <SpotlightCard className="group flex gap-4 rounded-2xl p-4 transition-transform duration-300 ease-smooth hover:-translate-y-0.5 sm:p-5">
-                    <span className="relative mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl border border-brand-500/30 bg-brand-950/50 font-mono text-[10.5px] font-semibold text-brand-300">
+                  <SpotlightCard className="group flex gap-4 rounded-[24px] p-5 transition-transform duration-500 ease-smooth hover:-translate-y-0.5">
+                    <span className="relative mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-2xl border border-brand-400/25 bg-brand-400/[0.09] text-[12px] font-semibold text-brand-200">
                       0{i + 1}
                     </span>
                     <div className="relative">
-                      <h3 className="font-display text-[15.5px] font-bold tracking-tight text-white">
+                      <h3 className="font-display text-[16px] font-semibold tracking-tight text-white">
                         {c.kicker}
                       </h3>
-                      <p className="mt-1 text-[13px] leading-relaxed text-zinc-400">
+                      <p className="mt-1 text-[13.5px] leading-relaxed text-zinc-400">
                         {c.title}
                       </p>
                     </div>
@@ -226,13 +206,13 @@ export function VoiceMaster() {
               ))}
             </div>
 
-            <Reveal delay={200} className="mt-6">
+            <Reveal delay={180} className="mt-7">
               <Link
                 href="/dashboard/demo?tab=voicemaster"
-                className="group inline-flex items-center gap-2 text-[13.5px] font-semibold text-brand-300 transition hover:text-white"
+                className="group inline-flex items-center gap-2 text-[14px] font-medium text-brand-300 transition-colors duration-300 hover:text-brand-100"
               >
-                Configure VoiceMaster in the interactive demo
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                Customize VoiceMaster in the dashboard
+                <ArrowRight className="size-4 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
               </Link>
             </Reveal>
           </div>
@@ -240,10 +220,10 @@ export function VoiceMaster() {
           <Reveal delay={110} className="relative">
             <div
               aria-hidden
-              className="pointer-events-none absolute -inset-8 rounded-full blur-3xl"
+              className="pointer-events-none absolute -inset-8 -z-10 rounded-full blur-3xl"
               style={{
                 background:
-                  "radial-gradient(closest-side, rgb(var(--brand-600) / 0.24), transparent)",
+                  "radial-gradient(closest-side, rgb(var(--brand-400) / 0.16), transparent)",
               }}
             />
             <InteractiveVoiceDeck />

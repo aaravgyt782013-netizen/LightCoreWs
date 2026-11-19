@@ -5,8 +5,8 @@ import {
   type SiteConfig,
 } from "@/lib/site-config";
 
-const SITE_CONFIG_KEY = "site/config-v2";
-const LEGACY_SITE_CONFIG_KEY = "site/config-v1";
+const SITE_CONFIG_KEY = "site/config-v3";
+const LEGACY_KEYS = ["site/config-v2", "site/config-v1"] as const;
 
 export async function getSiteConfig(): Promise<SiteConfig> {
   const base = createDefaultSiteConfig();
@@ -15,19 +15,37 @@ export async function getSiteConfig(): Promise<SiteConfig> {
 
   let stored = await kvGet<Partial<SiteConfig>>(SITE_CONFIG_KEY);
   if (!stored) {
-    const legacy = await kvGet<Partial<SiteConfig>>(LEGACY_SITE_CONFIG_KEY);
-    if (legacy) {
-      // Carry forward custom branding/pricing/logos while upgrading default theme to Crimson & Obsidian Black.
-      const {
-        themePreset: _legacyTheme,
-        surfacePreset: _legacySurface,
-        customAccentHex: _legacyHex,
-        ...kept
-      } = legacy;
-      void _legacyTheme;
-      void _legacySurface;
-      void _legacyHex;
-      stored = kept;
+    for (const legacyKey of LEGACY_KEYS) {
+      const legacy = await kvGet<Partial<SiteConfig>>(legacyKey);
+      if (legacy) {
+        // Carry forward custom pricing, premiumRoleId, and custom announcements while
+        // smoothly upgrading theme, surface, logo, tagline, and hero copy to Solar Gold & Velvet Black.
+        const {
+          themePreset: _t,
+          surfacePreset: _s,
+          customAccentHex: _h,
+          showGrid: _g,
+          tagline: _tag,
+          description: _desc,
+          heroSubtext: _sub,
+          loaderText: _loader,
+          logoUrl: _logo,
+          faviconUrl: _fav,
+          ...kept
+        } = legacy;
+        void _t;
+        void _s;
+        void _h;
+        void _g;
+        void _tag;
+        void _desc;
+        void _sub;
+        void _loader;
+        void _logo;
+        void _fav;
+        stored = kept;
+        break;
+      }
     }
   }
   if (!stored) return base;
@@ -53,7 +71,9 @@ export async function saveSiteConfig(
 
 export async function resetSiteConfig(updatedBy: string): Promise<SiteConfig> {
   await kvDelete(SITE_CONFIG_KEY);
-  await kvDelete(LEGACY_SITE_CONFIG_KEY);
+  for (const k of LEGACY_KEYS) {
+    await kvDelete(k);
+  }
   const fresh = createDefaultSiteConfig();
   fresh.updatedAt = new Date().toISOString();
   fresh.updatedBy = updatedBy;

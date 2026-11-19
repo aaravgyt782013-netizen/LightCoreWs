@@ -6,42 +6,36 @@ export function ModuleMarquee() {
 
   return (
     <section
-      aria-label="LightCore capability stream"
-      className="relative overflow-hidden border-y border-white/[0.065] bg-ink-900/35 py-6 backdrop-blur-sm"
+      aria-label="LightCore modules"
+      className="relative overflow-hidden border-y border-white/[0.055] bg-ink-900/30 py-7 backdrop-blur-sm"
     >
-      <div className="marquee-mask mask-fade-x space-y-2.5 overflow-hidden">
-        <div
-          style={{ ["--marquee-duration" as string]: "42s" }}
-          className="marquee-track animate-marquee gap-2.5"
-        >
+      <div className="marquee-mask mask-fade-x space-y-3 overflow-hidden">
+        <div className="marquee-track animate-marquee gap-3">
           {rowA.map((item, idx) => (
             <div
               key={`a-${item.name}-${idx}`}
-              className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-white/[0.075] bg-ink-950/85 px-4 py-2 transition-colors hover:border-brand-500/40"
+              className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-white/[0.065] bg-ink-900/75 px-4 py-2 transition-all duration-300 ease-smooth hover:border-brand-400/30 hover:bg-ink-850/90"
             >
-              <span className="rounded-full border border-brand-500/35 bg-brand-950/60 px-2 py-0.5 font-mono text-[8.5px] font-semibold uppercase tracking-[0.2em] text-brand-300">
+              <span className="rounded-full border border-brand-400/22 bg-brand-400/[0.08] px-2.5 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.14em] text-brand-200">
                 {item.tag}
               </span>
-              <span className="text-[12.5px] font-medium text-zinc-200">
+              <span className="text-[13px] font-medium text-zinc-200">
                 {item.name}
               </span>
             </div>
           ))}
         </div>
 
-        <div
-          style={{ ["--marquee-duration" as string]: "48s" }}
-          className="marquee-track animate-marquee-reverse gap-2.5"
-        >
+        <div className="marquee-track animate-marquee-reverse gap-3">
           {rowB.map((item, idx) => (
             <div
               key={`b-${item.name}-${idx}`}
-              className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-white/[0.075] bg-ink-950/85 px-4 py-2 transition-colors hover:border-brand-500/40"
+              className="inline-flex shrink-0 items-center gap-2.5 rounded-full border border-white/[0.06] bg-ink-900/65 px-4 py-2 transition-all duration-300 ease-smooth hover:border-brand-400/25 hover:bg-ink-850/85"
             >
-              <span className="rounded-full border border-white/[0.1] bg-white/[0.04] px-2 py-0.5 font-mono text-[8.5px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              <span className="rounded-full bg-white/[0.05] px-2.5 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.14em] text-zinc-400">
                 {item.tag}
               </span>
-              <span className="text-[12.5px] font-medium text-zinc-300">
+              <span className="text-[13px] font-medium text-zinc-300">
                 {item.name}
               </span>
             </div>

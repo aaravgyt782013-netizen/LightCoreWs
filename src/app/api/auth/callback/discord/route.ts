@@ -340,7 +340,7 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       sendDiscordLogEmbed({
         title: `${site.name} · Dashboard Sign-In`,
         description: `**${rawUser.global_name || rawUser.username}** (\`@${rawUser.username}\`) signed in to the dashboard.`,
-        color: ownerLogin ? 0xef4444 : 0xdc2626,
+        color: ownerLogin ? 0xfacc15 : 0xeab308,
         timestamp: new Date().toISOString(),
         fields: [
           { name: "User ID", value: `\`${rawUser.id}\``, inline: true },

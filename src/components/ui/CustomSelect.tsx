@@ -480,17 +480,17 @@ export function TimeSelect({
 }
 
 const COLOR_SWATCHES = [
-  { hex: "#ef4444", name: "LightCore Crimson" },
-  { hex: "#dc2626", name: "Blood Scarlet" },
-  { hex: "#f43f5e", name: "Neon Rose" },
-  { hex: "#ec4899", name: "Sakura Pink" },
-  { hex: "#f59e0b", name: "Cyber Gold" },
-  { hex: "#10b981", name: "Emerald Matrix" },
+  { hex: "#facc15", name: "LightCore Gold" },
+  { hex: "#eab308", name: "Solar Honey" },
+  { hex: "#f59e0b", name: "Warm Amber" },
+  { hex: "#38bdf8", name: "Sky Glow" },
+  { hex: "#10b981", name: "Emerald Mint" },
   { hex: "#14b8a6", name: "Ocean Teal" },
   { hex: "#06b6d4", name: "Aqua Pulse" },
-  { hex: "#38bdf8", name: "Arctic Sky" },
   { hex: "#6366f1", name: "Royal Indigo" },
-  { hex: "#8b5cf6", name: "Royal Violet" },
+  { hex: "#8b5cf6", name: "Soft Violet" },
+  { hex: "#ec4899", name: "Sakura Pink" },
+  { hex: "#ef4444", name: "Classic Crimson" },
   { hex: "#ffffff", name: "Pure White" },
 ] as const;
 
@@ -603,13 +603,13 @@ export function ColorSwatchSelect({
                 const v = e.target.value;
                 onChange(v.startsWith("#") ? v : `#${v}`);
               }}
-              placeholder="#ef4444"
-              className="h-8 flex-1 rounded-lg border border-brand-200/12 bg-ink-950 px-2.5 font-mono text-[12px] text-white focus:border-brand-400/60 focus:outline-none"
+              placeholder="#facc15"
+              className="h-9 flex-1 rounded-xl border border-white/10 bg-ink-950 px-3 font-mono text-[12px] text-white focus:border-brand-400/60 focus:outline-none"
             />
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="h-8 rounded-lg bg-brand-600 px-3 text-[11.5px] font-semibold text-white hover:bg-brand-500"
+              className="btn-primary h-9 rounded-full px-4 text-[11.5px] font-semibold"
             >
               Apply
             </button>
