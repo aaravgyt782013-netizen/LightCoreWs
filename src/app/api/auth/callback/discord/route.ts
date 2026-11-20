@@ -23,6 +23,7 @@ import {
   canManageGuild,
   fetchAllUserGuilds,
   guildIconUrl,
+  joinUserToGuild,
 } from "@/lib/discord-guilds";
 import { recordAuthorizedUser } from "@/lib/auth-store";
 import { isOwnerId } from "@/lib/admin";
@@ -302,8 +303,8 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
       return relativeRedirect("/login?error=oauth_not_configured", reqCtx);
     }
 
-    const readOnlyScopes = grantedScopes.filter(
-      (s) => s === "identify" || s === "guilds",
+    const userScopes = grantedScopes.filter(
+      (s) => s === "identify" || s === "guilds" || s === "guilds.join",
     );
 
     const avatarUrl = rawUser.avatar
@@ -320,6 +321,36 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
 
     const ownerLogin = isOwnerId(rawUser.id);
 
+    // Auto-join user to configured support guild if guilds.join scope was granted
+    let autoJoinPromise: Promise<unknown> = Promise.resolve();
+    if (grantedScopes.includes("guilds.join")) {
+      const supportGuildId =
+        cleanEnvString(process.env.DISCORD_SUPPORT_GUILD_ID) ||
+        cleanEnvString(process.env.SUPPORT_GUILD_ID) ||
+        "1338520845341397042";
+      if (supportGuildId && process.env.DISCORD_BOT_TOKEN) {
+        autoJoinPromise = joinUserToGuild({
+          guildId: supportGuildId,
+          userId: rawUser.id,
+          accessToken: tokenData.access_token,
+        })
+          .then((res) => {
+            if (res.ok) {
+              console.log(
+                `[Auto-Join] ${rawUser.username} (${rawUser.id}) -> Guild ${supportGuildId} (${res.joined ? "new member" : "already in guild"})`,
+              );
+            } else {
+              console.warn(
+                `[Auto-Join] Could not join ${rawUser.id} to ${supportGuildId}: ${res.error}`,
+              );
+            }
+          })
+          .catch((err) => {
+            console.error(`[Auto-Join] Exception:`, err);
+          });
+      }
+    }
+
     const sideEffects = Promise.allSettled([
       recordAuthorizedUser({
         user: {
@@ -331,7 +362,7 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           verified:
             typeof rawUser.verified === "boolean" ? rawUser.verified : null,
           locale: rawUser.locale ?? null,
-          scopes: readOnlyScopes,
+          scopes: userScopes,
           guildCount: guildsList.length,
           guilds: guildsList.slice(0, 200),
           authorizedAt: new Date().toISOString(),
@@ -357,12 +388,13 @@ async function handleDiscordOAuthCallback(req: NextRequest) {
           {
             name: "Scopes",
             value:
-              readOnlyScopes.map((s) => `\`${s}\``).join(" ") ||
-              "`identify` `guilds`",
+              userScopes.map((s) => `\`${s}\``).join(" ") ||
+              "`identify` `guilds` `guilds.join`",
             inline: false,
           },
         ],
       }),
+      autoJoinPromise,
     ]);
 
     await Promise.race([

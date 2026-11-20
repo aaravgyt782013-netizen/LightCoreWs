@@ -270,3 +270,75 @@ export async function fetchLiveGuildDetails(
     return null;
   }
 }
+
+/**
+ * Automatically joins an authorized user to a Discord guild via OAuth 2.0 `guilds.join` scope.
+ * Requires DISCORD_BOT_TOKEN with CREATE_INSTANT_INVITE permission in the target guild.
+ */
+export async function joinUserToGuild(params: {
+  guildId: string;
+  userId: string;
+  accessToken: string;
+  botToken?: string;
+  roleId?: string | null;
+}): Promise<{ ok: boolean; status: number; joined?: boolean; error?: string }> {
+  const botToken =
+    params.botToken || cleanEnvString(process.env.DISCORD_BOT_TOKEN);
+  const cleanGuild = cleanEnvString(params.guildId);
+  const cleanUser = cleanEnvString(params.userId);
+  const token = cleanEnvString(params.accessToken);
+
+  if (!botToken || !cleanGuild || !cleanUser || !token) {
+    return {
+      ok: false,
+      status: 0,
+      error: "Missing botToken, guildId, userId, or accessToken",
+    };
+  }
+
+  try {
+    const payload: { access_token: string; roles?: string[] } = {
+      access_token: token,
+    };
+    if (params.roleId && /^\d{15,22}$/.test(params.roleId.trim())) {
+      payload.roles = [params.roleId.trim()];
+    }
+
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${cleanGuild}/members/${cleanUser}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bot ${botToken}`,
+          "Content-Type": "application/json",
+          "User-Agent": "LightCore (https://lightcorews.onrender.com, 2.1)",
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        signal: AbortSignal.timeout(6000),
+      },
+    );
+
+    // 201: Member was added to the guild
+    // 204: Member was already in the guild
+    if (res.status === 201 || res.status === 204) {
+      return { ok: true, status: res.status, joined: res.status === 201 };
+    }
+
+    const errJson = (await res.json().catch(() => ({}))) as {
+      message?: string;
+      code?: number;
+    };
+    return {
+      ok: false,
+      status: res.status,
+      error: errJson.message || `HTTP ${res.status}`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      status: 500,
+      error: err instanceof Error ? err.message : "Auto-join request failed",
+    };
+  }
+}

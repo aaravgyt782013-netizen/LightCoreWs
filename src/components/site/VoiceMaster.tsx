@@ -208,7 +208,7 @@ export function VoiceMaster() {
 
             <Reveal delay={180} className="mt-7">
               <Link
-                href="/dashboard/demo?tab=voicemaster"
+                href={site.dashboard}
                 className="group inline-flex items-center gap-2 text-[14px] font-medium text-brand-300 transition-colors duration-300 hover:text-brand-100"
               >
                 Customize VoiceMaster in the dashboard

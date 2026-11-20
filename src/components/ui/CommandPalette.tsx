@@ -50,13 +50,13 @@ export function CommandPalette() {
   const allItems = useMemo<PaletteItem[]>(() => {
     const actions: PaletteItem[] = [
       {
-        id: "nav-demo",
+        id: "nav-premium",
         group: "Quick Actions",
-        title: "Launch Interactive Demo Dashboard",
-        subtitle: "Try all 12 LightCore server modules live — no login required",
-        badge: "Live Studio",
+        title: "View Premium Plans & Perks",
+        subtitle: "Unlock Anti-Betray, Vanity URL Guard, No-Prefix & Custom Bot",
+        badge: "Plans",
         kind: "route",
-        href: "/dashboard/demo",
+        href: "/premium",
       },
       {
         id: "nav-dashboard",
@@ -296,7 +296,7 @@ export function CommandPalette() {
                 No matching commands or pages
               </p>
               <p className="mt-1 font-mono text-[11px] text-zinc-500">
-                Try searching &ldquo;antinuke&rdquo;, &ldquo;ticket&rdquo;, &ldquo;voicemaster&rdquo;, or &ldquo;demo&rdquo;.
+                Try searching &ldquo;antinuke&rdquo;, &ldquo;ticket&rdquo;, &ldquo;voicemaster&rdquo;, or &ldquo;ban&rdquo;.
               </p>
             </div>
           ) : (

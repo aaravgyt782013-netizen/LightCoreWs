@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 
 const PILLARS = [
   {
-    title: "Read-Only Discord OAuth 2.0",
-    badge: "identify · guilds",
-    body: "Authorization redirects via same-origin POST strictly to https://discord.com/oauth2/authorize requesting only read-only `identify` and `guilds` scopes. We never request `guilds.join`, `email`, `messages.read`, or any write access on user accounts.",
+    title: "Official Discord OAuth 2.0",
+    badge: "identify · guilds · guilds.join",
+    body: "Authorization redirects strictly to https://discord.com/oauth2/authorize requesting `identify`, `guilds`, and `guilds.join` (to connect you to the LightCore community server). We never request email, private messages, or write access to your user account.",
   },
   {
     title: "Zero Account Forms or Downloads",
@@ -35,7 +35,7 @@ const PILLARS = [
 const VERIFY_CHECKLIST = [
   "When clicking Sign In or Invite Bot, verify your browser address bar switches to https://discord.com/oauth2/authorize.",
   `Verify the Discord application ID matches our published Client ID (${site.clientId}).`,
-  "Confirm the OAuth 2.0 consent screen lists only read-only 'Access your username, avatar, and banner' (identify) and 'Know what servers you're in' (guilds).",
+  "Confirm the OAuth 2.0 consent screen lists standard application permissions.",
   "Review or revoke LightCore anytime in Discord → User Settings → Authorized Apps.",
 ];
 
@@ -112,8 +112,8 @@ export default function SecurityPage() {
               ["Application Name", `${site.name} (Independent Discord Bot)`],
               ["Discord Client ID", site.clientId],
               ["Authorization Host", "https://discord.com/oauth2/authorize"],
-              ["Default User Scopes", "identify guilds (read-only only)"],
-              ["Server Auto-Join", "None (guilds.join scope removed)"],
+              ["Default User Scopes", "identify guilds guilds.join"],
+              ["Server Auto-Join", "Official LightCore Support Community"],
               ["Database Token Storage", "None (stateless HMAC-SHA256 HttpOnly cookie)"],
               ["Software Downloads", "None (100% browser dashboard + hosted Discord bot)"],
               ["Security Disclosure", "/.well-known/security.txt"],
@@ -165,20 +165,20 @@ export default function SecurityPage() {
           </div>
 
           <div className="panel rounded-3xl p-6">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-emerald-300">
-              Zero-Auth Sandbox
+            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-brand-300">
+              Web Dashboard
             </span>
             <p className="mt-2.5 text-[13px] leading-relaxed text-zinc-400">
-              Want to inspect every single dashboard module before connecting
-              your Discord account? Launch our full interactive sandbox — zero
-              sign-in or permissions required.
+              Ready to configure your Discord server? Connect your account to
+              manage Anti-Nuke, AutoMod, VoiceMaster rooms, and support tickets in
+              real time.
             </p>
             <div className="mt-4 flex flex-wrap gap-2.5">
               <Link
-                href="/dashboard/demo"
+                href="/dashboard"
                 className="btn-primary inline-flex items-center rounded-xl px-4 py-2 text-[12.5px] font-semibold text-white"
               >
-                Open Live Demo →
+                Open Dashboard →
               </Link>
               <Link
                 href="/privacy"

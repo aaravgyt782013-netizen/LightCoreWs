@@ -73,10 +73,10 @@ export function CtaSection() {
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12.5px] text-zinc-400">
                 <Link
-                  href={site.demo}
+                  href="/premium"
                   className="transition-colors hover:text-brand-200"
                 >
-                  Interactive Demo
+                  Premium Plans
                 </Link>
                 <span className="text-zinc-700">·</span>
                 <Link

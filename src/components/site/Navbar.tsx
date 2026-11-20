@@ -12,12 +12,11 @@ import {
   SearchIcon,
   ServerIcon,
   ShieldIcon,
-  SparklesIcon,
 } from "@/components/ui/Icons";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import { nav, site } from "@/lib/site";
 
-const SECTION_IDS = ["features", "showcase", "voicemaster", "setup", "faq"];
+const SECTION_IDS = ["features", "showcase", "voicemaster", "commands", "setup", "faq"];
 
 type LiteUser = {
   id: string;
@@ -269,12 +268,12 @@ export function Navbar() {
                       My Servers
                     </Link>
                     <Link
-                      href="/dashboard/demo"
+                      href="/docs"
                       onClick={() => setMenuOpen(false)}
                       className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-[12.5px] text-zinc-200 transition-colors hover:bg-white/[0.06] hover:text-white"
                     >
-                      <SparklesIcon className="size-4 text-brand-300" />
-                      Live Demo
+                      <SearchIcon className="size-4 text-brand-300" />
+                      Commands Guide
                     </Link>
                     {isAdmin && (
                       <Link
@@ -413,13 +412,13 @@ export function Navbar() {
               ),
             )}
             <Link
-              href="/dashboard/demo"
+              href="/docs"
               onClick={() => setOpen(false)}
               className="flex items-center justify-between rounded-2xl px-4 py-3 text-[15px] font-medium text-zinc-200 transition-colors hover:bg-white/[0.055] hover:text-white"
             >
-              Try Demo
-              <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[10.5px] font-medium text-emerald-300">
-                Interactive
+              Commands Guide
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[10.5px] font-medium text-zinc-400">
+                68+ cmds
               </span>
             </Link>
             <a

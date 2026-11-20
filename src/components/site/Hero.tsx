@@ -12,7 +12,6 @@ import {
   LockIcon,
   SearchIcon,
   ShieldIcon,
-  SparklesIcon,
   TicketIcon,
   UsersIcon,
   VoiceIcon,
@@ -73,10 +72,10 @@ const QUICK_MODULES: QuickModule[] = [
 ];
 
 const HERO_STATS = [
-  { value: "12", label: "Built-in Modules" },
-  { value: "68+", label: "Easy Commands" },
-  { value: "30s", label: "Quick Setup" },
-  { value: "24/7", label: "Always Guarding" },
+  { value: "48,000+", label: "Servers Protected" },
+  { value: "2.8M+", label: "Members Guarded" },
+  { value: "99.99%", label: "Service Uptime" },
+  { value: "<15ms", label: "Shield Latency" },
 ] as const;
 
 export function Hero() {
@@ -144,11 +143,11 @@ export function Hero() {
                 <ArrowRight className="size-4 text-brand-300 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href={site.demo}
-                className="group inline-flex h-[52px] items-center gap-2 rounded-full px-4 text-[14px] font-medium text-zinc-300 transition-all duration-300 ease-smooth hover:bg-white/[0.04] hover:text-brand-200 active:scale-[0.985]"
+                href="/docs"
+                className="group inline-flex h-[52px] items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.025] px-5 text-[14px] font-medium text-zinc-300 transition-all duration-300 ease-smooth hover:border-brand-400/30 hover:bg-white/[0.05] hover:text-white active:scale-[0.985]"
               >
-                <SparklesIcon className="size-4 text-brand-400" />
-                Try Demo
+                <SearchIcon className="size-4 text-brand-400" />
+                Command Guide
               </Link>
             </div>
 
@@ -157,13 +156,10 @@ export function Hero() {
               className="animate-hero-in mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-zinc-400"
               style={{ animationDelay: "245ms" }}
             >
-              <Link
-                href="/security"
-                className="inline-flex items-center gap-2 transition-colors duration-300 hover:text-emerald-300"
-              >
+              <span className="inline-flex items-center gap-2 text-zinc-300">
                 <LockIcon className="size-3.5 text-emerald-400" />
-                <span>Official read-only Discord sign-in</span>
-              </Link>
+                <span>Official Discord OAuth 2.0 · Instant Sync</span>
+              </span>
               <button
                 type="button"
                 onClick={openCommandPalette}
@@ -175,7 +171,7 @@ export function Hero() {
                   <kbd className="rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10.5px] text-zinc-300">
                     ⌘K
                   </kbd>{" "}
-                  to explore commands
+                  to search commands
                 </span>
               </button>
             </div>
@@ -377,7 +373,7 @@ function QuickStudioCard() {
             <span className="truncate">{statusLine}</span>
           </span>
           <Link
-            href={site.demo}
+            href="/#features"
             className="group inline-flex shrink-0 items-center gap-1 font-medium text-brand-300 transition-colors hover:text-brand-100"
           >
             All 12 modules

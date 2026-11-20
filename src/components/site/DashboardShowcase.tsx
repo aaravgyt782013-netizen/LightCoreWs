@@ -9,7 +9,7 @@ import {
 } from "@/lib/guild-config";
 import { Reveal } from "@/components/ui/Reveal";
 import { SpotlightCard } from "@/components/ui/SpotlightCard";
-import { ArrowRight, CheckIcon, SparklesIcon } from "@/components/ui/Icons";
+import { ArrowRight, CheckIcon } from "@/components/ui/Icons";
 import { site } from "@/lib/site";
 
 const PUNISHMENT_FRIENDLY: Record<string, string> = {
@@ -135,11 +135,10 @@ export function DashboardShowcase() {
               </div>
 
               <Link
-                href={site.demo}
-                className="group inline-flex items-center gap-1.5 rounded-full border border-brand-400/25 bg-brand-400/[0.09] px-3.5 py-1.5 text-[12px] font-medium text-brand-200 transition-all duration-300 ease-smooth hover:border-brand-300/45 hover:bg-brand-400/[0.16] hover:text-brand-50"
+                href={site.dashboard}
+                className="group inline-flex items-center gap-1.5 rounded-full border border-brand-400/25 bg-brand-400/[0.09] px-4 py-1.5 text-[12px] font-medium text-brand-200 transition-all duration-300 ease-smooth hover:border-brand-300/45 hover:bg-brand-400/[0.16] hover:text-brand-50"
               >
-                <SparklesIcon className="size-3.5 text-brand-300" />
-                Try Full Demo
+                <span>Live Dashboard</span>
                 <ArrowRight className="size-3 transition-transform duration-300 ease-smooth group-hover:translate-x-0.5" />
               </Link>
             </div>
@@ -236,14 +235,14 @@ export function DashboardShowcase() {
                     href={site.dashboard}
                     className="btn-primary btn-glow relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full px-6 text-[13.5px] font-semibold hover:-translate-y-0.5 active:scale-[0.985]"
                   >
-                    <span className="relative z-10">Manage My Server</span>
+                    <span className="relative z-10">Manage in Dashboard</span>
                     <ArrowRight className="relative z-10 size-3.5" />
                   </Link>
                   <Link
-                    href={site.demo}
+                    href="/docs"
                     className="btn-soft inline-flex h-11 items-center gap-2 px-5 text-[13px] font-medium active:scale-[0.985]"
                   >
-                    Explore Sandbox
+                    Browse All Commands
                   </Link>
                 </div>
               </div>

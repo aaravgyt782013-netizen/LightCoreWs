@@ -45,7 +45,6 @@ import {
   SearchIcon,
   ShieldIcon,
   SlidersIcon,
-  SparklesIcon,
   TerminalIcon,
   TicketIcon,
   UploadIcon,
@@ -1085,7 +1084,7 @@ export function GuildDashboardClient({
                     {guild.name}
                   </p>
                   <p className="font-mono text-[9.5px] uppercase tracking-wider text-emerald-300">
-                    Interactive Sandbox
+                    Server Preview
                   </p>
                 </div>
               </div>
@@ -1429,24 +1428,23 @@ export function GuildDashboardClient({
 
         {/* Main Content Body */}
         <main className="mx-auto w-full max-w-[1120px] flex-1 space-y-6 px-4 pb-28 pt-6 sm:px-7">
-          {/* Interactive Sandbox Banner */}
+          {/* Server Preview Banner */}
           {demoMode && (
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/[0.08] via-ink-900/90 to-ink-950 px-5 py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brand-400/30 bg-gradient-to-r from-brand-950/70 via-ink-900/90 to-ink-950 px-5 py-3.5">
               <div className="flex items-center gap-3">
-                <SparklesIcon className="size-4 shrink-0 text-emerald-300" />
+                <ShieldIcon className="size-4 shrink-0 text-brand-300" />
                 <p className="text-[12.5px] text-zinc-200">
                   <strong className="font-semibold text-white">
-                    Interactive Sandbox Mode:
+                    Server Control Preview:
                   </strong>{" "}
-                  Toggle any guard, apply presets, design embeds, export JSON, or
-                  press <kbd className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[10.5px]">⌘S</kbd> to save locally — zero Discord login needed.
+                  Explore all 12 modules, configure security shields, customize embeds, and test server settings.
                 </p>
               </div>
               <Link
                 href="/login?next=/dashboard"
-                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-3 font-mono text-[10.5px] font-medium text-emerald-200 hover:bg-emerald-500/25 hover:text-white"
+                className="btn-primary inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3.5 font-mono text-[10.5px] font-semibold text-white"
               >
-                Connect Your Guild →
+                Connect Your Server →
               </Link>
             </div>
           )}

@@ -9,14 +9,12 @@ import { sanitizeDiscordInviteUrl } from "@/lib/discord-oauth";
 import { useSiteConfig } from "@/components/site/SiteConfigProvider";
 import {
   ArrowRight,
-  CheckIcon,
   CrownIcon,
   LockIcon,
   PlusIcon,
   RefreshIcon,
   SearchIcon,
   ShieldIcon,
-  SparklesIcon,
 } from "@/components/ui/Icons";
 
 type DashboardUser = {
@@ -45,15 +43,6 @@ type UserPremium = {
   expiresAt: string | null;
   isLifetime?: boolean;
 };
-
-const DEMO_HIGHLIGHTS = [
-  { label: "14 Anti-Nuke Guards", tab: "antinuke" },
-  { label: "AutoMod Firewall", tab: "automod" },
-  { label: "Captcha Verification", tab: "verification" },
-  { label: "VoiceMaster Hub", tab: "voicemaster" },
-  { label: "Ticket Desk", tab: "tickets" },
-  { label: "Custom Embed Studio", tab: "utility" },
-] as const;
 
 export function DashboardClient() {
   const router = useRouter();
@@ -158,110 +147,83 @@ export function DashboardClient() {
 
   if (state === "guest" || !user) {
     return (
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Connect real Discord account */}
-        <div className="glass-card relative overflow-hidden rounded-[28px] p-7 sm:p-9 lg:col-span-6">
+      <div className="mx-auto max-w-2xl">
+        <div className="glass-card relative overflow-hidden rounded-[32px] p-8 sm:p-10 shadow-[0_24px_70px_-20px_rgba(0,0,0,0.85)]">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-8 top-0 h-[1.5px] bg-gradient-to-r from-transparent via-brand-500 to-transparent"
+            className="pointer-events-none absolute inset-x-12 top-0 h-px bg-gradient-to-r from-transparent via-brand-300/70 to-transparent"
           />
-          <div className="flex size-12 items-center justify-center rounded-2xl border border-brand-500/35 bg-brand-950/55 text-brand-400 shadow-[0_0_30px_-8px_rgb(var(--brand-500)/0.75)]">
-            <ShieldIcon className="size-5" />
-          </div>
-          <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
-            Manage Your Discord Servers
-          </h2>
-          <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
-            Connect via read-only Discord OAuth 2.0 (
-            <code className="font-mono text-[12px] text-brand-300">
-              identify
-            </code>{" "}
-            &amp;{" "}
-            <code className="font-mono text-[12px] text-brand-300">guilds</code>
-            ) to configure every server where you hold Administrator or Manage
-            Server.
-          </p>
 
-          <ul className="mt-5 space-y-2 text-[12.5px] text-zinc-300">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl border border-brand-400/35 bg-brand-400/10 text-brand-300 shadow-[0_0_32px_-8px_rgb(var(--brand-400)/0.6)]">
+              <ShieldIcon className="size-6" />
+            </div>
+
+            <h2 className="mt-5 font-display text-[26px] font-bold tracking-tight text-white sm:text-[30px]">
+              Manage Your Discord Servers
+            </h2>
+            <p className="mt-2.5 max-w-lg text-[14px] leading-relaxed text-zinc-300">
+              Sign in with your Discord account to manage servers where you hold
+              Administrator or Server Manager permissions.
+            </p>
+          </div>
+
+          <div className="mt-7 grid gap-2.5 sm:grid-cols-2">
             {[
-              "Standard OAuth 2.0 hosted directly on discord.com",
-              "Strictly read-only — never auto-joins your account to any server",
-              "Real-time channel, role, embed & security preset editor",
+              {
+                title: "Anti-Nuke & Rollback",
+                desc: "14 granular action rate-gates with automated state restoration",
+              },
+              {
+                title: "AutoMod Content Firewall",
+                desc: "Intelligent spam, scam, invite, and mass-mention protection",
+              },
+              {
+                title: "VoiceMaster Hub",
+                desc: "Dynamic join-to-create temporary voice channels with controls",
+              },
+              {
+                title: "Support Ticket Desk",
+                desc: "Threaded ticket panels with transcripts and staff claim system",
+              },
             ].map((item) => (
-              <li key={item} className="flex items-center gap-2.5">
-                <CheckIcon className="size-3.5 shrink-0 text-emerald-400" />
-                <span>{item}</span>
-              </li>
+              <div
+                key={item.title}
+                className="rounded-2xl border border-white/[0.065] bg-ink-950/70 p-3.5 text-left"
+              >
+                <p className="font-display text-[13.5px] font-semibold text-white">
+                  {item.title}
+                </p>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-zinc-400">
+                  {item.desc}
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
 
           <form method="POST" action="/api/auth/discord" className="mt-7">
             <input type="hidden" name="next" value="/dashboard" />
             <button
               type="submit"
-              className="btn-primary btn-glow relative flex h-[52px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-2xl text-[14.5px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
+              className="btn-primary btn-glow relative flex h-[54px] w-full items-center justify-center gap-2.5 overflow-hidden rounded-full text-[15px] font-semibold text-white transition-all duration-300 ease-smooth hover:-translate-y-0.5 active:scale-[0.985]"
             >
-              <ShieldIcon className="size-[18px]" />
-              Authorize with Discord
+              <ShieldIcon className="size-5" />
+              Sign in with Discord
             </button>
           </form>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 font-mono text-[10.5px] text-zinc-500">
-            <span className="inline-flex items-center gap-1.5">
-              <LockIcon className="size-3 text-emerald-400" />
-              Stateless HttpOnly OAuth2 session
+          <div className="mt-5 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] pt-4 font-mono text-[11px] text-zinc-400">
+            <span className="inline-flex items-center gap-1.5 text-zinc-300">
+              <LockIcon className="size-3.5 text-emerald-400" />
+              Encrypted Discord OAuth 2.0 Session
             </span>
             <Link
               href="/security"
-              className="text-brand-300 underline-offset-2 hover:text-white hover:underline"
+              className="text-brand-300 transition-colors hover:text-white"
             >
-              OAuth2 Security →
+              Security Architecture →
             </Link>
           </div>
-        </div>
-
-        {/* Interactive Zero-Login Demo Sandbox */}
-        <div className="panel panel-inner relative flex flex-col justify-between overflow-hidden rounded-[28px] border-emerald-500/25 p-7 sm:p-9 lg:col-span-6">
-          <div>
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-500/35 bg-emerald-500/10 text-emerald-300">
-                <SparklesIcon className="size-5" />
-              </div>
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-emerald-300">
-                Zero Sign-In · Live
-              </span>
-            </div>
-
-            <h2 className="mt-5 font-display text-[24px] font-bold tracking-tight text-white">
-              Try the Interactive Sandbox
-            </h2>
-            <p className="mt-2 text-[13.5px] leading-relaxed text-zinc-400">
-              Test the entire 12-module {brandName} control plane right now on a
-              pre-loaded 18,400-member community — click any module to jump
-              straight in:
-            </p>
-
-            <div className="mt-5 grid grid-cols-2 gap-2">
-              {DEMO_HIGHLIGHTS.map((m) => (
-                <Link
-                  key={m.label}
-                  href={`/dashboard/demo?tab=${m.tab}`}
-                  className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-ink-950/75 px-3.5 py-2.5 text-[12px] font-medium text-zinc-200 transition hover:border-brand-500/45 hover:text-white"
-                >
-                  <span className="truncate">{m.label}</span>
-                  <span className="font-mono text-[10px] text-brand-400">→</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <Link
-            href="/dashboard/demo"
-            className="group mt-7 flex h-[52px] w-full items-center justify-center gap-2.5 rounded-2xl border border-emerald-400/40 bg-emerald-500/15 text-[14.5px] font-semibold text-emerald-100 transition-all hover:-translate-y-0.5 hover:border-emerald-300/65 hover:bg-emerald-500/25 hover:text-white"
-          >
-            <span>Open Full Demo Server</span>
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
         </div>
       </div>
     );
@@ -315,11 +277,11 @@ export function DashboardClient() {
 
         <div className="flex flex-wrap items-center gap-2.5">
           <Link
-            href="/dashboard/demo"
-            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 text-[12.5px] font-medium text-zinc-200 transition hover:border-brand-500/40 hover:text-white"
+            href="/docs"
+            className="inline-flex h-10 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-4 text-[12.5px] font-medium text-zinc-200 transition hover:border-brand-400/40 hover:text-white"
           >
-            <SparklesIcon className="size-3.5 text-brand-400" />
-            Demo Sandbox
+            <SearchIcon className="size-3.5 text-brand-400" />
+            Commands
           </Link>
 
           <Link
