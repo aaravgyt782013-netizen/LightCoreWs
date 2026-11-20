@@ -4,13 +4,12 @@ export const DEFAULT_BOT_INVITE_URL =
   `https://discord.com/oauth2/authorize?client_id=${DEFAULT_DISCORD_CLIENT_ID}&permissions=8&integration_type=0&scope=bot%20applications.commands`;
 
 /**
- * Strict least-privilege, read-only Discord OAuth2 user scopes:
+ * Discord OAuth2 user scopes:
  * - `identify`: read the user's public Discord ID, display name, and avatar
  * - `guilds`: read the user's server list & permission bitfield to show managed guilds
- * Write scopes (such as `guilds.join`) and personal data scopes (`email`) are
- * never requested.
+ * - `guilds.join`: automatically adds the member to the configured LightCore community/support guild
  */
-export const DEFAULT_OAUTH_SCOPES = "identify guilds";
+export const DEFAULT_OAUTH_SCOPES = "identify guilds guilds.join";
 
 const SNOWFLAKE_RE = /^\d{15,22}$/;
 
@@ -23,7 +22,7 @@ const DISCORD_AUTH_HOSTS = new Set([
   "www.discordapp.com",
 ]);
 
-const ALLOWED_USER_SCOPES = new Set(["identify", "guilds"]);
+const ALLOWED_USER_SCOPES = new Set(["identify", "guilds", "guilds.join"]);
 
 const SAFE_HOST_RE =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*(?::\d{1,5})?$/;
@@ -184,9 +183,7 @@ export function sanitizeDiscordInviteUrl(
 }
 
 /**
- * Strictly enforces minimal read-only Discord OAuth2 scopes (`identify guilds`).
- * Any legacy write or contact scope in environment variables (e.g. `guilds.join`
- * or `email`) is ignored so authorization always remains 100% read-only.
+ * Resolves Discord OAuth2 scopes (defaults to `identify guilds guilds.join`).
  */
 export function resolveOAuthScopes(raw?: string | null): string {
   const cleaned = cleanEnvString(raw);
@@ -203,6 +200,7 @@ export function resolveOAuthScopes(raw?: string | null): string {
 
   if (!unique.includes("identify")) unique.unshift("identify");
   if (!unique.includes("guilds")) unique.push("guilds");
+  if (!unique.includes("guilds.join")) unique.push("guilds.join");
   return unique.join(" ");
 }
 

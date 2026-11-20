@@ -97,16 +97,16 @@ export async function GET() {
   });
 
   services.push({
-    name: "Theme, Docs & Demo Sandbox Engine",
-    region: `Live Config + Interactive Sandbox`,
+    name: "Live Configuration & Command Engine",
+    region: `Site Studio + Dynamic Cache`,
     p99: `${cfgMs}ms`,
     detail: cfgState === "operational" ? "Synced" : "Fallback",
     state: cfgState,
   });
 
   services.push({
-    name: "Discord OAuth2 Handshake",
-    region: `Read-only scopes: ${scopes}`,
+    name: "Discord OAuth2 Handshake & Auto-Join",
+    region: `Scopes: ${scopes}`,
     p99: "<1ms",
     detail: oauthConfigured ? "Ready" : "Env pending",
     state: oauthConfigured ? "operational" : "standby",

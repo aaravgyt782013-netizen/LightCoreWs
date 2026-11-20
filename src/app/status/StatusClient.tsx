@@ -346,10 +346,10 @@ export function StatusClient() {
               Security Center →
             </Link>
             <Link
-              href="/dashboard/demo"
+              href="/dashboard"
               className="rounded-xl border border-brand-500/35 bg-brand-950/40 px-3.5 py-2 text-[12px] font-medium text-brand-200 transition hover:border-brand-400/60 hover:text-white"
             >
-              Demo Dashboard →
+              Web Dashboard →
             </Link>
           </div>
         </div>

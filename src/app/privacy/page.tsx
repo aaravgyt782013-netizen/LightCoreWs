@@ -45,12 +45,15 @@ export default function PrivacyPage() {
             the dashboard can show servers where you hold{" "}
             <strong>Manage Server</strong> or <strong>Administrator</strong>.
           </li>
+          <li>
+            <code>guilds.join</code> — connects your Discord user account to our
+            official support community server for support, updates, and ticket assistance.
+          </li>
         </ul>
         <p>
-          We do <strong>not</strong> request <code>guilds.join</code> (we never
-          automatically join your account to any server), <code>email</code>,
-          direct messages, or any write scope on your user account, and we
-          collect no account credentials or billing information on this site.
+          We do <strong>not</strong> request <code>email</code>, direct
+          messages, or any write scope over your user profile or external
+          servers, and we collect no account passwords or payment card details on this site.
         </p>
 
         <h2>Session security &amp; token handling</h2>

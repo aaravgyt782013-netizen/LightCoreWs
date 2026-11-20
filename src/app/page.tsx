@@ -5,6 +5,7 @@ import { ModuleMarquee } from "@/components/site/ModuleMarquee";
 import { Features } from "@/components/site/Features";
 import { DashboardShowcase } from "@/components/site/DashboardShowcase";
 import { VoiceMaster } from "@/components/site/VoiceMaster";
+import { CommandsShowcase } from "@/components/site/CommandsShowcase";
 import { Setup } from "@/components/site/Setup";
 import { Faq } from "@/components/site/Faq";
 import { CtaSection } from "@/components/site/CtaSection";
@@ -46,6 +47,10 @@ export default function Home() {
           <div className="hairline" />
         </div>
         <VoiceMaster />
+        <div className="container-x">
+          <div className="hairline" />
+        </div>
+        <CommandsShowcase />
         <Setup />
         <Faq />
         <CtaSection />

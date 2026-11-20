@@ -426,14 +426,14 @@ export function DocsClient() {
                 Prefer a Visual Control Plane?
               </h3>
               <p className="mt-1.5 text-[13px] leading-relaxed text-zinc-400">
-                Try all 12 server modules — including Security Presets, Ticket
-                Previews, and the Embed Studio — in our interactive sandbox.
+                Configure all 12 server modules — including Security Presets, Ticket
+                Panels, VoiceMaster, and Embed Studio — directly in the Web Dashboard.
               </p>
               <Link
-                href="/dashboard/demo"
+                href="/dashboard"
                 className="btn-primary mt-4 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] font-semibold text-white"
               >
-                Launch Demo Dashboard
+                Open Web Dashboard
                 <ArrowRight className="size-3.5" />
               </Link>
             </div>

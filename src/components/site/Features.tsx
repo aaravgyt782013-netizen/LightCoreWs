@@ -226,10 +226,10 @@ export function Features() {
                 )}
 
                 <Link
-                  href={`/dashboard/demo?tab=${feature.demoTab}`}
+                  href={site.dashboard}
                   className="btn-primary btn-glow relative inline-flex h-[50px] shrink-0 items-center justify-center gap-2 overflow-hidden rounded-full px-6 text-[13.5px] font-semibold hover:-translate-y-0.5 active:scale-[0.985]"
                 >
-                  <span className="relative z-10">Try in Dashboard</span>
+                  <span className="relative z-10">Configure in Dashboard</span>
                   <ArrowRight className="relative z-10 size-3.5" />
                 </Link>
               </div>

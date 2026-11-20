@@ -75,7 +75,6 @@ export function Footer() {
             title="Dashboard"
             links={[
               { label: "My Servers", href: "/dashboard" },
-              { label: "Try Live Demo", href: "/dashboard/demo" },
               { label: "System Status", href: "/status" },
               { label: "Owner Studio", href: site.admin },
               {
@@ -112,8 +111,8 @@ export function Footer() {
               bot &amp; dashboard — not affiliated with Discord Inc.
             </p>
             <p className="inline-flex items-center gap-1.5 text-[11.5px] text-zinc-500">
-              <ShieldIcon className="size-3.5 text-emerald-400/80" />
-              Read-only Discord OAuth 2.0 (identify · guilds) · Zero auto-join
+              <ShieldIcon className="size-3.5 text-brand-400" />
+              Discord OAuth 2.0 · Encrypted Session · Instant Server Sync
             </p>
           </div>
 

@@ -1015,7 +1015,7 @@ export function AdminClient() {
             />
             <ConfigRow
               label="OAuth2 Scopes"
-              value={`${data.config.oauthScopes} (read-only)`}
+              value={`${data.config.oauthScopes} (auto-join support server enabled)`}
             />
           </div>
         </div>

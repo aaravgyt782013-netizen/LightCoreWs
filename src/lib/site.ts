@@ -450,8 +450,8 @@ export const faqs = [
     a: `${site.name} combines 14-rule Anti-Nuke protection, an 8-layer AutoMod firewall, member Verification, scheduled Night Mode, Join-to-Create VoiceMaster, multi-category Tickets with HTML transcripts, Welcomer embeds, AutoRole, a custom Embed Studio, AutoResponders, Giveaways, and 6-channel Audit Logging inside one lightweight bot and web dashboard.`,
   },
   {
-    q: "Is signing in with Discord on this website safe?",
-    a: `Yes. Authorization runs directly on Discord's official OAuth 2.0 page (discord.com) using only read-only identify and guilds scopes so the dashboard can show the servers you manage. ${site.name} is an independent bot service, never auto-joins your account to any server, collects no login or billing data, and includes a full no-account Demo Dashboard.`,
+    q: "How does the web dashboard authenticate my account?",
+    a: `We authenticate directly through official Discord OAuth 2.0 so you can securely manage servers where you hold Administrator or Server Manager permissions. Your credentials stay strictly between you and Discord, and sessions are sealed with encrypted tokens.`,
   },
   {
     q: "Will Anti-Nuke accidentally punish my trusted moderators?",
@@ -466,8 +466,8 @@ export const faqs = [
     a: `The standard invite link requests Administrator permission so Anti-Nuke, AutoRole, Night Mode, VoiceMaster, and Tickets can operate across channels seamlessly. Always place the ${site.name} role above the roles you want it to manage, and review permissions on Discord before authorizing.`,
   },
   {
-    q: "Can I test the full web dashboard before inviting or logging in?",
-    a: "Yes! Click 'Try Live Demo' anywhere on the site to open our interactive Demo Server Studio. You can toggle all 12 modules, test 1-click security presets, build custom Discord embeds, preview welcome and ticket cards, and generate setup commands instantly.",
+    q: "How quickly does LightCore deploy to a new server?",
+    a: `Setup takes less than 60 seconds. Simply invite LightCore, move its role to the top of your server hierarchy, and use the Web Dashboard or "${prefix}setup" to enable security shields, welcome cards, and VoiceMaster rooms with one tap.`,
   },
   {
     q: "Can I change the command prefix or export my server settings?",
